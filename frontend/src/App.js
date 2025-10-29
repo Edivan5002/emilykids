@@ -1,53 +1,91 @@
-import { useEffect } from "react";
-import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { Toaster } from '@/components/ui/sonner';
+import '@/App.css';
+import '@/index.css';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+// Pages
+import LoginPage from './pages/LoginPage';
+import Dashboard from './pages/Dashboard';
+import Clientes from './pages/Clientes';
+import Fornecedores from './pages/Fornecedores';
+import Marcas from './pages/Marcas';
+import Categorias from './pages/Categorias';
+import Subcategorias from './pages/Subcategorias';
+import Produtos from './pages/Produtos';
+import Estoque from './pages/Estoque';
+import NotasFiscais from './pages/NotasFiscais';
+import Orcamentos from './pages/Orcamentos';
+import Vendas from './pages/Vendas';
+import Relatorios from './pages/Relatorios';
+import IAInsights from './pages/IAInsights';
+import Logs from './pages/Logs';
 
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
+// Layout
+import Layout from './components/Layout';
 
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
+const PrivateRoute = ({ children }) => {
+  const { user, loading } = useAuth();
 
-  return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
+          <p className="mt-4 text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return user ? children : <Navigate to="/login" />;
 };
 
-function App() {
+function AppContent() {
   return (
     <div className="App">
+      <Toaster richColors position="top-right" />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/*"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/clientes" element={<Clientes />} />
+                    <Route path="/fornecedores" element={<Fornecedores />} />
+                    <Route path="/marcas" element={<Marcas />} />
+                    <Route path="/categorias" element={<Categorias />} />
+                    <Route path="/subcategorias" element={<Subcategorias />} />
+                    <Route path="/produtos" element={<Produtos />} />
+                    <Route path="/estoque" element={<Estoque />} />
+                    <Route path="/notas-fiscais" element={<NotasFiscais />} />
+                    <Route path="/orcamentos" element={<Orcamentos />} />
+                    <Route path="/vendas" element={<Vendas />} />
+                    <Route path="/relatorios" element={<Relatorios />} />
+                    <Route path="/ia-insights" element={<IAInsights />} />
+                    <Route path="/logs" element={<Logs />} />
+                  </Routes>
+                </Layout>
+              </PrivateRoute>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
