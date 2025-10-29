@@ -824,6 +824,37 @@ async def devolver_orcamento(orcamento_id: str, current_user: dict = Depends(get
     
     return {"message": "Itens devolvidos ao estoque"}
 
+@api_router.delete("/orcamentos/{orcamento_id}")
+async def delete_orcamento(orcamento_id: str, current_user: dict = Depends(get_current_user)):
+    orcamento = await db.orcamentos.find_one({"id": orcamento_id}, {"_id": 0})
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    # Se o orçamento estava aberto, devolver estoque
+    if orcamento["status"] == "aberto":
+        for item in orcamento.get("itens", []):
+            produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
+            if produto:
+                novo_estoque = produto["estoque_atual"] + item["quantidade"]
+                await db.produtos.update_one(
+                    {"id": item["produto_id"]},
+                    {"$set": {"estoque_atual": novo_estoque}}
+                )
+    
+    # Deletar orçamento
+    await db.orcamentos.delete_one({"id": orcamento_id})
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="orcamentos",
+        acao="deletar",
+        detalhes={"orcamento_id": orcamento_id, "status": orcamento.get("status")}
+    )
+    
+    return {"message": "Orçamento excluído com sucesso"}
+
 # ========== VENDAS ==========
 
 @api_router.get("/vendas", response_model=List[Venda])
