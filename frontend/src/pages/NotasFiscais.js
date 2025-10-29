@@ -514,22 +514,42 @@ const NotasFiscais = () => {
               </div>
 
               {!nota.confirmado && (
-                <Button
-                  onClick={() => handleConfirmar(nota.id)}
-                  style={{backgroundColor: '#2C9AA1'}}
-                  data-testid={`confirmar-nf-${nota.id}`}
-                >
-                  <Check className="mr-2" size={16} />
-                  Confirmar e Atualizar Estoque
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => handleConfirmar(nota.id)}
+                    style={{backgroundColor: '#2C9AA1'}}
+                    data-testid={`confirmar-nf-${nota.id}`}
+                  >
+                    <Check className="mr-2" size={16} />
+                    Confirmar e Atualizar Estoque
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleExcluir(nota.id, nota.confirmado)}
+                    data-testid={`excluir-nf-${nota.id}`}
+                  >
+                    <Trash2 className="mr-2 text-red-500" size={16} />
+                    Excluir
+                  </Button>
+                </div>
               )}
 
               {nota.confirmado && (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-800 flex items-center gap-2">
-                    <Check size={16} />
-                    Nota confirmada - Estoque atualizado
-                  </p>
+                <div className="space-y-3">
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-800 flex items-center gap-2">
+                      <Check size={16} />
+                      Nota confirmada - Estoque atualizado
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleExcluir(nota.id, nota.confirmado)}
+                    data-testid={`excluir-nf-confirmada-${nota.id}`}
+                  >
+                    <Trash2 className="mr-2 text-red-500" size={16} />
+                    Excluir Nota Fiscal
+                  </Button>
                 </div>
               )}
             </CardContent>
