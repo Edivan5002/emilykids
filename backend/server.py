@@ -706,82 +706,297 @@ async def create_venda(venda_data: VendaCreate, current_user: dict = Depends(get
 
 # ========== IA - INSIGHTS ==========
 
+class PrevisaoDemandaRequest(BaseModel):
+    produto_id: str
+
+class RecomendacoesClienteRequest(BaseModel):
+    cliente_id: str
+
 @api_router.post("/ia/previsao-demanda")
-async def previsao_demanda(produto_id: str, current_user: dict = Depends(get_current_user)):
-    # Buscar histórico de vendas
-    vendas = await db.vendas.find({}, {"_id": 0}).to_list(1000)
-    produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
-    
-    if not produto:
-        raise HTTPException(status_code=404, detail="Produto não encontrado")
-    
-    # Calcular total vendido
-    total_vendido = 0
-    for venda in vendas:
-        for item in venda.get("itens", []):
-            if item["produto_id"] == produto_id:
-                total_vendido += item["quantidade"]
-    
-    # Usar GPT-4 para análise
-    api_key = os.environ.get('EMERGENT_LLM_KEY')
-    chat = LlmChat(
-        api_key=api_key,
-        session_id=f"previsao-{produto_id}",
-        system_message="Você é um assistente especializado em análise de vendas e previsão de demanda."
-    ).with_model("openai", "gpt-4")
-    
-    prompt = f"""Analise os dados do produto:
-    Nome: {produto['nome']}
-    Estoque Atual: {produto['estoque_atual']}
-    Estoque Mínimo: {produto['estoque_minimo']}
-    Total Vendido (histórico): {total_vendido}
-    
-    Forneça uma previsão de demanda para os próximos 30 dias e recomendações de compra."""
-    
-    message = UserMessage(text=prompt)
-    response = await chat.send_message(message)
-    
-    return {
-        "produto": produto["nome"],
-        "analise": response
-    }
+async def previsao_demanda(request: PrevisaoDemandaRequest, current_user: dict = Depends(get_current_user)):
+    try:
+        produto_id = request.produto_id
+        
+        # Buscar produto
+        produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
+        if not produto:
+            raise HTTPException(status_code=404, detail="Produto não encontrado")
+        
+        # Buscar histórico de vendas dos últimos 90 dias
+        vendas = await db.vendas.find({}, {"_id": 0}).to_list(1000)
+        movimentacoes = await db.movimentacoes_estoque.find(
+            {"produto_id": produto_id, "tipo": "saida"},
+            {"_id": 0}
+        ).to_list(1000)
+        
+        # Calcular estatísticas
+        total_vendido = 0
+        vendas_por_mes = {}
+        quantidade_vendas = 0
+        
+        for venda in vendas:
+            for item in venda.get("itens", []):
+                if item["produto_id"] == produto_id:
+                    total_vendido += item["quantidade"]
+                    quantidade_vendas += 1
+                    
+                    # Agrupar por mês
+                    mes = venda["created_at"][:7]
+                    if mes not in vendas_por_mes:
+                        vendas_por_mes[mes] = 0
+                    vendas_por_mes[mes] += item["quantidade"]
+        
+        media_mensal = total_vendido / max(len(vendas_por_mes), 1)
+        
+        # Usar GPT-4 para análise
+        api_key = os.environ.get('EMERGENT_LLM_KEY')
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"previsao-{produto_id}-{datetime.now().isoformat()}",
+            system_message="Você é um especialista em análise de vendas e previsão de demanda. Forneça análises objetivas e práticas."
+        ).with_model("openai", "gpt-4")
+        
+        prompt = f"""Analise os seguintes dados de vendas do produto "{produto['nome']}":
+
+DADOS ATUAIS:
+- Estoque Atual: {produto['estoque_atual']} unidades
+- Estoque Mínimo Configurado: {produto['estoque_minimo']} unidades
+- Estoque Máximo Configurado: {produto['estoque_maximo']} unidades
+- Preço de Venda: R$ {produto['preco_venda']:.2f}
+
+HISTÓRICO DE VENDAS:
+- Total Vendido (histórico completo): {total_vendido} unidades
+- Número de Vendas: {quantidade_vendas} transações
+- Média Mensal de Vendas: {media_mensal:.2f} unidades/mês
+- Vendas por Mês: {vendas_por_mes}
+
+TAREFA:
+1. Faça uma previsão de demanda para os próximos 30 dias
+2. Calcule a quantidade sugerida para compra/produção
+3. Identifique tendências e padrões de venda
+4. Forneça recomendações estratégicas de estoque
+5. Avalie se o estoque atual é suficiente
+
+Formate sua resposta de forma estruturada e objetiva."""
+        
+        message = UserMessage(text=prompt)
+        response = await chat.send_message(message)
+        
+        return {
+            "success": True,
+            "produto": {
+                "id": produto["id"],
+                "nome": produto["nome"],
+                "sku": produto["sku"],
+                "estoque_atual": produto["estoque_atual"],
+                "estoque_minimo": produto["estoque_minimo"],
+                "preco_venda": produto["preco_venda"]
+            },
+            "estatisticas": {
+                "total_vendido": total_vendido,
+                "quantidade_vendas": quantidade_vendas,
+                "media_mensal": round(media_mensal, 2),
+                "vendas_por_mes": vendas_por_mes
+            },
+            "analise_ia": response,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro na análise: {str(e)}")
 
 @api_router.post("/ia/recomendacoes-cliente")
-async def recomendacoes_cliente(cliente_id: str, current_user: dict = Depends(get_current_user)):
-    # Buscar histórico de compras do cliente
-    vendas = await db.vendas.find({"cliente_id": cliente_id}, {"_id": 0}).to_list(100)
-    cliente = await db.clientes.find_one({"id": cliente_id}, {"_id": 0})
-    
-    if not cliente:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado")
-    
-    produtos_comprados = []
-    for venda in vendas:
-        for item in venda.get("itens", []):
-            produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
-            if produto:
-                produtos_comprados.append(produto["nome"])
-    
-    # Usar GPT-4 para recomendações
-    api_key = os.environ.get('EMERGENT_LLM_KEY')
-    chat = LlmChat(
-        api_key=api_key,
-        session_id=f"recomendacao-{cliente_id}",
-        system_message="Você é um assistente especializado em recomendação de produtos."
-    ).with_model("openai", "gpt-4")
-    
-    prompt = f"""Com base no histórico de compras do cliente {cliente['nome']}:
-    Produtos já comprados: {', '.join(produtos_comprados[:10])}
-    
-    Sugira 5 produtos ou categorias que este cliente pode ter interesse em comprar."""
-    
-    message = UserMessage(text=prompt)
-    response = await chat.send_message(message)
-    
-    return {
-        "cliente": cliente["nome"],
-        "recomendacoes": response
-    }
+async def recomendacoes_cliente(request: RecomendacoesClienteRequest, current_user: dict = Depends(get_current_user)):
+    try:
+        cliente_id = request.cliente_id
+        
+        # Buscar cliente
+        cliente = await db.clientes.find_one({"id": cliente_id}, {"_id": 0})
+        if not cliente:
+            raise HTTPException(status_code=404, detail="Cliente não encontrado")
+        
+        # Buscar histórico de compras
+        vendas = await db.vendas.find({"cliente_id": cliente_id}, {"_id": 0}).to_list(1000)
+        
+        produtos_comprados = []
+        categorias_compradas = set()
+        marcas_compradas = set()
+        total_gasto = 0
+        
+        for venda in vendas:
+            total_gasto += venda.get("total", 0)
+            for item in venda.get("itens", []):
+                produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
+                if produto:
+                    produtos_comprados.append({
+                        "nome": produto["nome"],
+                        "quantidade": item["quantidade"],
+                        "valor": item["preco_unitario"]
+                    })
+                    if produto.get("categoria_id"):
+                        categorias_compradas.add(produto["categoria_id"])
+                    if produto.get("marca_id"):
+                        marcas_compradas.add(produto["marca_id"])
+        
+        # Buscar produtos disponíveis
+        produtos_disponiveis = await db.produtos.find({"ativo": True}, {"_id": 0}).to_list(100)
+        
+        # Usar GPT-4 para recomendações
+        api_key = os.environ.get('EMERGENT_LLM_KEY')
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"recomendacao-{cliente_id}-{datetime.now().isoformat()}",
+            system_message="Você é um especialista em análise de comportamento de compra e recomendação de produtos. Forneça recomendações personalizadas e estratégicas."
+        ).with_model("openai", "gpt-4")
+        
+        produtos_nomes = [p["nome"] for p in produtos_comprados[:20]]
+        produtos_catalogo = [f"{p['nome']} (R$ {p['preco_venda']:.2f})" for p in produtos_disponiveis[:30]]
+        
+        prompt = f"""Analise o perfil de compras do cliente "{cliente['nome']}" e forneça recomendações personalizadas:
+
+PERFIL DO CLIENTE:
+- Nome: {cliente['nome']}
+- Email: {cliente.get('email', 'Não informado')}
+- Total Gasto: R$ {total_gasto:.2f}
+- Número de Compras: {len(vendas)}
+
+HISTÓRICO DE COMPRAS (produtos já comprados):
+{chr(10).join([f"- {p['nome']} ({p['quantidade']}x) - R$ {p['valor']:.2f}" for p in produtos_comprados[:15]])}
+
+PRODUTOS DISPONÍVEIS NO CATÁLOGO:
+{chr(10).join([f"- {p}" for p in produtos_catalogo])}
+
+TAREFA:
+1. Identifique padrões de compra e preferências do cliente
+2. Sugira 5-8 produtos específicos que o cliente pode ter interesse
+3. Explique o motivo de cada recomendação (baseado no histórico)
+4. Sugira estratégias de cross-sell e up-sell
+5. Avalie o perfil de valor do cliente (ticket médio, frequência)
+
+Formate sua resposta de forma estruturada e persuasiva."""
+        
+        message = UserMessage(text=prompt)
+        response = await chat.send_message(message)
+        
+        return {
+            "success": True,
+            "cliente": {
+                "id": cliente["id"],
+                "nome": cliente["nome"],
+                "email": cliente.get("email"),
+                "cpf_cnpj": cliente["cpf_cnpj"]
+            },
+            "estatisticas": {
+                "total_compras": len(vendas),
+                "total_gasto": round(total_gasto, 2),
+                "ticket_medio": round(total_gasto / max(len(vendas), 1), 2),
+                "produtos_distintos": len(set([p["nome"] for p in produtos_comprados]))
+            },
+            "recomendacoes_ia": response,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro na análise: {str(e)}")
+
+@api_router.get("/ia/analise-preditiva")
+async def analise_preditiva(current_user: dict = Depends(get_current_user)):
+    try:
+        # Coletar dados gerais do sistema
+        total_clientes = await db.clientes.count_documents({})
+        total_produtos = await db.produtos.count_documents({"ativo": True})
+        
+        vendas = await db.vendas.find({}, {"_id": 0}).to_list(1000)
+        produtos = await db.produtos.find({"ativo": True}, {"_id": 0}).to_list(1000)
+        
+        # Calcular métricas
+        total_vendas = len(vendas)
+        faturamento_total = sum(v.get("total", 0) for v in vendas)
+        ticket_medio = faturamento_total / max(total_vendas, 1)
+        
+        # Produtos mais vendidos
+        vendas_por_produto = {}
+        for venda in vendas:
+            for item in venda.get("itens", []):
+                pid = item["produto_id"]
+                if pid not in vendas_por_produto:
+                    vendas_por_produto[pid] = 0
+                vendas_por_produto[pid] += item["quantidade"]
+        
+        top_produtos = sorted(vendas_por_produto.items(), key=lambda x: x[1], reverse=True)[:10]
+        top_produtos_info = []
+        for pid, qtd in top_produtos:
+            p = await db.produtos.find_one({"id": pid}, {"_id": 0})
+            if p:
+                top_produtos_info.append(f"{p['nome']} ({qtd} unidades)")
+        
+        # Produtos com estoque baixo
+        produtos_estoque_baixo = [p for p in produtos if p["estoque_atual"] <= p["estoque_minimo"]]
+        
+        # Análise temporal
+        vendas_por_mes = {}
+        for venda in vendas:
+            mes = venda["created_at"][:7]
+            if mes not in vendas_por_mes:
+                vendas_por_mes[mes] = {"quantidade": 0, "valor": 0}
+            vendas_por_mes[mes]["quantidade"] += 1
+            vendas_por_mes[mes]["valor"] += venda.get("total", 0)
+        
+        # Usar GPT-4 para análise preditiva geral
+        api_key = os.environ.get('EMERGENT_LLM_KEY')
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"analise-preditiva-{datetime.now().isoformat()}",
+            system_message="Você é um especialista em análise de negócios e business intelligence. Forneça insights estratégicos e previsões de mercado."
+        ).with_model("openai", "gpt-4")
+        
+        prompt = f"""Realize uma análise preditiva completa do negócio EMILY KIDS com base nos seguintes dados:
+
+VISÃO GERAL DO NEGÓCIO:
+- Total de Clientes Cadastrados: {total_clientes}
+- Total de Produtos Ativos: {total_produtos}
+- Total de Vendas Realizadas: {total_vendas}
+- Faturamento Total: R$ {faturamento_total:.2f}
+- Ticket Médio: R$ {ticket_medio:.2f}
+
+PRODUTOS MAIS VENDIDOS:
+{chr(10).join([f"- {info}" for info in top_produtos_info])}
+
+ALERTAS DE ESTOQUE:
+- Produtos com Estoque Baixo: {len(produtos_estoque_baixo)}
+
+EVOLUÇÃO TEMPORAL (Vendas por Mês):
+{chr(10).join([f"- {mes}: {info['quantidade']} vendas, R$ {info['valor']:.2f}" for mes, info in sorted(vendas_por_mes.items())])}
+
+TAREFA - FORNEÇA UMA ANÁLISE COMPLETA INCLUINDO:
+1. **Tendências de Mercado**: Identifique padrões de crescimento ou declínio
+2. **Previsão de Faturamento**: Estime o faturamento para os próximos 3 meses
+3. **Análise de Produtos**: Identifique produtos com potencial e produtos em declínio
+4. **Gestão de Estoque**: Recomendações para otimização de estoque
+5. **Estratégias de Crescimento**: Sugestões para aumentar vendas e fidelizar clientes
+6. **Riscos e Oportunidades**: Identifique pontos de atenção e oportunidades de mercado
+7. **KPIs Recomendados**: Quais métricas acompanhar para melhoria contínua
+
+Seja específico, use números e forneça recomendações práticas e acionáveis."""
+        
+        message = UserMessage(text=prompt)
+        response = await chat.send_message(message)
+        
+        return {
+            "success": True,
+            "metricas_gerais": {
+                "total_clientes": total_clientes,
+                "total_produtos": total_produtos,
+                "total_vendas": total_vendas,
+                "faturamento_total": round(faturamento_total, 2),
+                "ticket_medio": round(ticket_medio, 2),
+                "produtos_estoque_baixo": len(produtos_estoque_baixo)
+            },
+            "top_produtos": top_produtos_info,
+            "evolucao_mensal": vendas_por_mes,
+            "analise_preditiva_ia": response,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro na análise: {str(e)}")
 
 # ========== RELATÓRIOS ==========
 
