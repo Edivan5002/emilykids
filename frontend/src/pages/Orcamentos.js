@@ -56,7 +56,7 @@ const Orcamentos = () => {
     }
   };
 
-  const handleAddItem = () => {
+  const handleAddItem = async () => {
     if (!novoItem.produto_id || novoItem.quantidade <= 0) {
       toast.error('Selecione um produto e quantidade válida');
       return;
@@ -65,21 +65,25 @@ const Orcamentos = () => {
     const produto = produtos.find(p => p.id === novoItem.produto_id);
     if (!produto) return;
 
-    // VERIFICAÇÃO CRÍTICA DE ESTOQUE
-    if (produto.estoque_atual < novoItem.quantidade) {
-      toast.error(
-        `Estoque insuficiente!\nProduto: ${produto.nome}\nDisponível: ${produto.estoque_atual} unidades\nSolicitado: ${novoItem.quantidade} unidades`,
-        { duration: 5000 }
-      );
-      return;
-    }
+    // VERIFICAÇÃO CRÍTICA DE ESTOQUE - com estoque reservado
+    try {
+      const checkResponse = await axios.post(`${API}/estoque/check-disponibilidade`, {
+        produto_id: novoItem.produto_id,
+        quantidade: novoItem.quantidade
+      });
 
-    // Verificar se estoque ficará negativo
-    if (produto.estoque_atual <= 0) {
-      toast.error(
-        `Produto sem estoque!\nProduto: ${produto.nome}\nEstoque atual: ${produto.estoque_atual}`,
-        { duration: 5000 }
+      if (!checkResponse.data.disponivel) {
+        toast.error(checkResponse.data.mensagem, { duration: 5000 });
+        return;
+      }
+
+      // Mostrar informação de estoque disponível
+      toast.success(
+        `${produto.nome}: ${checkResponse.data.estoque_disponivel} unidades disponíveis`,
+        { duration: 3000 }
       );
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao verificar estoque');
       return;
     }
 
