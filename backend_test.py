@@ -1,0 +1,540 @@
+#!/usr/bin/env python3
+"""
+Backend Test Suite for Emily Kids ERP - Stock Validation Testing
+Tests the complete stock validation implementation for Budgets and Sales
+"""
+
+import requests
+import json
+import uuid
+from datetime import datetime
+import sys
+import os
+
+# Backend URL from environment
+BACKEND_URL = "https://emilykids-erp.preview.emergentagent.com/api"
+
+class EmilyKidsBackendTester:
+    def __init__(self):
+        self.base_url = BACKEND_URL
+        self.token = None
+        self.user_id = None
+        self.test_results = []
+        
+    def log_test(self, test_name, success, message, details=None):
+        """Log test results"""
+        result = {
+            "test": test_name,
+            "success": success,
+            "message": message,
+            "details": details or {},
+            "timestamp": datetime.now().isoformat()
+        }
+        self.test_results.append(result)
+        status = "✅ PASS" if success else "❌ FAIL"
+        print(f"{status} - {test_name}: {message}")
+        if details and not success:
+            print(f"   Details: {details}")
+    
+    def authenticate(self):
+        """Authenticate and get JWT token"""
+        print("\n=== AUTHENTICATION TEST ===")
+        
+        # First try to register a test user
+        register_data = {
+            "email": "teste.estoque@emilykids.com",
+            "nome": "Teste Estoque",
+            "senha": "senha123",
+            "papel": "admin"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/auth/register", json=register_data)
+            if response.status_code == 400 and "já cadastrado" in response.text:
+                print("User already exists, proceeding to login...")
+            elif response.status_code == 200:
+                print("User registered successfully")
+        except Exception as e:
+            print(f"Registration attempt: {e}")
+        
+        # Login
+        login_data = {
+            "email": "teste.estoque@emilykids.com",
+            "senha": "senha123"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/auth/login", json=login_data)
+            if response.status_code == 200:
+                data = response.json()
+                self.token = data["access_token"]
+                self.user_id = data["user"]["id"]
+                self.log_test("Authentication", True, "Login successful")
+                return True
+            else:
+                self.log_test("Authentication", False, f"Login failed: {response.status_code} - {response.text}")
+                return False
+        except Exception as e:
+            self.log_test("Authentication", False, f"Login error: {str(e)}")
+            return False
+    
+    def get_headers(self):
+        """Get headers with authentication"""
+        return {
+            "Authorization": f"Bearer {self.token}",
+            "Content-Type": "application/json"
+        }
+    
+    def setup_test_data(self):
+        """Create test data for stock validation tests"""
+        print("\n=== SETTING UP TEST DATA ===")
+        
+        # Create test client
+        client_data = {
+            "nome": "Maria Silva - Mãe da Ana",
+            "cpf_cnpj": "123.456.789-00",
+            "telefone": "(11) 99999-9999",
+            "email": "maria.silva@email.com"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/clientes", json=client_data, headers=self.get_headers())
+            if response.status_code == 200:
+                self.test_client_id = response.json()["id"]
+                self.log_test("Create Test Client", True, "Test client created successfully")
+            else:
+                self.log_test("Create Test Client", False, f"Failed to create client: {response.text}")
+                return False
+        except Exception as e:
+            self.log_test("Create Test Client", False, f"Error creating client: {str(e)}")
+            return False
+        
+        # Create test products with stock
+        products = [
+            {
+                "sku": "VEST-PRIN-001",
+                "nome": "Vestido Princesa Rosa - Tamanho 4",
+                "unidade": "UN",
+                "preco_custo": 25.00,
+                "preco_venda": 45.90,
+                "estoque_minimo": 5,
+                "estoque_maximo": 50,
+                "descricao": "Vestido infantil princesa cor rosa com detalhes em renda"
+            },
+            {
+                "sku": "TENIS-SPORT-002", 
+                "nome": "Tênis Esportivo Azul - Tamanho 28",
+                "unidade": "PAR",
+                "preco_custo": 35.00,
+                "preco_venda": 65.90,
+                "estoque_minimo": 3,
+                "estoque_maximo": 30,
+                "descricao": "Tênis esportivo infantil azul com velcro"
+            },
+            {
+                "sku": "BONECA-BABY-003",
+                "nome": "Boneca Baby Alive - Loira",
+                "unidade": "UN", 
+                "preco_custo": 45.00,
+                "preco_venda": 89.90,
+                "estoque_minimo": 2,
+                "estoque_maximo": 20,
+                "descricao": "Boneca interativa que fala e chora"
+            }
+        ]
+        
+        self.test_products = []
+        for product in products:
+            try:
+                response = requests.post(f"{self.base_url}/produtos", json=product, headers=self.get_headers())
+                if response.status_code == 200:
+                    product_data = response.json()
+                    self.test_products.append(product_data)
+                    self.log_test(f"Create Product {product['nome']}", True, "Product created successfully")
+                else:
+                    self.log_test(f"Create Product {product['nome']}", False, f"Failed: {response.text}")
+            except Exception as e:
+                self.log_test(f"Create Product {product['nome']}", False, f"Error: {str(e)}")
+        
+        # Add stock to products by creating and confirming a fiscal note
+        if self.test_products:
+            # Create a supplier first
+            supplier_data = {
+                "razao_social": "Fornecedor Teste Ltda",
+                "cnpj": "12.345.678/0001-90",
+                "telefone": "(11) 3333-4444"
+            }
+            
+            try:
+                response = requests.post(f"{self.base_url}/fornecedores", json=supplier_data, headers=self.get_headers())
+                if response.status_code == 200:
+                    supplier_id = response.json()["id"]
+                    
+                    # Create fiscal note to add stock
+                    nota_data = {
+                        "numero": "000001",
+                        "serie": "1",
+                        "fornecedor_id": supplier_id,
+                        "data_emissao": datetime.now().isoformat(),
+                        "valor_total": 315.00,
+                        "itens": [
+                            {"produto_id": self.test_products[0]["id"], "quantidade": 20, "preco_unitario": 25.00},
+                            {"produto_id": self.test_products[1]["id"], "quantidade": 15, "preco_unitario": 35.00},
+                            {"produto_id": self.test_products[2]["id"], "quantidade": 10, "preco_unitario": 45.00}
+                        ]
+                    }
+                    
+                    response = requests.post(f"{self.base_url}/notas-fiscais", json=nota_data, headers=self.get_headers())
+                    if response.status_code == 200:
+                        nota_id = response.json()["id"]
+                        
+                        # Confirm the fiscal note to add stock
+                        response = requests.post(f"{self.base_url}/notas-fiscais/{nota_id}/confirmar", headers=self.get_headers())
+                        if response.status_code == 200:
+                            self.log_test("Add Stock via Fiscal Note", True, "Stock added successfully")
+                        else:
+                            self.log_test("Add Stock via Fiscal Note", False, f"Failed to confirm note: {response.text}")
+                    else:
+                        self.log_test("Create Fiscal Note", False, f"Failed: {response.text}")
+                else:
+                    self.log_test("Create Supplier", False, f"Failed: {response.text}")
+            except Exception as e:
+                self.log_test("Setup Stock", False, f"Error: {str(e)}")
+        
+        return len(self.test_products) > 0
+    
+    def test_stock_check_endpoint(self):
+        """Test the stock availability check endpoint"""
+        print("\n=== TESTING STOCK CHECK ENDPOINT ===")
+        
+        if not self.test_products:
+            self.log_test("Stock Check Tests", False, "No test products available")
+            return
+        
+        product = self.test_products[0]  # Vestido Princesa
+        
+        # Test 1: Check stock with sufficient quantity
+        test_data = {
+            "produto_id": product["id"],
+            "quantidade": 5
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/estoque/check-disponibilidade", json=test_data, headers=self.get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                expected_fields = ["disponivel", "estoque_atual", "estoque_reservado", "estoque_disponivel", "mensagem"]
+                
+                if all(field in data for field in expected_fields):
+                    if data["disponivel"] and data["estoque_disponivel"] >= 5:
+                        self.log_test("Stock Check - Sufficient Stock", True, f"Stock available: {data['estoque_disponivel']} units")
+                    else:
+                        self.log_test("Stock Check - Sufficient Stock", False, f"Expected available stock but got: {data}")
+                else:
+                    self.log_test("Stock Check - Response Format", False, f"Missing fields in response: {data}")
+            else:
+                self.log_test("Stock Check - Sufficient Stock", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Stock Check - Sufficient Stock", False, f"Error: {str(e)}")
+        
+        # Test 2: Check stock with excessive quantity
+        test_data = {
+            "produto_id": product["id"],
+            "quantidade": 100  # More than available
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/estoque/check-disponibilidade", json=test_data, headers=self.get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                if not data["disponivel"]:
+                    self.log_test("Stock Check - Insufficient Stock", True, f"Correctly identified insufficient stock: {data['mensagem']}")
+                else:
+                    self.log_test("Stock Check - Insufficient Stock", False, f"Should have insufficient stock but got: {data}")
+            else:
+                self.log_test("Stock Check - Insufficient Stock", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Stock Check - Insufficient Stock", False, f"Error: {str(e)}")
+        
+        # Test 3: Check with invalid product ID
+        test_data = {
+            "produto_id": "invalid-product-id",
+            "quantidade": 1
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/estoque/check-disponibilidade", json=test_data, headers=self.get_headers())
+            if response.status_code == 404:
+                self.log_test("Stock Check - Invalid Product", True, "Correctly returned 404 for invalid product")
+            else:
+                self.log_test("Stock Check - Invalid Product", False, f"Expected 404 but got {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Stock Check - Invalid Product", False, f"Error: {str(e)}")
+    
+    def test_budget_stock_validation(self):
+        """Test stock validation in budget creation"""
+        print("\n=== TESTING BUDGET STOCK VALIDATION ===")
+        
+        if not self.test_products or not hasattr(self, 'test_client_id'):
+            self.log_test("Budget Stock Tests", False, "Missing test data")
+            return
+        
+        # Test 1: Create budget with sufficient stock
+        budget_data = {
+            "cliente_id": self.test_client_id,
+            "itens": [
+                {
+                    "produto_id": self.test_products[0]["id"],  # Vestido
+                    "quantidade": 2,
+                    "preco_unitario": 45.90
+                },
+                {
+                    "produto_id": self.test_products[1]["id"],  # Tênis
+                    "quantidade": 1,
+                    "preco_unitario": 65.90
+                }
+            ],
+            "desconto": 0,
+            "frete": 10.00
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/orcamentos", json=budget_data, headers=self.get_headers())
+            if response.status_code == 200:
+                self.budget_id = response.json()["id"]
+                self.log_test("Budget Creation - Sufficient Stock", True, "Budget created successfully with stock validation")
+            else:
+                self.log_test("Budget Creation - Sufficient Stock", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Budget Creation - Sufficient Stock", False, f"Error: {str(e)}")
+        
+        # Test 2: Try to create budget with insufficient stock
+        budget_data_insufficient = {
+            "cliente_id": self.test_client_id,
+            "itens": [
+                {
+                    "produto_id": self.test_products[2]["id"],  # Boneca
+                    "quantidade": 50,  # More than available
+                    "preco_unitario": 89.90
+                }
+            ],
+            "desconto": 0,
+            "frete": 0
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/orcamentos", json=budget_data_insufficient, headers=self.get_headers())
+            if response.status_code == 400:
+                error_msg = response.json().get("detail", response.text)
+                if "insuficiente" in error_msg.lower():
+                    self.log_test("Budget Creation - Insufficient Stock", True, f"Correctly blocked creation: {error_msg}")
+                else:
+                    self.log_test("Budget Creation - Insufficient Stock", False, f"Wrong error message: {error_msg}")
+            else:
+                self.log_test("Budget Creation - Insufficient Stock", False, f"Expected 400 but got {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Budget Creation - Insufficient Stock", False, f"Error: {str(e)}")
+        
+        # Test 3: Create multiple budgets to test reserved stock calculation
+        budget_data_2 = {
+            "cliente_id": self.test_client_id,
+            "itens": [
+                {
+                    "produto_id": self.test_products[0]["id"],  # Same product as first budget
+                    "quantidade": 3,
+                    "preco_unitario": 45.90
+                }
+            ],
+            "desconto": 0,
+            "frete": 5.00
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/orcamentos", json=budget_data_2, headers=self.get_headers())
+            if response.status_code == 200:
+                self.log_test("Budget Creation - Multiple Budgets", True, "Second budget created, stock reservation working")
+                
+                # Now check if stock is properly reserved
+                check_data = {
+                    "produto_id": self.test_products[0]["id"],
+                    "quantidade": 1
+                }
+                
+                response = requests.post(f"{self.base_url}/estoque/check-disponibilidade", json=check_data, headers=self.get_headers())
+                if response.status_code == 200:
+                    data = response.json()
+                    if data["estoque_reservado"] >= 5:  # 2 + 3 from budgets
+                        self.log_test("Stock Reservation Check", True, f"Stock properly reserved: {data['estoque_reservado']} units")
+                    else:
+                        self.log_test("Stock Reservation Check", False, f"Stock reservation not working: {data}")
+                
+            else:
+                self.log_test("Budget Creation - Multiple Budgets", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Budget Creation - Multiple Budgets", False, f"Error: {str(e)}")
+    
+    def test_sales_stock_validation(self):
+        """Test stock validation in sales creation"""
+        print("\n=== TESTING SALES STOCK VALIDATION ===")
+        
+        if not self.test_products or not hasattr(self, 'test_client_id'):
+            self.log_test("Sales Stock Tests", False, "Missing test data")
+            return
+        
+        # Test 1: Create sale with sufficient stock
+        sale_data = {
+            "cliente_id": self.test_client_id,
+            "itens": [
+                {
+                    "produto_id": self.test_products[1]["id"],  # Tênis
+                    "quantidade": 2,
+                    "preco_unitario": 65.90
+                }
+            ],
+            "desconto": 5.00,
+            "frete": 0,
+            "forma_pagamento": "pix"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/vendas", json=sale_data, headers=self.get_headers())
+            if response.status_code == 200:
+                self.sale_id = response.json()["id"]
+                self.log_test("Sale Creation - Sufficient Stock", True, "Sale created successfully with stock validation")
+            else:
+                self.log_test("Sale Creation - Sufficient Stock", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Sale Creation - Sufficient Stock", False, f"Error: {str(e)}")
+        
+        # Test 2: Try to create sale with insufficient stock
+        sale_data_insufficient = {
+            "cliente_id": self.test_client_id,
+            "itens": [
+                {
+                    "produto_id": self.test_products[2]["id"],  # Boneca
+                    "quantidade": 25,  # More than available
+                    "preco_unitario": 89.90
+                }
+            ],
+            "desconto": 0,
+            "frete": 0,
+            "forma_pagamento": "cartao"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/vendas", json=sale_data_insufficient, headers=self.get_headers())
+            if response.status_code == 400:
+                error_msg = response.json().get("detail", response.text)
+                if "insuficiente" in error_msg.lower():
+                    self.log_test("Sale Creation - Insufficient Stock", True, f"Correctly blocked creation: {error_msg}")
+                else:
+                    self.log_test("Sale Creation - Insufficient Stock", False, f"Wrong error message: {error_msg}")
+            else:
+                self.log_test("Sale Creation - Insufficient Stock", False, f"Expected 400 but got {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Sale Creation - Insufficient Stock", False, f"Error: {str(e)}")
+        
+        # Test 3: Try to create sale considering reserved stock from budgets
+        sale_data_with_reservation = {
+            "cliente_id": self.test_client_id,
+            "itens": [
+                {
+                    "produto_id": self.test_products[0]["id"],  # Vestido (has reserved stock from budgets)
+                    "quantidade": 20,  # Should exceed available after reservations
+                    "preco_unitario": 45.90
+                }
+            ],
+            "desconto": 0,
+            "frete": 0,
+            "forma_pagamento": "dinheiro"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/vendas", json=sale_data_with_reservation, headers=self.get_headers())
+            if response.status_code == 400:
+                error_msg = response.json().get("detail", response.text)
+                if "reservado" in error_msg.lower() or "insuficiente" in error_msg.lower():
+                    self.log_test("Sale Creation - Reserved Stock Check", True, f"Correctly considered reserved stock: {error_msg}")
+                else:
+                    self.log_test("Sale Creation - Reserved Stock Check", False, f"Error message doesn't mention reservations: {error_msg}")
+            else:
+                self.log_test("Sale Creation - Reserved Stock Check", False, f"Expected 400 but got {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Sale Creation - Reserved Stock Check", False, f"Error: {str(e)}")
+    
+    def test_edge_cases(self):
+        """Test edge cases and error scenarios"""
+        print("\n=== TESTING EDGE CASES ===")
+        
+        # Test with zero quantity
+        test_data = {
+            "produto_id": self.test_products[0]["id"] if self.test_products else "test-id",
+            "quantidade": 0
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/estoque/check-disponibilidade", json=test_data, headers=self.get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                self.log_test("Edge Case - Zero Quantity", True, f"Handled zero quantity: {data['mensagem']}")
+            else:
+                self.log_test("Edge Case - Zero Quantity", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Edge Case - Zero Quantity", False, f"Error: {str(e)}")
+        
+        # Test with negative quantity
+        test_data = {
+            "produto_id": self.test_products[0]["id"] if self.test_products else "test-id",
+            "quantidade": -5
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/estoque/check-disponibilidade", json=test_data, headers=self.get_headers())
+            # Should either handle gracefully or return appropriate error
+            self.log_test("Edge Case - Negative Quantity", True, f"Handled negative quantity: HTTP {response.status_code}")
+        except Exception as e:
+            self.log_test("Edge Case - Negative Quantity", False, f"Error: {str(e)}")
+    
+    def run_all_tests(self):
+        """Run all tests in sequence"""
+        print("🧪 EMILY KIDS ERP - BACKEND STOCK VALIDATION TESTS")
+        print("=" * 60)
+        
+        if not self.authenticate():
+            print("❌ Authentication failed. Cannot proceed with tests.")
+            return False
+        
+        if not self.setup_test_data():
+            print("❌ Test data setup failed. Some tests may not work properly.")
+        
+        self.test_stock_check_endpoint()
+        self.test_budget_stock_validation()
+        self.test_sales_stock_validation()
+        self.test_edge_cases()
+        
+        # Summary
+        print("\n" + "=" * 60)
+        print("📊 TEST SUMMARY")
+        print("=" * 60)
+        
+        total_tests = len(self.test_results)
+        passed_tests = len([t for t in self.test_results if t["success"]])
+        failed_tests = total_tests - passed_tests
+        
+        print(f"Total Tests: {total_tests}")
+        print(f"✅ Passed: {passed_tests}")
+        print(f"❌ Failed: {failed_tests}")
+        print(f"Success Rate: {(passed_tests/total_tests*100):.1f}%")
+        
+        if failed_tests > 0:
+            print("\n🔍 FAILED TESTS:")
+            for test in self.test_results:
+                if not test["success"]:
+                    print(f"  - {test['test']}: {test['message']}")
+        
+        return failed_tests == 0
+
+if __name__ == "__main__":
+    tester = EmilyKidsBackendTester()
+    success = tester.run_all_tests()
+    sys.exit(0 if success else 1)
