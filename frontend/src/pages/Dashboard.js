@@ -1,0 +1,197 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Users, Package, ShoppingCart, DollarSign, AlertCircle, TrendingUp } from 'lucide-react';
+import { toast } from 'sonner';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+const Dashboard = () => {
+  const [stats, setStats] = useState(null);
+  const [vendasPorPeriodo, setVendasPorPeriodo] = useState([]);
+  const [alertas, setAlertas] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [statsRes, vendasRes, alertasRes] = await Promise.all([
+        axios.get(`${API}/relatorios/dashboard`),
+        axios.get(`${API}/relatorios/vendas-por-periodo`),
+        axios.get(`${API}/estoque/alertas`)
+      ]);
+
+      setStats(statsRes.data);
+      
+      const vendasArray = Object.entries(vendasRes.data).map(([data, info]) => ({
+        data: new Date(data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+        quantidade: info.quantidade,
+        total: info.total
+      })).slice(-7);
+      setVendasPorPeriodo(vendasArray);
+      
+      setAlertas(alertasRes.data);
+    } catch (error) {
+      toast.error('Erro ao carregar dados do dashboard');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
+          <p className="mt-4 text-gray-600">Carregando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const statCards = [
+    {
+      title: 'Total de Clientes',
+      value: stats?.total_clientes || 0,
+      icon: Users,
+      color: 'bg-blue-500',
+      testid: 'total-clientes-card'
+    },
+    {
+      title: 'Total de Produtos',
+      value: stats?.total_produtos || 0,
+      icon: Package,
+      color: 'bg-green-500',
+      testid: 'total-produtos-card'
+    },
+    {
+      title: 'Total de Vendas',
+      value: stats?.total_vendas || 0,
+      icon: ShoppingCart,
+      color: 'bg-purple-500',
+      testid: 'total-vendas-card'
+    },
+    {
+      title: 'Faturamento Total',
+      value: `R$ ${(stats?.total_faturamento || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      icon: DollarSign,
+      color: 'bg-yellow-500',
+      testid: 'faturamento-card'
+    }
+  ];
+
+  return (
+    <div className="page-container" data-testid="dashboard-page">
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">Dashboard</h1>
+        <p className="text-gray-600">Visão geral do seu negócio</p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {statCards.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={stat.title} className="card-hover" data-testid={stat.testid}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
+                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  </div>
+                  <div className={`${stat.color} p-4 rounded-xl`}>
+                    <Icon className="text-white" size={24} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Alertas de Estoque */}
+      {alertas && (alertas.alertas_minimo.length > 0 || alertas.alertas_maximo.length > 0) && (
+        <Card className="mb-8" data-testid="alertas-estoque-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="text-orange-500" />
+              Alertas de Estoque
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {alertas.alertas_minimo.length > 0 && (
+              <div className="mb-4">
+                <h3 className="font-semibold text-red-600 mb-2">Estoque Mínimo Atingido ({alertas.alertas_minimo.length})</h3>
+                <div className="space-y-1">
+                  {alertas.alertas_minimo.slice(0, 5).map(produto => (
+                    <p key={produto.id} className="text-sm text-gray-600">
+                      {produto.nome} - Estoque: {produto.estoque_atual}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+            {alertas.alertas_maximo.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-yellow-600 mb-2">Estoque Máximo Atingido ({alertas.alertas_maximo.length})</h3>
+                <div className="space-y-1">
+                  {alertas.alertas_maximo.slice(0, 5).map(produto => (
+                    <p key={produto.id} className="text-sm text-gray-600">
+                      {produto.nome} - Estoque: {produto.estoque_atual}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Vendas por Período */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card data-testid="vendas-chart-card">
+          <CardHeader>
+            <CardTitle>Vendas dos Últimos 7 Dias</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={vendasPorPeriodo}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="data" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="quantidade" fill="#3b82f6" name="Quantidade" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card data-testid="faturamento-chart-card">
+          <CardHeader>
+            <CardTitle>Faturamento dos Últimos 7 Dias</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={vendasPorPeriodo}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="data" />
+                <YAxis />
+                <Tooltip formatter={(value) => `R$ ${value.toFixed(2)}`} />
+                <Legend />
+                <Line type="monotone" dataKey="total" stroke="#10b981" name="Faturamento" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
