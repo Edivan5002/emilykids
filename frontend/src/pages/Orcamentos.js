@@ -65,9 +65,21 @@ const Orcamentos = () => {
     const produto = produtos.find(p => p.id === novoItem.produto_id);
     if (!produto) return;
 
-    // Verificar estoque disponível
+    // VERIFICAÇÃO CRÍTICA DE ESTOQUE
     if (produto.estoque_atual < novoItem.quantidade) {
-      toast.error(`Estoque insuficiente! Disponível: ${produto.estoque_atual}`);
+      toast.error(
+        `Estoque insuficiente!\nProduto: ${produto.nome}\nDisponível: ${produto.estoque_atual} unidades\nSolicitado: ${novoItem.quantidade} unidades`,
+        { duration: 5000 }
+      );
+      return;
+    }
+
+    // Verificar se estoque ficará negativo
+    if (produto.estoque_atual <= 0) {
+      toast.error(
+        `Produto sem estoque!\nProduto: ${produto.nome}\nEstoque atual: ${produto.estoque_atual}`,
+        { duration: 5000 }
+      );
       return;
     }
 
