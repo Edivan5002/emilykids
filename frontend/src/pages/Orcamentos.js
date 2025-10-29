@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Check, RotateCcw, Eye } from 'lucide-react';
+import { Trash2, Check, RotateCcw, Eye, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import AutorizacaoModal from '../components/AutorizacaoModal';
