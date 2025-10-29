@@ -681,6 +681,46 @@ async def get_movimentacoes(current_user: dict = Depends(get_current_user)):
     movimentacoes = await db.movimentacoes_estoque.find({}, {"_id": 0}).sort("timestamp", -1).to_list(100)
     return movimentacoes
 
+@api_router.post("/estoque/check-disponibilidade", response_model=CheckEstoqueResponse)
+async def check_disponibilidade_estoque(request: CheckEstoqueRequest, current_user: dict = Depends(get_current_user)):
+    """
+    Verifica a disponibilidade de estoque de um produto.
+    Calcula: estoque_disponível = estoque_atual - estoque_reservado (orçamentos abertos)
+    """
+    # Buscar produto
+    produto = await db.produtos.find_one({"id": request.produto_id}, {"_id": 0})
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    
+    estoque_atual = produto.get("estoque_atual", 0)
+    
+    # Calcular estoque reservado (orçamentos com status "aberto")
+    orcamentos_abertos = await db.orcamentos.find({"status": "aberto"}, {"_id": 0}).to_list(1000)
+    estoque_reservado = 0
+    for orcamento in orcamentos_abertos:
+        for item in orcamento.get("itens", []):
+            if item.get("produto_id") == request.produto_id:
+                estoque_reservado += item.get("quantidade", 0)
+    
+    # Calcular estoque disponível
+    estoque_disponivel = estoque_atual - estoque_reservado
+    
+    # Verificar se a quantidade solicitada está disponível
+    disponivel = estoque_disponivel >= request.quantidade
+    
+    if disponivel:
+        mensagem = f"Estoque disponível. Você pode adicionar {request.quantidade} unidades."
+    else:
+        mensagem = f"Estoque insuficiente. Disponível: {estoque_disponivel} unidades (Atual: {estoque_atual}, Reservado: {estoque_reservado})"
+    
+    return CheckEstoqueResponse(
+        disponivel=disponivel,
+        estoque_atual=estoque_atual,
+        estoque_reservado=estoque_reservado,
+        estoque_disponivel=estoque_disponivel,
+        mensagem=mensagem
+    )
+
 # ========== NOTAS FISCAIS ==========
 
 @api_router.get("/notas-fiscais", response_model=List[NotaFiscal])
