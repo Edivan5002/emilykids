@@ -559,6 +559,7 @@ const NotasFiscais = () => {
                   >
                     <Trash2 className="mr-2 text-red-500" size={16} />
                     Excluir
+                    {user?.papel === 'vendedor' && <Shield className="ml-1" size={12} style={{color: '#E76F51'}} />}
                   </Button>
                 </div>
               )}
@@ -578,6 +579,7 @@ const NotasFiscais = () => {
                   >
                     <Trash2 className="mr-2 text-red-500" size={16} />
                     Excluir Nota Fiscal
+                    {user?.papel === 'vendedor' && <Shield className="ml-1" size={12} style={{color: '#E76F51'}} />}
                   </Button>
                 </div>
               )}
@@ -595,6 +597,16 @@ const NotasFiscais = () => {
           </Card>
         )}
       </div>
+
+      <AutorizacaoModal
+        isOpen={showAutorizacao}
+        onClose={() => {
+          setShowAutorizacao(false);
+          setNotaParaExcluir(null);
+        }}
+        onAutorizado={handleAutorizacaoSucesso}
+        acao="excluir esta nota fiscal"
+      />
     </div>
   );
 };
