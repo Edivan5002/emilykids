@@ -871,6 +871,47 @@ async def create_venda(venda_data: VendaCreate, current_user: dict = Depends(get
     
     return venda
 
+@api_router.delete("/vendas/{venda_id}")
+async def delete_venda(venda_id: str, current_user: dict = Depends(get_current_user)):
+    venda = await db.vendas.find_one({"id": venda_id}, {"_id": 0})
+    if not venda:
+        raise HTTPException(status_code=404, detail="Venda não encontrada")
+    
+    # Devolver itens ao estoque
+    for item in venda.get("itens", []):
+        produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
+        if produto:
+            novo_estoque = produto["estoque_atual"] + item["quantidade"]
+            await db.produtos.update_one(
+                {"id": item["produto_id"]},
+                {"$set": {"estoque_atual": novo_estoque}}
+            )
+            
+            # Registrar movimentação de devolução
+            movimentacao = MovimentacaoEstoque(
+                produto_id=item["produto_id"],
+                tipo="entrada",
+                quantidade=item["quantidade"],
+                referencia_tipo="devolucao_venda",
+                referencia_id=venda_id,
+                user_id=current_user["id"]
+            )
+            await db.movimentacoes_estoque.insert_one(movimentacao.model_dump())
+    
+    # Deletar venda
+    await db.vendas.delete_one({"id": venda_id})
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="vendas",
+        acao="deletar",
+        detalhes={"venda_id": venda_id, "total": venda.get("total")}
+    )
+    
+    return {"message": "Venda excluída e estoque devolvido com sucesso"}
+
 # ========== IA - INSIGHTS ==========
 
 class PrevisaoDemandaRequest(BaseModel):
