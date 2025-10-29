@@ -295,6 +295,10 @@ async def log_action(ip: str, user_id: str, user_nome: str, tela: str, acao: str
 
 # ========== AUTH ROUTES ==========
 
+@api_router.get("/")
+async def root():
+    return {"message": "InventoAI API - Sistema de Vendas com IA", "status": "online"}
+
 @api_router.post("/auth/register", response_model=User)
 async def register(user_data: UserCreate):
     existing = await db.users.find_one({"email": user_data.email}, {"_id": 0})
