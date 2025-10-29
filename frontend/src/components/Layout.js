@@ -18,7 +18,8 @@ import {
   Layers,
   Truck,
   Receipt,
-  ClipboardList
+  ClipboardList,
+  UserCog
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
