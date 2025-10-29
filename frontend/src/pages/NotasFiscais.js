@@ -141,6 +141,22 @@ const NotasFiscais = () => {
     }
   };
 
+  const handleExcluir = async (notaId, confirmada) => {
+    const mensagem = confirmada 
+      ? 'Tem certeza que deseja excluir esta nota fiscal? O estoque será revertido.'
+      : 'Tem certeza que deseja excluir esta nota fiscal?';
+    
+    if (!window.confirm(mensagem)) return;
+
+    try {
+      await axios.delete(`${API}/notas-fiscais/${notaId}`);
+      toast.success('Nota fiscal excluída com sucesso!');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao excluir nota fiscal');
+    }
+  };
+
   const handleClose = () => {
     setIsOpen(false);
     setFormData({
