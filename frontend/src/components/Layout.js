@@ -59,15 +59,24 @@ const Layout = ({ children }) => {
       >
         <div className="h-full flex flex-col">
           {/* Logo */}
-          <div className="p-4 border-b border-gray-700">
+          <div className="p-4 border-b border-white border-opacity-20">
             <div className="flex items-center justify-between">
               {sidebarOpen && (
-                <h1 className="text-xl font-bold text-white">InventoAI</h1>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-1 mb-1">
+                    <span className="text-2xl font-bold" style={{color: '#F26C4F'}}>E</span>
+                    <span className="text-2xl font-bold" style={{color: '#F4A261'}}>M</span>
+                    <span className="text-2xl font-bold" style={{color: '#267698'}}>I</span>
+                    <span className="text-2xl font-bold" style={{color: '#2C9AA1'}}>L</span>
+                    <span className="text-2xl font-bold" style={{color: '#E76F51'}}>Y</span>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-300">KIDS</span>
+                </div>
               )}
               <button
                 data-testid="sidebar-toggle-btn"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded hover:bg-gray-700"
+                className="p-2 rounded hover:bg-white hover:bg-opacity-10"
               >
                 {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
