@@ -56,10 +56,12 @@ const Layout = ({ children }) => {
         className={`sidebar fixed top-0 left-0 h-full z-40 transition-all duration-300 ${
           sidebarOpen ? 'w-64' : 'w-20'
         }`}
+        style={{backgroundColor: '#F7F4E9'}}
       >
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col"
+             style={{color: '#3A3A3A'}}>
           {/* Logo */}
-          <div className="p-4 border-b border-white border-opacity-20">
+          <div className="p-4 border-b border-gray-300">
             <div className="flex items-center justify-between">
               {sidebarOpen && (
                 <div className="flex flex-col">
@@ -70,13 +72,14 @@ const Layout = ({ children }) => {
                     <span className="text-2xl font-bold" style={{color: '#2C9AA1'}}>L</span>
                     <span className="text-2xl font-bold" style={{color: '#E76F51'}}>Y</span>
                   </div>
-                  <span className="text-sm font-semibold text-gray-300">KIDS</span>
+                  <span className="text-sm font-semibold" style={{color: '#3A3A3A'}}>KIDS</span>
                 </div>
               )}
               <button
                 data-testid="sidebar-toggle-btn"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded hover:bg-white hover:bg-opacity-10"
+                className="p-2 rounded hover:bg-gray-200"
+                style={{color: '#3A3A3A'}}
               >
                 {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
