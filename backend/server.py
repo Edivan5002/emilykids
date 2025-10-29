@@ -465,6 +465,50 @@ async def toggle_usuario_status(user_id: str, current_user: dict = Depends(get_c
     
     return {"message": f"Usuário {'ativado' if novo_status else 'desativado'} com sucesso", "ativo": novo_status}
 
+# ========== AUTORIZAÇÃO ==========
+
+class AutorizacaoRequest(BaseModel):
+    email: EmailStr
+    senha: str
+
+@api_router.post("/auth/validar-autorizacao")
+async def validar_autorizacao(auth_data: AutorizacaoRequest, current_user: dict = Depends(get_current_user)):
+    """Valida credenciais de supervisor/admin para autorizar ações críticas"""
+    usuario = await db.users.find_one({"email": auth_data.email}, {"_id": 0})
+    
+    if not usuario:
+        raise HTTPException(status_code=401, detail="Credenciais inválidas")
+    
+    # Verificar se o usuário é admin ou gerente
+    if usuario.get("papel") not in ["admin", "gerente"]:
+        raise HTTPException(status_code=403, detail="Usuário não autorizado. Apenas supervisores ou administradores.")
+    
+    # Verificar senha
+    if not verify_password(auth_data.senha, usuario["senha_hash"]):
+        raise HTTPException(status_code=401, detail="Senha incorreta")
+    
+    # Verificar se está ativo
+    if not usuario.get("ativo", True):
+        raise HTTPException(status_code=403, detail="Usuário inativo")
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="autorizacao",
+        acao="validar",
+        detalhes={"autorizador": usuario["email"], "papel": usuario["papel"]}
+    )
+    
+    return {
+        "autorizado": True,
+        "autorizador": {
+            "nome": usuario["nome"],
+            "email": usuario["email"],
+            "papel": usuario["papel"]
+        }
+    }
+
 # ========== CLIENTES ==========
 
 @api_router.get("/clientes", response_model=List[Cliente])
