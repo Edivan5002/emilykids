@@ -720,6 +720,48 @@ async def confirmar_nota_fiscal(nota_id: str, current_user: dict = Depends(get_c
     
     return {"message": "Nota fiscal confirmada e estoque atualizado"}
 
+@api_router.delete("/notas-fiscais/{nota_id}")
+async def delete_nota_fiscal(nota_id: str, current_user: dict = Depends(get_current_user)):
+    nota = await db.notas_fiscais.find_one({"id": nota_id}, {"_id": 0})
+    if not nota:
+        raise HTTPException(status_code=404, detail="Nota fiscal não encontrada")
+    
+    # Se a nota foi confirmada, reverter o estoque
+    if nota.get("confirmado", False):
+        for item in nota.get("itens", []):
+            produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
+            if produto:
+                novo_estoque = produto["estoque_atual"] - item["quantidade"]
+                await db.produtos.update_one(
+                    {"id": item["produto_id"]},
+                    {"$set": {"estoque_atual": novo_estoque}}
+                )
+                
+                # Registrar movimentação de estorno
+                movimentacao = MovimentacaoEstoque(
+                    produto_id=item["produto_id"],
+                    tipo="saida",
+                    quantidade=item["quantidade"],
+                    referencia_tipo="estorno_nota_fiscal",
+                    referencia_id=nota_id,
+                    user_id=current_user["id"]
+                )
+                await db.movimentacoes_estoque.insert_one(movimentacao.model_dump())
+    
+    # Deletar nota fiscal
+    await db.notas_fiscais.delete_one({"id": nota_id})
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="notas_fiscais",
+        acao="deletar",
+        detalhes={"nota_id": nota_id, "numero": nota.get("numero"), "confirmado": nota.get("confirmado")}
+    )
+    
+    return {"message": "Nota fiscal excluída com sucesso"}
+
 # ========== ORÇAMENTOS ==========
 
 @api_router.get("/orcamentos", response_model=List[Orcamento])
