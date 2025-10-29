@@ -7,17 +7,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, FileText, Check, Trash2, Upload, AlertCircle, Package } from 'lucide-react';
+import { Plus, FileText, Check, Trash2, Upload, AlertCircle, Package, Shield } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
+import AutorizacaoModal from '../components/AutorizacaoModal';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const NotasFiscais = () => {
+  const { user } = useAuth();
   const [notasFiscais, setNotasFiscais] = useState([]);
   const [fornecedores, setFornecedores] = useState([]);
   const [produtos, setProdutos] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showAutorizacao, setShowAutorizacao] = useState(false);
+  const [notaParaExcluir, setNotaParaExcluir] = useState(null);
   
   const [formData, setFormData] = useState({
     numero: '',
