@@ -91,6 +91,11 @@ const Layout = ({ children }) => {
           {/* Menu Items */}
           <div className="flex-1 overflow-y-auto py-4">
             {menuItems.map((item) => {
+              // Esconder itens adminOnly se não for admin
+              if (item.adminOnly && user?.papel !== 'admin') {
+                return null;
+              }
+              
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
               return (
