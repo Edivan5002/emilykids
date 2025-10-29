@@ -96,9 +96,25 @@ const Layout = ({ children }) => {
                   key={item.path}
                   data-testid={`menu-item-${item.label.toLowerCase().replace(/ /g, '-')}`}
                   onClick={() => navigate(item.path)}
-                  className={`sidebar-item mx-2 mb-1 flex items-center gap-3 ${
-                    isActive ? 'active' : ''
-                  }`}
+                  className={`sidebar-item mx-2 mb-1 flex items-center gap-3`}
+                  style={{
+                    backgroundColor: isActive ? '#267698' : 'transparent',
+                    color: isActive ? '#FFFFFF' : '#3A3A3A',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = '#E5E5E5';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }
+                  }}
                 >
                   <Icon size={20} />
                   {sidebarOpen && <span>{item.label}</span>}
@@ -108,21 +124,23 @@ const Layout = ({ children }) => {
           </div>
 
           {/* User Info */}
-          <div className="p-4 border-t border-gray-700">
+          <div className="p-4 border-t border-gray-300">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                   style={{backgroundColor: '#267698'}}>
                 {user?.nome?.charAt(0)}
               </div>
               {sidebarOpen && (
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-white">{user?.nome}</p>
-                  <p className="text-xs text-gray-400">{user?.papel}</p>
+                  <p className="text-sm font-medium" style={{color: '#3A3A3A'}}>{user?.nome}</p>
+                  <p className="text-xs" style={{color: '#6B7280'}}>{user?.papel}</p>
                 </div>
               )}
               <button
                 data-testid="logout-btn"
                 onClick={handleLogout}
-                className="p-2 rounded hover:bg-gray-700"
+                className="p-2 rounded hover:bg-gray-200"
+                style={{color: '#3A3A3A'}}
                 title="Sair"
               >
                 <LogOut size={18} />
