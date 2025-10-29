@@ -147,6 +147,17 @@ const NotasFiscais = () => {
   };
 
   const handleExcluir = async (notaId, confirmada) => {
+    // Se for admin ou gerente, pode excluir direto
+    if (user?.papel === 'admin' || user?.papel === 'gerente') {
+      handleExcluirDireto(notaId, confirmada);
+    } else {
+      // Vendedor precisa de autorização
+      setNotaParaExcluir({ id: notaId, confirmada });
+      setShowAutorizacao(true);
+    }
+  };
+
+  const handleExcluirDireto = async (notaId, confirmada) => {
     const mensagem = confirmada 
       ? 'Tem certeza que deseja excluir esta nota fiscal? O estoque será revertido.'
       : 'Tem certeza que deseja excluir esta nota fiscal?';
@@ -159,6 +170,19 @@ const NotasFiscais = () => {
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao excluir nota fiscal');
+    }
+  };
+
+  const handleAutorizacaoSucesso = async (autorizador) => {
+    if (notaParaExcluir) {
+      try {
+        await axios.delete(`${API}/notas-fiscais/${notaParaExcluir.id}`);
+        toast.success(`Nota fiscal excluída com autorização de ${autorizador.nome}!`);
+        fetchData();
+        setNotaParaExcluir(null);
+      } catch (error) {
+        toast.error(error.response?.data?.detail || 'Erro ao excluir nota fiscal');
+      }
     }
   };
 
