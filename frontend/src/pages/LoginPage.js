@@ -48,10 +48,20 @@ const LoginPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500 rounded-xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl mb-4"
+               style={{backgroundColor: '#267698'}}>
             <Brain size={32} className="text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">InventoAI</h1>
+          <div className="mb-2">
+            <div className="flex items-center justify-center gap-1">
+              <span className="text-5xl font-bold" style={{color: '#F26C4F'}}>E</span>
+              <span className="text-5xl font-bold" style={{color: '#F4A261'}}>M</span>
+              <span className="text-5xl font-bold" style={{color: '#267698'}}>I</span>
+              <span className="text-5xl font-bold" style={{color: '#2C9AA1'}}>L</span>
+              <span className="text-5xl font-bold" style={{color: '#E76F51'}}>Y</span>
+            </div>
+            <div className="text-2xl font-bold" style={{color: '#3A3A3A'}}>KIDS</div>
+          </div>
           <p className="text-gray-600">Sistema Inteligente de Vendas e Estoque</p>
         </div>
 
