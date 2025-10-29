@@ -71,6 +71,7 @@ function AppContent() {
                     <Route path="/relatorios" element={<Relatorios />} />
                     <Route path="/ia-insights" element={<IAInsights />} />
                     <Route path="/logs" element={<Logs />} />
+                    <Route path="/usuarios" element={<Usuarios />} />
                   </Routes>
                 </Layout>
               </PrivateRoute>
