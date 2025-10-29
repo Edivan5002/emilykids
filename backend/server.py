@@ -257,6 +257,17 @@ class VendaCreate(BaseModel):
     forma_pagamento: str
     orcamento_id: Optional[str] = None
 
+class CheckEstoqueRequest(BaseModel):
+    produto_id: str
+    quantidade: int
+
+class CheckEstoqueResponse(BaseModel):
+    disponivel: bool
+    estoque_atual: int
+    estoque_reservado: int
+    estoque_disponivel: int
+    mensagem: str
+
 # ========== AUTH UTILS ==========
 
 def hash_password(password: str) -> str:
