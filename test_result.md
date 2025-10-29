@@ -107,39 +107,48 @@ user_problem_statement: "Implementar validação de estoque completa em Orçamen
 backend:
   - task: "Endpoint de verificação de estoque (POST /api/estoque/check-disponibilidade)"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Criado endpoint que recebe produto_id e quantidade, calcula estoque disponível (atual - reservado) e retorna se está disponível para uso"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO COM SUCESSO - Endpoint funcionando perfeitamente. Testes realizados: (1) Verificação com estoque suficiente - retornou disponível=true com 20 unidades disponíveis; (2) Verificação com quantidade excessiva (100 unidades) - corretamente identificou estoque insuficiente; (3) Produto inválido - retornou 404 apropriadamente; (4) Casos extremos (quantidade zero e negativa) - tratados adequadamente. Todos os campos obrigatórios presentes na resposta: disponivel, estoque_atual, estoque_reservado, estoque_disponivel, mensagem."
   
   - task: "Validação de estoque na criação de orçamentos (POST /api/orcamentos)"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Adicionada validação que verifica estoque disponível antes de criar orçamento. Se insuficiente, retorna erro 400 com mensagem detalhada"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO COM SUCESSO - Validação de estoque em orçamentos funcionando corretamente. Testes realizados: (1) Criação com estoque suficiente - orçamento criado com sucesso; (2) Tentativa com estoque insuficiente (50 unidades de produto com apenas 10 disponíveis) - corretamente bloqueado com erro 400 e mensagem 'Estoque insuficiente para o produto Boneca Baby Alive - Loira. Disponível: 10 unidades'; (3) Múltiplos orçamentos - estoque corretamente reservado (5 unidades reservadas após 2 orçamentos). Sistema considera estoque reservado por orçamentos abertos."
   
   - task: "Validação de estoque na criação de vendas (POST /api/vendas)"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Adicionada validação que verifica estoque disponível antes de criar venda. Se insuficiente, retorna erro 400 com mensagem detalhada"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO COM SUCESSO - Validação de estoque em vendas funcionando perfeitamente. Testes realizados: (1) Criação com estoque suficiente - venda criada com sucesso; (2) Tentativa com estoque insuficiente (25 unidades de produto com apenas 10 disponíveis) - corretamente bloqueado com erro 400; (3) Consideração de estoque reservado - tentativa de venda de 20 unidades de produto com 15 atual mas 5 reservados por orçamentos foi corretamente bloqueada com mensagem 'Estoque insuficiente para o produto Vestido Princesa Rosa - Tamanho 4. Disponível: 10 unidades (Atual: 15, Reservado: 5)'. Sistema calcula corretamente estoque_disponível = estoque_atual - estoque_reservado."
 
 frontend:
   - task: "Validação de estoque ao adicionar item em Orçamento"
