@@ -88,7 +88,14 @@ const Dashboard = () => {
   return (
     <div className="page-container" data-testid="dashboard-page">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Dashboard</h1>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-4xl font-bold" style={{color: '#F26C4F'}}>E</span>
+          <span className="text-4xl font-bold" style={{color: '#F4A261'}}>M</span>
+          <span className="text-4xl font-bold" style={{color: '#267698'}}>I</span>
+          <span className="text-4xl font-bold" style={{color: '#2C9AA1'}}>L</span>
+          <span className="text-4xl font-bold" style={{color: '#E76F51'}}>Y</span>
+          <span className="text-4xl font-bold ml-2" style={{color: '#3A3A3A'}}>KIDS</span>
+        </div>
         <p className="text-gray-600">Visão geral do seu negócio</p>
       </div>
 
