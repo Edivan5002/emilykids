@@ -342,6 +342,129 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     user_data = {k: v for k, v in current_user.items() if k != "senha_hash"}
     return user_data
 
+# ========== USUÁRIOS (ADMIN) ==========
+
+class UserUpdate(BaseModel):
+    nome: str
+    email: EmailStr
+    papel: str
+    ativo: bool
+    senha: Optional[str] = None
+
+@api_router.get("/usuarios", response_model=List[User])
+async def get_usuarios(current_user: dict = Depends(get_current_user)):
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
+    
+    usuarios = await db.users.find({}, {"_id": 0}).to_list(1000)
+    return usuarios
+
+@api_router.get("/usuarios/{user_id}", response_model=User)
+async def get_usuario(user_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
+    
+    usuario = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    return usuario
+
+@api_router.put("/usuarios/{user_id}")
+async def update_usuario(user_id: str, user_data: UserUpdate, current_user: dict = Depends(get_current_user)):
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
+    
+    existing = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
+    # Verificar se email já existe em outro usuário
+    email_exists = await db.users.find_one({"email": user_data.email, "id": {"$ne": user_id}}, {"_id": 0})
+    if email_exists:
+        raise HTTPException(status_code=400, detail="Email já cadastrado para outro usuário")
+    
+    updated_data = {
+        "id": user_id,
+        "nome": user_data.nome,
+        "email": user_data.email,
+        "papel": user_data.papel,
+        "ativo": user_data.ativo,
+        "created_at": existing["created_at"]
+    }
+    
+    # Atualizar senha se fornecida
+    if user_data.senha:
+        updated_data["senha_hash"] = hash_password(user_data.senha)
+    else:
+        updated_data["senha_hash"] = existing["senha_hash"]
+    
+    await db.users.replace_one({"id": user_id}, updated_data)
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="usuarios",
+        acao="editar",
+        detalhes={"usuario_editado_id": user_id}
+    )
+    
+    return {"message": "Usuário atualizado com sucesso"}
+
+@api_router.delete("/usuarios/{user_id}")
+async def delete_usuario(user_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
+    
+    # Não permitir deletar a si mesmo
+    if user_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Não é possível deletar seu próprio usuário")
+    
+    result = await db.users.delete_one({"id": user_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="usuarios",
+        acao="deletar",
+        detalhes={"usuario_deletado_id": user_id}
+    )
+    
+    return {"message": "Usuário deletado com sucesso"}
+
+@api_router.post("/usuarios/{user_id}/toggle-status")
+async def toggle_usuario_status(user_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
+    
+    # Não permitir desativar a si mesmo
+    if user_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Não é possível desativar seu próprio usuário")
+    
+    usuario = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
+    novo_status = not usuario.get("ativo", True)
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"ativo": novo_status}}
+    )
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="usuarios",
+        acao="editar",
+        detalhes={"usuario_id": user_id, "novo_status": "ativo" if novo_status else "inativo"}
+    )
+    
+    return {"message": f"Usuário {'ativado' if novo_status else 'desativado'} com sucesso", "ativo": novo_status}
+
 # ========== CLIENTES ==========
 
 @api_router.get("/clientes", response_model=List[Cliente])
