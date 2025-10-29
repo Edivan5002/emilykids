@@ -30,6 +30,7 @@ const Layout = ({ children }) => {
 
   const menuItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/usuarios', label: 'Usuários', icon: UserCog, adminOnly: true },
     { path: '/clientes', label: 'Clientes', icon: Users },
     { path: '/fornecedores', label: 'Fornecedores', icon: Truck },
     { path: '/marcas', label: 'Marcas', icon: Tag },
