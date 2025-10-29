@@ -101,3 +101,74 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Implementar validação de estoque completa em Orçamentos e Vendas. O sistema deve verificar se a quantidade digitada tem em estoque antes de adicionar o item, considerando o estoque reservado por orçamentos abertos. Se não tiver estoque suficiente, o sistema deve avisar e não deixar adicionar o item."
+
+backend:
+  - task: "Endpoint de verificação de estoque (POST /api/estoque/check-disponibilidade)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Criado endpoint que recebe produto_id e quantidade, calcula estoque disponível (atual - reservado) e retorna se está disponível para uso"
+  
+  - task: "Validação de estoque na criação de orçamentos (POST /api/orcamentos)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Adicionada validação que verifica estoque disponível antes de criar orçamento. Se insuficiente, retorna erro 400 com mensagem detalhada"
+  
+  - task: "Validação de estoque na criação de vendas (POST /api/vendas)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Adicionada validação que verifica estoque disponível antes de criar venda. Se insuficiente, retorna erro 400 com mensagem detalhada"
+
+frontend:
+  - task: "Validação de estoque ao adicionar item em Orçamento"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Orcamentos.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Atualizada função handleAddItem para chamar endpoint de verificação de estoque antes de adicionar item. Mostra mensagem de erro detalhada se estoque insuficiente"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Endpoint de verificação de estoque (POST /api/estoque/check-disponibilidade)"
+    - "Validação de estoque na criação de orçamentos (POST /api/orcamentos)"
+    - "Validação de estoque na criação de vendas (POST /api/vendas)"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Implementei a validação completa de estoque para Orçamentos e Vendas. Criei um endpoint /api/estoque/check-disponibilidade que calcula o estoque disponível (estoque_atual - estoque_reservado) e retorna se a quantidade solicitada está disponível. Atualizei os endpoints de criação de orçamentos e vendas para validar o estoque antes de criar, retornando erro 400 se insuficiente. No frontend, atualizei o módulo de Orçamentos para chamar o endpoint de verificação antes de adicionar itens. Preciso que você teste: 1) O endpoint de verificação de estoque com diferentes cenários (estoque suficiente, insuficiente, com reservas); 2) Criação de orçamento com estoque suficiente e insuficiente; 3) Criação de venda com estoque suficiente e insuficiente. Use os dados de teste existentes no sistema."
