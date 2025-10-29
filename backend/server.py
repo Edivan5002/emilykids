@@ -822,6 +822,32 @@ async def get_orcamentos(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/orcamentos", response_model=Orcamento)
 async def create_orcamento(orcamento_data: OrcamentoCreate, current_user: dict = Depends(get_current_user)):
+    # Validar estoque antes de criar o orçamento
+    orcamentos_abertos = await db.orcamentos.find({"status": "aberto"}, {"_id": 0}).to_list(1000)
+    
+    for item in orcamento_data.itens:
+        produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
+        if not produto:
+            raise HTTPException(status_code=404, detail=f"Produto {item['produto_id']} não encontrado")
+        
+        estoque_atual = produto.get("estoque_atual", 0)
+        
+        # Calcular estoque reservado
+        estoque_reservado = 0
+        for orc in orcamentos_abertos:
+            for orc_item in orc.get("itens", []):
+                if orc_item.get("produto_id") == item["produto_id"]:
+                    estoque_reservado += orc_item.get("quantidade", 0)
+        
+        estoque_disponivel = estoque_atual - estoque_reservado
+        
+        if item["quantidade"] > estoque_disponivel:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Estoque insuficiente para o produto '{produto['nome']}'. Disponível: {estoque_disponivel} unidades (Atual: {estoque_atual}, Reservado: {estoque_reservado})"
+            )
+    
+    # Se passou pela validação, criar o orçamento
     total = sum(item["quantidade"] * item["preco_unitario"] for item in orcamento_data.itens)
     total = total - orcamento_data.desconto + orcamento_data.frete
     
