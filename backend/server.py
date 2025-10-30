@@ -727,6 +727,79 @@ async def check_disponibilidade_estoque(request: CheckEstoqueRequest, current_us
         mensagem=mensagem
     )
 
+@api_router.post("/estoque/ajuste-manual")
+async def ajuste_manual_estoque(request: AjusteEstoqueRequest, current_user: dict = Depends(get_current_user)):
+    """
+    Permite ajuste manual de estoque.
+    Admin e Gerente podem ajustar direto.
+    Vendedor precisa de autorização (validada no frontend via AutorizacaoModal).
+    """
+    # Buscar produto
+    produto = await db.produtos.find_one({"id": request.produto_id}, {"_id": 0})
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    
+    estoque_atual = produto.get("estoque_atual", 0)
+    
+    # Calcular novo estoque baseado no tipo
+    if request.tipo == "entrada":
+        novo_estoque = estoque_atual + abs(request.quantidade)
+        tipo_movimentacao = "entrada"
+    else:  # saida
+        novo_estoque = estoque_atual - abs(request.quantidade)
+        tipo_movimentacao = "saida"
+    
+    # Validar se estoque não ficará negativo
+    if novo_estoque < 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ajuste resultaria em estoque negativo. Estoque atual: {estoque_atual}, Ajuste: -{abs(request.quantidade)}"
+        )
+    
+    # Atualizar estoque
+    await db.produtos.update_one(
+        {"id": request.produto_id},
+        {"$set": {"estoque_atual": novo_estoque}}
+    )
+    
+    # Registrar movimentação
+    movimentacao = MovimentacaoEstoque(
+        produto_id=request.produto_id,
+        tipo=tipo_movimentacao,
+        quantidade=abs(request.quantidade),
+        referencia_tipo="ajuste_manual",
+        referencia_id=f"ajuste_{datetime.now(timezone.utc).timestamp()}",
+        user_id=current_user["id"]
+    )
+    await db.movimentacoes_estoque.insert_one(movimentacao.model_dump())
+    
+    # Log da ação
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="estoque",
+        acao="ajuste_manual",
+        detalhes={
+            "produto_id": request.produto_id,
+            "produto_nome": produto["nome"],
+            "estoque_anterior": estoque_atual,
+            "estoque_novo": novo_estoque,
+            "quantidade_ajuste": request.quantidade,
+            "tipo": request.tipo,
+            "motivo": request.motivo
+        }
+    )
+    
+    return {
+        "message": "Estoque ajustado com sucesso",
+        "produto": produto["nome"],
+        "estoque_anterior": estoque_atual,
+        "estoque_novo": novo_estoque,
+        "tipo": request.tipo,
+        "quantidade": abs(request.quantidade)
+    }
+
 # ========== NOTAS FISCAIS ==========
 
 @api_router.get("/notas-fiscais", response_model=List[NotaFiscal])
