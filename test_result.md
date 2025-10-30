@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Implementar validação de estoque completa em Orçamentos e Vendas. O sistema deve verificar se a quantidade digitada tem em estoque antes de adicionar o item, considerando o estoque reservado por orçamentos abertos. Se não tiver estoque suficiente, o sistema deve avisar e não deixar adicionar o item."
+user_problem_statement: "Desenvolver o módulo completo de estoque com: 1) Visualização de todos produtos com estoque atual/mínimo/máximo e alertas visuais; 2) Histórico de movimentações (entradas/saídas) com filtros; 3) Alertas de estoque baixo/alto; 4) Ajuste manual de estoque com autorização de supervisor/administrador para vendedores."
 
 backend:
   - task: "Endpoint de verificação de estoque (POST /api/estoque/check-disponibilidade)"
@@ -150,6 +150,18 @@ backend:
         agent: "testing"
         comment: "✅ TESTADO COM SUCESSO - Validação de estoque em vendas funcionando perfeitamente. Testes realizados: (1) Criação com estoque suficiente - venda criada com sucesso; (2) Tentativa com estoque insuficiente (25 unidades de produto com apenas 10 disponíveis) - corretamente bloqueado com erro 400; (3) Consideração de estoque reservado - tentativa de venda de 20 unidades de produto com 15 atual mas 5 reservados por orçamentos foi corretamente bloqueada com mensagem 'Estoque insuficiente para o produto Vestido Princesa Rosa - Tamanho 4. Disponível: 10 unidades (Atual: 15, Reservado: 5)'. Sistema calcula corretamente estoque_disponível = estoque_atual - estoque_reservado."
 
+  - task: "Endpoint de ajuste manual de estoque (POST /api/estoque/ajuste-manual)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Criado endpoint para ajuste manual de estoque. Recebe produto_id, quantidade, tipo (entrada/saida) e motivo. Valida se estoque não ficará negativo, atualiza produto, registra movimentação e cria log. Admin/gerente podem ajustar direto, vendedor precisa autorização via frontend."
+
 frontend:
   - task: "Validação de estoque ao adicionar item em Orçamento"
     implemented: true
@@ -163,17 +175,64 @@ frontend:
         agent: "main"
         comment: "Atualizada função handleAddItem para chamar endpoint de verificação de estoque antes de adicionar item. Mostra mensagem de erro detalhada se estoque insuficiente"
 
+  - task: "Módulo completo de Estoque - Visão Geral"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Estoque.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Criada aba Visão Geral com tabela de produtos mostrando SKU, nome, marca, categoria, estoque atual/mínimo/máximo e status com cores (vermelho=baixo, laranja=alto, verde=normal). Inclui filtros por busca, marca, categoria e status."
+
+  - task: "Módulo completo de Estoque - Movimentações"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Estoque.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Criada aba Movimentações com histórico completo de entradas/saídas. Mostra tipo (entrada/saída), produto, referência (nota fiscal, venda, orçamento, ajuste manual) e data/hora."
+
+  - task: "Módulo completo de Estoque - Alertas"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Estoque.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Criada aba Alertas com cards separados para produtos com estoque abaixo do mínimo e acima do máximo. Inclui estatísticas com total de produtos, alertas de estoque baixo e alto."
+
+  - task: "Módulo completo de Estoque - Ajuste Manual"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Estoque.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Criada aba Ajuste Manual com formulário completo (produto, tipo, quantidade, motivo). Integrado com AutorizacaoModal - vendedores precisam de autorização de supervisor/admin, admin/gerente podem ajustar direto. Mostra últimos 10 ajustes manuais realizados."
+
 metadata:
   created_by: "main_agent"
-  version: "1.0"
-  test_sequence: 2
+  version: "2.0"
+  test_sequence: 3
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Endpoint de verificação de estoque (POST /api/estoque/check-disponibilidade)"
-    - "Validação de estoque na criação de orçamentos (POST /api/orcamentos)"
-    - "Validação de estoque na criação de vendas (POST /api/vendas)"
+    - "Endpoint de ajuste manual de estoque (POST /api/estoque/ajuste-manual)"
+    - "Módulo completo de Estoque - todas as abas"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -183,3 +242,5 @@ agent_communication:
     message: "Implementei a validação completa de estoque para Orçamentos e Vendas. Criei um endpoint /api/estoque/check-disponibilidade que calcula o estoque disponível (estoque_atual - estoque_reservado) e retorna se a quantidade solicitada está disponível. Atualizei os endpoints de criação de orçamentos e vendas para validar o estoque antes de criar, retornando erro 400 se insuficiente. No frontend, atualizei o módulo de Orçamentos para chamar o endpoint de verificação antes de adicionar itens. Preciso que você teste: 1) O endpoint de verificação de estoque com diferentes cenários (estoque suficiente, insuficiente, com reservas); 2) Criação de orçamento com estoque suficiente e insuficiente; 3) Criação de venda com estoque suficiente e insuficiente. Use os dados de teste existentes no sistema."
   - agent: "testing"
     message: "🎉 TODOS OS TESTES DE VALIDAÇÃO DE ESTOQUE PASSARAM COM SUCESSO! Executei 18 testes abrangentes cobrindo todos os cenários solicitados. Criei arquivo backend_test.py com testes automatizados usando dados realistas da Emily Kids (vestidos, tênis, bonecas). RESULTADOS: ✅ Endpoint /api/estoque/check-disponibilidade funcionando 100% - calcula corretamente estoque disponível considerando reservas de orçamentos abertos; ✅ Validação em orçamentos funcionando 100% - bloqueia criação quando estoque insuficiente com mensagens detalhadas; ✅ Validação em vendas funcionando 100% - considera estoque reservado por orçamentos na validação; ✅ Casos extremos tratados adequadamente. A implementação está COMPLETA e FUNCIONANDO PERFEITAMENTE. Taxa de sucesso: 100% (18/18 testes). Sistema pronto para produção."
+  - agent: "main"
+    message: "Desenvolvi o módulo COMPLETO de Estoque conforme solicitado. Backend: criado endpoint /api/estoque/ajuste-manual que permite ajuste manual com registro de movimentação e log. Frontend: reescrevi completamente /app/frontend/src/pages/Estoque.js com 4 abas: (1) Visão Geral - tabela com todos produtos, estoque atual/mínimo/máximo, alertas visuais coloridos e filtros por busca/marca/categoria/status; (2) Movimentações - histórico completo de entradas/saídas; (3) Alertas - cards com produtos em estoque baixo/alto + estatísticas; (4) Ajuste Manual - formulário integrado com AutorizacaoModal (vendedor precisa senha supervisor/admin, admin/gerente ajustam direto) + histórico dos últimos ajustes. Preciso que você teste: 1) Endpoint de ajuste manual (entrada e saída); 2) Interface completa do módulo Estoque com todas as abas e funcionalidades."
