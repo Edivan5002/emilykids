@@ -462,6 +462,171 @@ class EmilyKidsBackendTester:
         except Exception as e:
             self.log_test("Sale Creation - Reserved Stock Check", False, f"Error: {str(e)}")
     
+    def test_manual_stock_adjustment(self):
+        """Test manual stock adjustment endpoint - NEW FEATURE"""
+        print("\n=== TESTING MANUAL STOCK ADJUSTMENT ENDPOINT ===")
+        
+        if not self.test_products:
+            self.log_test("Manual Stock Adjustment Tests", False, "No test products available")
+            return
+        
+        # Get initial stock for testing
+        product = self.test_products[0]  # Vestido Princesa
+        
+        # Get current stock before adjustments
+        try:
+            response = requests.get(f"{self.base_url}/produtos", headers=self.get_headers())
+            if response.status_code == 200:
+                produtos = response.json()
+                current_product = next((p for p in produtos if p["id"] == product["id"]), None)
+                if current_product:
+                    initial_stock = current_product["estoque_atual"]
+                    self.log_test("Get Initial Stock", True, f"Initial stock: {initial_stock} units")
+                else:
+                    self.log_test("Get Initial Stock", False, "Product not found")
+                    return
+            else:
+                self.log_test("Get Initial Stock", False, f"HTTP {response.status_code}: {response.text}")
+                return
+        except Exception as e:
+            self.log_test("Get Initial Stock", False, f"Error: {str(e)}")
+            return
+        
+        # Test 1: Ajuste de Entrada (Adding to stock)
+        entrada_data = {
+            "produto_id": product["id"],
+            "quantidade": 10,
+            "tipo": "entrada",
+            "motivo": "Reposição de estoque - produtos encontrados no depósito"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/estoque/ajuste-manual", json=entrada_data, headers=self.get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                expected_new_stock = initial_stock + 10
+                if data.get("estoque_novo") == expected_new_stock:
+                    self.log_test("Manual Adjustment - Entrada", True, f"Stock increased from {data.get('estoque_anterior')} to {data.get('estoque_novo')}")
+                    current_stock = data.get("estoque_novo")
+                else:
+                    self.log_test("Manual Adjustment - Entrada", False, f"Stock calculation error: {data}")
+                    current_stock = initial_stock
+            else:
+                self.log_test("Manual Adjustment - Entrada", False, f"HTTP {response.status_code}: {response.text}")
+                current_stock = initial_stock
+        except Exception as e:
+            self.log_test("Manual Adjustment - Entrada", False, f"Error: {str(e)}")
+            current_stock = initial_stock
+        
+        # Test 2: Ajuste de Saída (Removing from stock)
+        saida_data = {
+            "produto_id": product["id"],
+            "quantidade": 5,
+            "tipo": "saida",
+            "motivo": "Produto danificado - descarte necessário"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/estoque/ajuste-manual", json=saida_data, headers=self.get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                expected_new_stock = current_stock - 5
+                if data.get("estoque_novo") == expected_new_stock:
+                    self.log_test("Manual Adjustment - Saída", True, f"Stock decreased from {data.get('estoque_anterior')} to {data.get('estoque_novo')}")
+                    current_stock = data.get("estoque_novo")
+                else:
+                    self.log_test("Manual Adjustment - Saída", False, f"Stock calculation error: {data}")
+            else:
+                self.log_test("Manual Adjustment - Saída", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Manual Adjustment - Saída", False, f"Error: {str(e)}")
+        
+        # Test 3: Validation - Prevent negative stock
+        negative_stock_data = {
+            "produto_id": product["id"],
+            "quantidade": current_stock + 50,  # More than current stock
+            "tipo": "saida",
+            "motivo": "Teste de validação - estoque negativo"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/estoque/ajuste-manual", json=negative_stock_data, headers=self.get_headers())
+            if response.status_code == 400:
+                error_msg = response.json().get("detail", response.text)
+                if "negativo" in error_msg.lower():
+                    self.log_test("Manual Adjustment - Negative Stock Prevention", True, f"Correctly prevented negative stock: {error_msg}")
+                else:
+                    self.log_test("Manual Adjustment - Negative Stock Prevention", False, f"Wrong error message: {error_msg}")
+            else:
+                self.log_test("Manual Adjustment - Negative Stock Prevention", False, f"Expected 400 but got {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Manual Adjustment - Negative Stock Prevention", False, f"Error: {str(e)}")
+        
+        # Test 4: Validation - Invalid product ID
+        invalid_product_data = {
+            "produto_id": "produto-inexistente-123",
+            "quantidade": 5,
+            "tipo": "entrada",
+            "motivo": "Teste com produto inválido"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/estoque/ajuste-manual", json=invalid_product_data, headers=self.get_headers())
+            if response.status_code == 404:
+                self.log_test("Manual Adjustment - Invalid Product", True, "Correctly returned 404 for invalid product")
+            else:
+                self.log_test("Manual Adjustment - Invalid Product", False, f"Expected 404 but got {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Manual Adjustment - Invalid Product", False, f"Error: {str(e)}")
+        
+        # Test 5: Validation - Missing required fields
+        incomplete_data = {
+            "produto_id": product["id"],
+            "quantidade": 5
+            # Missing tipo and motivo
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/estoque/ajuste-manual", json=incomplete_data, headers=self.get_headers())
+            if response.status_code == 422:  # Pydantic validation error
+                self.log_test("Manual Adjustment - Required Fields", True, "Correctly validated required fields")
+            else:
+                self.log_test("Manual Adjustment - Required Fields", False, f"Expected 422 but got {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Manual Adjustment - Required Fields", False, f"Error: {str(e)}")
+        
+        # Test 6: Verify movement logging
+        try:
+            response = requests.get(f"{self.base_url}/estoque/movimentacoes", headers=self.get_headers())
+            if response.status_code == 200:
+                movimentacoes = response.json()
+                # Look for recent manual adjustments
+                manual_adjustments = [m for m in movimentacoes if m.get("referencia_tipo") == "ajuste_manual"]
+                if len(manual_adjustments) >= 2:  # Should have at least entrada and saida from our tests
+                    self.log_test("Manual Adjustment - Movement Logging", True, f"Found {len(manual_adjustments)} manual adjustment movements")
+                else:
+                    self.log_test("Manual Adjustment - Movement Logging", False, f"Expected manual adjustment movements but found {len(manual_adjustments)}")
+            else:
+                self.log_test("Manual Adjustment - Movement Logging", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Manual Adjustment - Movement Logging", False, f"Error: {str(e)}")
+        
+        # Test 7: Verify action logging
+        try:
+            response = requests.get(f"{self.base_url}/logs", headers=self.get_headers())
+            if response.status_code == 200:
+                logs = response.json()
+                # Look for recent manual adjustment logs
+                adjustment_logs = [l for l in logs if l.get("acao") == "ajuste_manual"]
+                if len(adjustment_logs) >= 1:
+                    self.log_test("Manual Adjustment - Action Logging", True, f"Found {len(adjustment_logs)} adjustment action logs")
+                else:
+                    self.log_test("Manual Adjustment - Action Logging", False, f"No adjustment action logs found")
+            else:
+                self.log_test("Manual Adjustment - Action Logging", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Manual Adjustment - Action Logging", False, f"Error: {str(e)}")
+
     def test_edge_cases(self):
         """Test edge cases and error scenarios"""
         print("\n=== TESTING EDGE CASES ===")
