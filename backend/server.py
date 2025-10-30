@@ -268,6 +268,12 @@ class CheckEstoqueResponse(BaseModel):
     estoque_disponivel: int
     mensagem: str
 
+class AjusteEstoqueRequest(BaseModel):
+    produto_id: str
+    quantidade: int  # Pode ser positivo (entrada) ou negativo (saída)
+    motivo: str
+    tipo: str  # "entrada" ou "saida"
+
 # ========== AUTH UTILS ==========
 
 def hash_password(password: str) -> str:
