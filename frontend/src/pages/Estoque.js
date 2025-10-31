@@ -222,12 +222,12 @@ const Estoque = () => {
                 </div>
                 <div>
                   <Label>Marca</Label>
-                  <Select value={filtros.marca} onValueChange={(value) => setFiltros({...filtros, marca: value})}>
+                  <Select value={filtros.marca} onValueChange={(value) => setFiltros({...filtros, marca: value === 'todas' ? '' : value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas</SelectItem>
+                      <SelectItem value="todas">Todas</SelectItem>
                       {marcas.map(m => (
                         <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
                       ))}
@@ -236,12 +236,12 @@ const Estoque = () => {
                 </div>
                 <div>
                   <Label>Categoria</Label>
-                  <Select value={filtros.categoria} onValueChange={(value) => setFiltros({...filtros, categoria: value})}>
+                  <Select value={filtros.categoria} onValueChange={(value) => setFiltros({...filtros, categoria: value === 'todas' ? '' : value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas</SelectItem>
+                      <SelectItem value="todas">Todas</SelectItem>
                       {categorias.map(c => (
                         <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                       ))}
