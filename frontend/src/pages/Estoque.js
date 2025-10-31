@@ -122,12 +122,12 @@ const Estoque = () => {
     }
 
     // Marca
-    if (filtros.marca && p.marca_id !== filtros.marca) {
+    if (filtros.marca && filtros.marca !== 'todas' && p.marca_id !== filtros.marca) {
       return false;
     }
 
     // Categoria
-    if (filtros.categoria && p.categoria_id !== filtros.categoria) {
+    if (filtros.categoria && filtros.categoria !== 'todas' && p.categoria_id !== filtros.categoria) {
       return false;
     }
 
