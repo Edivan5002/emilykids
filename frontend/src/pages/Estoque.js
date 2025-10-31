@@ -29,8 +29,8 @@ const Estoque = () => {
   // Filtros
   const [filtros, setFiltros] = useState({
     busca: '',
-    marca: '',
-    categoria: '',
+    marca: 'todas',
+    categoria: 'todas',
     status: 'todos' // todos, alerta_minimo, alerta_maximo
   });
 
