@@ -858,24 +858,298 @@ async def ajuste_manual_estoque(request: AjusteEstoqueRequest, current_user: dic
 
 # ========== NOTAS FISCAIS ==========
 
+# Valor mínimo que requer aprovação (pode ser configurado)
+VALOR_MINIMO_APROVACAO = 5000.00
+
 @api_router.get("/notas-fiscais", response_model=List[NotaFiscal])
-async def get_notas_fiscais(current_user: dict = Depends(get_current_user)):
-    notas = await db.notas_fiscais.find({}, {"_id": 0}).to_list(1000)
+async def get_notas_fiscais(
+    status: str = None,
+    fornecedor_id: str = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Lista notas fiscais com filtros opcionais"""
+    filtro = {}
+    if status:
+        filtro["status"] = status
+    if fornecedor_id:
+        filtro["fornecedor_id"] = fornecedor_id
+    
+    notas = await db.notas_fiscais.find(filtro, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return notas
 
 @api_router.post("/notas-fiscais", response_model=NotaFiscal)
 async def create_nota_fiscal(nota_data: NotaFiscalCreate, current_user: dict = Depends(get_current_user)):
-    nota = NotaFiscal(**nota_data.model_dump())
+    """
+    Cria uma nova nota fiscal com validações robustas
+    """
+    # VALIDAÇÃO 1: Duplicidade (numero + serie + fornecedor)
+    nota_existente = await db.notas_fiscais.find_one({
+        "numero": nota_data.numero,
+        "serie": nota_data.serie,
+        "fornecedor_id": nota_data.fornecedor_id,
+        "cancelada": False
+    }, {"_id": 0})
+    
+    if nota_existente:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Nota fiscal {nota_data.numero}/{nota_data.serie} já existe para este fornecedor"
+        )
+    
+    # VALIDAÇÃO 2: Data de emissão não pode ser futura
+    try:
+        data_emissao = datetime.fromisoformat(nota_data.data_emissao)
+        if data_emissao > datetime.now(timezone.utc):
+            raise HTTPException(
+                status_code=400,
+                detail="Data de emissão não pode ser futura"
+            )
+        
+        # Validar se não é muito antiga (mais de 90 dias)
+        dias_atras = (datetime.now(timezone.utc) - data_emissao).days
+        if dias_atras > 90:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Data de emissão muito antiga ({dias_atras} dias). Limite: 90 dias"
+            )
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Data de emissão inválida")
+    
+    # VALIDAÇÃO 3: Fornecedor existe
+    fornecedor = await db.fornecedores.find_one({"id": nota_data.fornecedor_id}, {"_id": 0})
+    if not fornecedor:
+        raise HTTPException(status_code=404, detail="Fornecedor não encontrado")
+    
+    # VALIDAÇÃO 4: Produtos existem e estão ativos
+    for item in nota_data.itens:
+        produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
+        if not produto:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Produto {item['produto_id']} não encontrado"
+            )
+        if produto.get("status") == "inativo":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Produto '{produto['nome']}' está inativo"
+            )
+        
+        # Validar preço unitário
+        if item["preco_unitario"] <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Preço unitário do produto '{produto['nome']}' deve ser maior que zero"
+            )
+    
+    # VALIDAÇÃO 5: Valor total deve bater com soma dos itens
+    total_calculado = sum(item["quantidade"] * item["preco_unitario"] for item in nota_data.itens)
+    if abs(total_calculado - nota_data.valor_total) > 0.01:  # Margem de 1 centavo
+        raise HTTPException(
+            status_code=400,
+            detail=f"Valor total (R$ {nota_data.valor_total:.2f}) não corresponde à soma dos itens (R$ {total_calculado:.2f})"
+        )
+    
+    # Determinar status inicial baseado no valor
+    status_inicial = "rascunho"
+    if nota_data.valor_total >= VALOR_MINIMO_APROVACAO:
+        status_inicial = "aguardando_aprovacao"
+    
+    nota = NotaFiscal(
+        **nota_data.model_dump(),
+        status=status_inicial,
+        criado_por=current_user["id"],
+        historico_alteracoes=[{
+            "data": datetime.now(timezone.utc).isoformat(),
+            "usuario": current_user["nome"],
+            "acao": "criacao",
+            "detalhes": f"Nota fiscal criada com status '{status_inicial}'"
+        }]
+    )
+    
     await db.notas_fiscais.insert_one(nota.model_dump())
+    
+    # Log
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="notas_fiscais",
+        acao="criar",
+        detalhes={
+            "nota_id": nota.id,
+            "numero": nota.numero,
+            "valor": nota.valor_total,
+            "status": status_inicial
+        }
+    )
+    
+    if status_inicial == "aguardando_aprovacao":
+        toast_message = f"Nota fiscal criada. Valor R$ {nota_data.valor_total:.2f} requer aprovação!"
+    else:
+        toast_message = "Nota fiscal criada com sucesso!"
+    
     return nota
 
-@api_router.post("/notas-fiscais/{nota_id}/confirmar")
-async def confirmar_nota_fiscal(nota_id: str, current_user: dict = Depends(get_current_user)):
+@api_router.put("/notas-fiscais/{nota_id}")
+async def update_nota_fiscal(
+    nota_id: str,
+    nota_data: NotaFiscalUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Edita uma nota fiscal (apenas se status = rascunho)
+    """
     nota = await db.notas_fiscais.find_one({"id": nota_id}, {"_id": 0})
     if not nota:
         raise HTTPException(status_code=404, detail="Nota fiscal não encontrada")
     
-    if nota["confirmado"]:
+    # VALIDAÇÃO: Só pode editar se estiver em rascunho
+    if nota["status"] != "rascunho":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível editar nota com status '{nota['status']}'. Apenas rascunhos podem ser editados."
+        )
+    
+    # Preparar dados para atualização
+    update_data = {k: v for k, v in nota_data.model_dump().items() if v is not None}
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Nenhum campo para atualizar")
+    
+    # Registrar alterações no histórico
+    alteracoes = []
+    for campo, novo_valor in update_data.items():
+        valor_antigo = nota.get(campo)
+        if valor_antigo != novo_valor:
+            alteracoes.append(f"{campo}: {valor_antigo} → {novo_valor}")
+    
+    if alteracoes:
+        historico_entry = {
+            "data": datetime.now(timezone.utc).isoformat(),
+            "usuario": current_user["nome"],
+            "acao": "edicao",
+            "detalhes": "; ".join(alteracoes)
+        }
+        
+        if "historico_alteracoes" not in nota:
+            nota["historico_alteracoes"] = []
+        nota["historico_alteracoes"].append(historico_entry)
+        update_data["historico_alteracoes"] = nota["historico_alteracoes"]
+    
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.notas_fiscais.update_one(
+        {"id": nota_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Nota fiscal atualizada com sucesso", "alteracoes": alteracoes}
+
+@api_router.post("/notas-fiscais/{nota_id}/solicitar-aprovacao")
+async def solicitar_aprovacao_nota(nota_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    Solicita aprovação para uma nota em rascunho
+    """
+    nota = await db.notas_fiscais.find_one({"id": nota_id}, {"_id": 0})
+    if not nota:
+        raise HTTPException(status_code=404, detail="Nota fiscal não encontrada")
+    
+    if nota["status"] != "rascunho":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Apenas notas em rascunho podem solicitar aprovação. Status atual: {nota['status']}"
+        )
+    
+    historico_entry = {
+        "data": datetime.now(timezone.utc).isoformat(),
+        "usuario": current_user["nome"],
+        "acao": "solicitacao_aprovacao",
+        "detalhes": "Nota enviada para aprovação"
+    }
+    
+    if "historico_alteracoes" not in nota:
+        nota["historico_alteracoes"] = []
+    nota["historico_alteracoes"].append(historico_entry)
+    
+    await db.notas_fiscais.update_one(
+        {"id": nota_id},
+        {"$set": {
+            "status": "aguardando_aprovacao",
+            "historico_alteracoes": nota["historico_alteracoes"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Nota fiscal enviada para aprovação"}
+
+@api_router.post("/notas-fiscais/{nota_id}/aprovar")
+async def aprovar_nota_fiscal(nota_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    Aprova uma nota (apenas admin/gerente)
+    """
+    # Validar permissão
+    if current_user["papel"] not in ["admin", "gerente"]:
+        raise HTTPException(status_code=403, detail="Apenas administradores e gerentes podem aprovar notas fiscais")
+    
+    nota = await db.notas_fiscais.find_one({"id": nota_id}, {"_id": 0})
+    if not nota:
+        raise HTTPException(status_code=404, detail="Nota fiscal não encontrada")
+    
+    if nota["status"] != "aguardando_aprovacao":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Apenas notas aguardando aprovação podem ser aprovadas. Status atual: {nota['status']}"
+        )
+    
+    historico_entry = {
+        "data": datetime.now(timezone.utc).isoformat(),
+        "usuario": current_user["nome"],
+        "acao": "aprovacao",
+        "detalhes": f"Nota aprovada por {current_user['nome']}"
+    }
+    
+    if "historico_alteracoes" not in nota:
+        nota["historico_alteracoes"] = []
+    nota["historico_alteracoes"].append(historico_entry)
+    
+    await db.notas_fiscais.update_one(
+        {"id": nota_id},
+        {"$set": {
+            "status": "rascunho",  # Volta para rascunho para poder confirmar
+            "aprovado_por": current_user["id"],
+            "data_aprovacao": datetime.now(timezone.utc).isoformat(),
+            "historico_alteracoes": nota["historico_alteracoes"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Nota fiscal aprovada com sucesso"}
+
+@api_router.post("/notas-fiscais/{nota_id}/confirmar")
+async def confirmar_nota_fiscal(nota_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    Confirma nota fiscal e atualiza estoque (com validações robustas)
+    """
+    nota = await db.notas_fiscais.find_one({"id": nota_id}, {"_id": 0})
+    if not nota:
+        raise HTTPException(status_code=404, detail="Nota fiscal não encontrada")
+    
+    # VALIDAÇÃO: Status deve ser rascunho ou aguardando_aprovacao
+    if nota["status"] not in ["rascunho", "aguardando_aprovacao"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível confirmar nota com status '{nota['status']}'"
+        )
+    
+    # VALIDAÇÃO: Se aguardando aprovação, só admin/gerente pode confirmar
+    if nota["status"] == "aguardando_aprovacao":
+        if current_user["papel"] not in ["admin", "gerente"]:
+            raise HTTPException(
+                status_code=403,
+                detail="Notas aguardando aprovação só podem ser confirmadas por administradores ou gerentes"
+            )
+    
+    if nota.get("confirmado", False) or nota["status"] == "confirmada":
         raise HTTPException(status_code=400, detail="Nota fiscal já confirmada")
     
     # Atualizar estoque
@@ -899,12 +1173,140 @@ async def confirmar_nota_fiscal(nota_id: str, current_user: dict = Depends(get_c
             )
             await db.movimentacoes_estoque.insert_one(movimentacao.model_dump())
     
+    # Adicionar ao histórico
+    historico_entry = {
+        "data": datetime.now(timezone.utc).isoformat(),
+        "usuario": current_user["nome"],
+        "acao": "confirmacao",
+        "detalhes": "Nota fiscal confirmada e estoque atualizado"
+    }
+    
+    if "historico_alteracoes" not in nota:
+        nota["historico_alteracoes"] = []
+    nota["historico_alteracoes"].append(historico_entry)
+    
     await db.notas_fiscais.update_one(
         {"id": nota_id},
-        {"$set": {"confirmado": True}}
+        {"$set": {
+            "confirmado": True,
+            "status": "confirmada",
+            "historico_alteracoes": nota["historico_alteracoes"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Log
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="notas_fiscais",
+        acao="confirmar",
+        detalhes={"nota_id": nota_id, "numero": nota.get("numero")}
     )
     
     return {"message": "Nota fiscal confirmada e estoque atualizado"}
+
+@api_router.post("/notas-fiscais/{nota_id}/cancelar")
+async def cancelar_nota_fiscal(
+    nota_id: str,
+    cancelamento: CancelarNotaRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Cancela uma nota fiscal (diferente de excluir) com justificativa
+    """
+    nota = await db.notas_fiscais.find_one({"id": nota_id}, {"_id": 0})
+    if not nota:
+        raise HTTPException(status_code=404, detail="Nota fiscal não encontrada")
+    
+    if nota.get("cancelada", False):
+        raise HTTPException(status_code=400, detail="Nota fiscal já está cancelada")
+    
+    # Se já foi confirmada, reverter estoque
+    if nota.get("confirmado", False) or nota["status"] == "confirmada":
+        for item in nota.get("itens", []):
+            produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
+            if produto:
+                novo_estoque = produto["estoque_atual"] - item["quantidade"]
+                if novo_estoque < 0:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Cancelamento resultaria em estoque negativo para produto '{produto['nome']}'"
+                    )
+                await db.produtos.update_one(
+                    {"id": item["produto_id"]},
+                    {"$set": {"estoque_atual": novo_estoque}}
+                )
+                
+                # Registrar movimentação de cancelamento
+                movimentacao = MovimentacaoEstoque(
+                    produto_id=item["produto_id"],
+                    tipo="saida",
+                    quantidade=item["quantidade"],
+                    referencia_tipo="cancelamento_nota_fiscal",
+                    referencia_id=nota_id,
+                    user_id=current_user["id"]
+                )
+                await db.movimentacoes_estoque.insert_one(movimentacao.model_dump())
+    
+    # Adicionar ao histórico
+    historico_entry = {
+        "data": datetime.now(timezone.utc).isoformat(),
+        "usuario": current_user["nome"],
+        "acao": "cancelamento",
+        "detalhes": f"Motivo: {cancelamento.motivo}"
+    }
+    
+    if "historico_alteracoes" not in nota:
+        nota["historico_alteracoes"] = []
+    nota["historico_alteracoes"].append(historico_entry)
+    
+    await db.notas_fiscais.update_one(
+        {"id": nota_id},
+        {"$set": {
+            "cancelada": True,
+            "status": "cancelada",
+            "motivo_cancelamento": cancelamento.motivo,
+            "cancelada_por": current_user["id"],
+            "data_cancelamento": datetime.now(timezone.utc).isoformat(),
+            "historico_alteracoes": nota["historico_alteracoes"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Log
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="notas_fiscais",
+        acao="cancelar",
+        detalhes={
+            "nota_id": nota_id,
+            "numero": nota.get("numero"),
+            "motivo": cancelamento.motivo
+        }
+    )
+    
+    return {"message": "Nota fiscal cancelada com sucesso"}
+
+@api_router.get("/notas-fiscais/{nota_id}/historico")
+async def get_historico_nota(nota_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    Retorna o histórico completo de alterações da nota fiscal
+    """
+    nota = await db.notas_fiscais.find_one({"id": nota_id}, {"_id": 0})
+    if not nota:
+        raise HTTPException(status_code=404, detail="Nota fiscal não encontrada")
+    
+    return {
+        "nota_id": nota_id,
+        "numero": nota.get("numero"),
+        "serie": nota.get("serie"),
+        "status": nota.get("status"),
+        "historico": nota.get("historico_alteracoes", [])
+    }
 
 @api_router.delete("/notas-fiscais/{nota_id}")
 async def delete_nota_fiscal(nota_id: str, current_user: dict = Depends(get_current_user)):
