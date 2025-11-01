@@ -224,10 +224,10 @@ const Logs = () => {
       data_inicio: '',
       data_fim: '',
       user_id: '',
-      severidade: '',
+      severidade: 'all',
       tela: '',
       acao: '',
-      metodo_http: ''
+      metodo_http: 'all'
     });
     setCurrentPage(1);
   };
