@@ -3563,10 +3563,381 @@ async def vendas_por_periodo(current_user: dict = Depends(get_current_user)):
 
 # ========== LOGS ==========
 
-@api_router.get("/logs", response_model=List[Log])
-async def get_logs(current_user: dict = Depends(get_current_user)):
-    logs = await db.logs.find({}, {"_id": 0}).sort("timestamp", -1).to_list(200)
-    return logs
+# ========== LOGS AVANÇADOS ==========
+
+# Configuração de retenção
+DIAS_RETENCAO_LOGS = 90
+
+@api_router.get("/logs")
+async def get_logs(
+    data_inicio: str = None,
+    data_fim: str = None,
+    user_id: str = None,
+    severidade: str = None,
+    tela: str = None,
+    acao: str = None,
+    metodo_http: str = None,
+    limit: int = 50,
+    offset: int = 0,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Lista logs com filtros avançados e paginação
+    """
+    # Apenas admin pode ver todos os logs
+    if current_user["papel"] != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores podem acessar logs")
+    
+    filtro = {"arquivado": False}
+    
+    # Aplicar filtros
+    if data_inicio and data_fim:
+        filtro["timestamp"] = {"$gte": data_inicio, "$lte": data_fim}
+    elif data_inicio:
+        filtro["timestamp"] = {"$gte": data_inicio}
+    elif data_fim:
+        filtro["timestamp"] = {"$lte": data_fim}
+    
+    if user_id:
+        filtro["user_id"] = user_id
+    if severidade:
+        filtro["severidade"] = severidade
+    if tela:
+        filtro["tela"] = tela
+    if acao:
+        filtro["acao"] = acao
+    if metodo_http:
+        filtro["metodo_http"] = metodo_http
+    
+    # Contar total
+    total = await db.logs.count_documents(filtro)
+    
+    # Buscar logs com paginação
+    logs = await db.logs.find(filtro, {"_id": 0}).sort("timestamp", -1).skip(offset).limit(limit).to_list(limit)
+    
+    return {
+        "logs": logs,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "has_more": (offset + limit) < total
+    }
+
+@api_router.get("/logs/estatisticas")
+async def get_estatisticas_logs(
+    data_inicio: str = None,
+    data_fim: str = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Estatísticas avançadas de logs
+    """
+    if current_user["papel"] != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores podem acessar estatísticas")
+    
+    filtro = {"arquivado": False}
+    if data_inicio and data_fim:
+        filtro["timestamp"] = {"$gte": data_inicio, "$lte": data_fim}
+    
+    logs = await db.logs.find(filtro, {"_id": 0}).to_list(10000)
+    
+    # Estatísticas por severidade
+    por_severidade = {}
+    for log in logs:
+        sev = log.get("severidade", "INFO")
+        if sev not in por_severidade:
+            por_severidade[sev] = 0
+        por_severidade[sev] += 1
+    
+    # Estatísticas por usuário
+    por_usuario = {}
+    for log in logs:
+        user = log.get("user_nome", "Desconhecido")
+        if user not in por_usuario:
+            por_usuario[user] = 0
+        por_usuario[user] += 1
+    
+    # Top 10 usuários mais ativos
+    top_usuarios = sorted(por_usuario.items(), key=lambda x: x[1], reverse=True)[:10]
+    
+    # Estatísticas por ação
+    por_acao = {}
+    for log in logs:
+        acao = log.get("acao", "desconhecido")
+        if acao not in por_acao:
+            por_acao[acao] = 0
+        por_acao[acao] += 1
+    
+    # Estatísticas por tela
+    por_tela = {}
+    for log in logs:
+        tela = log.get("tela", "desconhecido")
+        if tela not in por_tela:
+            por_tela[tela] = 0
+        por_tela[tela] += 1
+    
+    # Estatísticas por dispositivo
+    por_dispositivo = {}
+    for log in logs:
+        disp = log.get("dispositivo", "Desconhecido")
+        if disp and disp != "Desconhecido":
+            if disp not in por_dispositivo:
+                por_dispositivo[disp] = 0
+            por_dispositivo[disp] += 1
+    
+    # Estatísticas por navegador
+    por_navegador = {}
+    for log in logs:
+        nav = log.get("navegador", "Desconhecido")
+        if nav and nav != "Desconhecido":
+            if nav not in por_navegador:
+                por_navegador[nav] = 0
+            por_navegador[nav] += 1
+    
+    # Performance médio
+    tempos_execucao = [log.get("tempo_execucao_ms", 0) for log in logs if log.get("tempo_execucao_ms")]
+    tempo_medio = sum(tempos_execucao) / len(tempos_execucao) if tempos_execucao else 0
+    
+    # Erros
+    total_erros = len([l for l in logs if l.get("severidade") in ["ERROR", "CRITICAL"]])
+    
+    return {
+        "periodo": {"data_inicio": data_inicio, "data_fim": data_fim},
+        "total_logs": len(logs),
+        "total_erros": total_erros,
+        "por_severidade": por_severidade,
+        "por_acao": por_acao,
+        "por_tela": por_tela,
+        "por_dispositivo": por_dispositivo,
+        "por_navegador": por_navegador,
+        "top_usuarios": [{"usuario": u, "quantidade": q} for u, q in top_usuarios],
+        "performance": {
+            "tempo_medio_ms": tempo_medio,
+            "total_medidas": len(tempos_execucao)
+        }
+    }
+
+@api_router.get("/logs/dashboard")
+async def get_dashboard_logs(current_user: dict = Depends(get_current_user)):
+    """
+    Dashboard resumido de logs para os últimos 7 dias
+    """
+    if current_user["papel"] != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores podem acessar o dashboard")
+    
+    # Últimos 7 dias
+    data_inicio = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    
+    logs = await db.logs.find(
+        {"timestamp": {"$gte": data_inicio}, "arquivado": False},
+        {"_id": 0}
+    ).to_list(10000)
+    
+    # KPIs
+    total_logs = len(logs)
+    total_erros = len([l for l in logs if l.get("severidade") in ["ERROR", "CRITICAL"]])
+    total_security = len([l for l in logs if l.get("severidade") == "SECURITY"])
+    usuarios_ativos = len(set(l.get("user_id") for l in logs))
+    
+    # Atividade por dia
+    atividade_por_dia = {}
+    for log in logs:
+        dia = log["timestamp"][:10]
+        if dia not in atividade_por_dia:
+            atividade_por_dia[dia] = 0
+        atividade_por_dia[dia] += 1
+    
+    # Logs de segurança recentes
+    logs_seguranca = await db.logs_seguranca.find(
+        {"timestamp": {"$gte": data_inicio}},
+        {"_id": 0}
+    ).sort("timestamp", -1).limit(10).to_list(10)
+    
+    return {
+        "periodo": "Últimos 7 dias",
+        "kpis": {
+            "total_logs": total_logs,
+            "total_erros": total_erros,
+            "total_security": total_security,
+            "usuarios_ativos": usuarios_ativos
+        },
+        "atividade_por_dia": atividade_por_dia,
+        "logs_seguranca_recentes": logs_seguranca
+    }
+
+@api_router.get("/logs/seguranca")
+async def get_logs_seguranca(
+    limit: int = 100,
+    offset: int = 0,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Lista logs de segurança específicos
+    """
+    if current_user["papel"] != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores podem acessar logs de segurança")
+    
+    total = await db.logs_seguranca.count_documents({})
+    
+    logs = await db.logs_seguranca.find({}, {"_id": 0}).sort("timestamp", -1).skip(offset).limit(limit).to_list(limit)
+    
+    return {
+        "logs": logs,
+        "total": total,
+        "limit": limit,
+        "offset": offset
+    }
+
+@api_router.get("/logs/exportar")
+async def exportar_logs(
+    formato: str = "json",  # json, csv
+    data_inicio: str = None,
+    data_fim: str = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Exporta logs em diferentes formatos
+    """
+    if current_user["papel"] != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores podem exportar logs")
+    
+    filtro = {"arquivado": False}
+    if data_inicio and data_fim:
+        filtro["timestamp"] = {"$gte": data_inicio, "$lte": data_fim}
+    
+    logs = await db.logs.find(filtro, {"_id": 0}).sort("timestamp", -1).to_list(5000)
+    
+    if formato == "json":
+        return {
+            "formato": "json",
+            "total": len(logs),
+            "logs": logs
+        }
+    elif formato == "csv":
+        # Converter para CSV simplificado
+        csv_lines = ["timestamp,user_nome,tela,acao,severidade,ip"]
+        for log in logs:
+            line = f"{log.get('timestamp')},{log.get('user_nome')},{log.get('tela')},{log.get('acao')},{log.get('severidade')},{log.get('ip')}"
+            csv_lines.append(line)
+        
+        return {
+            "formato": "csv",
+            "total": len(logs),
+            "data": "\n".join(csv_lines)
+        }
+    else:
+        raise HTTPException(status_code=400, detail="Formato inválido. Use 'json' ou 'csv'")
+
+@api_router.post("/logs/arquivar-antigos")
+async def arquivar_logs_antigos(current_user: dict = Depends(get_current_user)):
+    """
+    Arquiva logs com mais de X dias (apenas admin)
+    """
+    if current_user["papel"] != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores podem arquivar logs")
+    
+    # Data limite
+    data_limite = (datetime.now(timezone.utc) - timedelta(days=DIAS_RETENCAO_LOGS)).isoformat()
+    
+    # Contar logs a arquivar
+    filtro = {
+        "timestamp": {"$lt": data_limite},
+        "arquivado": False
+    }
+    
+    total_arquivar = await db.logs.count_documents(filtro)
+    
+    # Arquivar
+    resultado = await db.logs.update_many(
+        filtro,
+        {"$set": {
+            "arquivado": True,
+            "data_arquivamento": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {
+        "message": f"{total_arquivar} logs arquivados com sucesso",
+        "total_arquivados": resultado.modified_count,
+        "data_limite": data_limite,
+        "dias_retencao": DIAS_RETENCAO_LOGS
+    }
+
+@api_router.get("/logs/atividade-suspeita")
+async def verificar_atividade_suspeita(current_user: dict = Depends(get_current_user)):
+    """
+    Verifica atividades suspeitas no sistema
+    """
+    if current_user["papel"] != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores podem verificar atividades suspeitas")
+    
+    # Últimas 24 horas
+    data_inicio = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    
+    # Buscar múltiplos logins falhos por IP
+    logs_seg = await db.logs_seguranca.find(
+        {"timestamp": {"$gte": data_inicio}, "tipo": "login_falho"},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Agrupar por IP
+    por_ip = {}
+    for log in logs_seg:
+        ip = log.get("ip")
+        if ip not in por_ip:
+            por_ip[ip] = []
+        por_ip[ip].append(log)
+    
+    # IPs suspeitos (5+ tentativas falhas)
+    ips_suspeitos = []
+    for ip, logs_ip in por_ip.items():
+        if len(logs_ip) >= 5:
+            ips_suspeitos.append({
+                "ip": ip,
+                "tentativas": len(logs_ip),
+                "ultima_tentativa": logs_ip[0]["timestamp"],
+                "emails_tentados": list(set(l.get("user_email") for l in logs_ip if l.get("user_email")))
+            })
+    
+    # Acessos negados
+    acessos_negados = await db.logs_seguranca.find(
+        {"timestamp": {"$gte": data_inicio}, "tipo": "acesso_negado"},
+        {"_id": 0}
+    ).limit(20).to_list(20)
+    
+    return {
+        "periodo": "Últimas 24 horas",
+        "ips_suspeitos": ips_suspeitos,
+        "total_ips_suspeitos": len(ips_suspeitos),
+        "acessos_negados_recentes": len(acessos_negados),
+        "detalhes_acessos_negados": acessos_negados[:10]
+    }
+
+@api_router.post("/logs/criar-indices")
+async def criar_indices_logs(current_user: dict = Depends(get_current_user)):
+    """
+    Cria índices no MongoDB para otimização de queries (apenas admin)
+    """
+    if current_user["papel"] != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores podem criar índices")
+    
+    try:
+        # Criar índices
+        await db.logs.create_index([("timestamp", -1)])
+        await db.logs.create_index([("user_id", 1)])
+        await db.logs.create_index([("severidade", 1)])
+        await db.logs.create_index([("tela", 1)])
+        await db.logs.create_index([("acao", 1)])
+        await db.logs.create_index([("arquivado", 1)])
+        await db.logs.create_index([("request_id", 1)])
+        
+        await db.logs_seguranca.create_index([("timestamp", -1)])
+        await db.logs_seguranca.create_index([("tipo", 1)])
+        await db.logs_seguranca.create_index([("ip", 1)])
+        
+        return {"message": "Índices criados com sucesso"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao criar índices: {str(e)}")
 
 # ========== RELATÓRIOS AVANÇADOS ==========
 
