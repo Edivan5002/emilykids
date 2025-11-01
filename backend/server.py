@@ -280,17 +280,74 @@ class Orcamento(BaseModel):
     cliente_id: str
     itens: List[dict]  # [{"produto_id": "", "quantidade": 0, "preco_unitario": 0}]
     desconto: float = 0
+    desconto_percentual: float = 0
     frete: float = 0
     total: float
-    status: str = "aberto"  # aberto, vendido, devolvido, cancelado
+    subtotal: float = 0
+    margem_lucro: float = 0
+    
+    # Status expandido
+    status: str = "rascunho"  # rascunho, em_analise, aprovado, aberto, vendido, devolvido, expirado, perdido
+    
+    # Validade
+    data_validade: str  # Calculada automaticamente
+    dias_validade: int = 7  # Padrão 7 dias
+    
+    # Observações
+    observacoes: Optional[str] = None
+    observacoes_vendedor: Optional[str] = None
+    
+    # Versionamento
+    versao: int = 1
+    orcamento_original_id: Optional[str] = None  # Se for revisão
+    
+    # Perda
+    perdido: bool = False
+    motivo_perda: Optional[str] = None
+    data_perda: Optional[str] = None
+    
+    # Aprovação
+    requer_aprovacao: bool = False
+    aprovado: bool = False
+    aprovado_por: Optional[str] = None
+    data_aprovacao: Optional[str] = None
+    
+    # Auditoria
     user_id: str
+    criado_por_nome: Optional[str] = None
+    historico_alteracoes: List[dict] = []
+    
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: Optional[str] = None
 
 class OrcamentoCreate(BaseModel):
     cliente_id: str
     itens: List[dict]
     desconto: float = 0
     frete: float = 0
+    dias_validade: int = 7
+    observacoes: Optional[str] = None
+    observacoes_vendedor: Optional[str] = None
+
+class OrcamentoUpdate(BaseModel):
+    cliente_id: Optional[str] = None
+    itens: Optional[List[dict]] = None
+    desconto: Optional[float] = None
+    frete: Optional[float] = None
+    observacoes: Optional[str] = None
+    observacoes_vendedor: Optional[str] = None
+
+class ConversaoVendaRequest(BaseModel):
+    forma_pagamento: str
+    desconto: Optional[float] = None  # Novo desconto (se diferente do orçamento)
+    frete: Optional[float] = None  # Novo frete (se diferente do orçamento)
+    observacoes: Optional[str] = None
+
+class DuplicarOrcamentoRequest(BaseModel):
+    novo_cliente_id: Optional[str] = None  # Se None, mantém o mesmo cliente
+
+class MarcarPerdidoRequest(BaseModel):
+    motivo: str
 
 class Venda(BaseModel):
     model_config = ConfigDict(extra="ignore")
