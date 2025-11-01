@@ -41,27 +41,27 @@ class EmilyKidsBackendTester:
         """Authenticate and get JWT token"""
         print("\n=== AUTHENTICATION TEST ===")
         
-        # First try to register a test user
+        # First try to register admin user as specified in review request
         register_data = {
-            "email": "teste.estoque@emilykids.com",
-            "nome": "Teste Estoque",
-            "senha": "senha123",
+            "email": "admin@emilykids.com",
+            "nome": "Admin Emily Kids",
+            "senha": "admin123",
             "papel": "admin"
         }
         
         try:
             response = requests.post(f"{self.base_url}/auth/register", json=register_data)
             if response.status_code == 400 and "já cadastrado" in response.text:
-                print("User already exists, proceeding to login...")
+                print("Admin user already exists, proceeding to login...")
             elif response.status_code == 200:
-                print("User registered successfully")
+                print("Admin user registered successfully")
         except Exception as e:
             print(f"Registration attempt: {e}")
         
-        # Login
+        # Login with admin credentials as specified in review request
         login_data = {
-            "email": "teste.estoque@emilykids.com",
-            "senha": "senha123"
+            "email": "admin@emilykids.com",
+            "senha": "admin123"
         }
         
         try:
@@ -70,7 +70,7 @@ class EmilyKidsBackendTester:
                 data = response.json()
                 self.token = data["access_token"]
                 self.user_id = data["user"]["id"]
-                self.log_test("Authentication", True, "Login successful")
+                self.log_test("Authentication", True, "Admin login successful")
                 return True
             else:
                 self.log_test("Authentication", False, f"Login failed: {response.status_code} - {response.text}")
