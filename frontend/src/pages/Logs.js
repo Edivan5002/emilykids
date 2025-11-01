@@ -109,7 +109,7 @@ const Logs = () => {
       
       // Remover parâmetros vazios
       Object.keys(params).forEach(key => {
-        if (params[key] === '' || params[key] === null) {
+        if (params[key] === '' || params[key] === null || params[key] === 'all') {
           delete params[key];
         }
       });
