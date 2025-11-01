@@ -554,6 +554,163 @@ class AjusteEstoqueRequest(BaseModel):
     motivo: str
     tipo: str  # "entrada" ou "saida"
 
+
+# ========== RBAC MODELS ==========
+
+class Permission(BaseModel):
+    """Permissão individual"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    modulo: str  # produtos, vendas, orcamentos, estoque, etc
+    acao: str  # criar, ler, editar, deletar, exportar, aprovar
+    descricao: Optional[str] = None
+
+class Role(BaseModel):
+    """Papel/Função customizável"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nome: str
+    descricao: Optional[str] = None
+    cor: str = "#6B7280"  # Cor hex para UI
+    is_sistema: bool = False  # Se é papel padrão do sistema (não pode deletar)
+    hierarquia_nivel: int = 99  # Admin=1, Gerente=50, Vendedor=99 (menor = maior poder)
+    permissoes: List[str] = []  # Lista de IDs de permissões
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class RoleCreate(BaseModel):
+    nome: str
+    descricao: Optional[str] = None
+    cor: str = "#6B7280"
+    hierarquia_nivel: int = 99
+    permissoes: List[str] = []
+
+class RoleUpdate(BaseModel):
+    nome: Optional[str] = None
+    descricao: Optional[str] = None
+    cor: Optional[str] = None
+    hierarquia_nivel: Optional[int] = None
+    permissoes: Optional[List[str]] = None
+
+class UserGroup(BaseModel):
+    """Grupo de usuários"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nome: str
+    descricao: Optional[str] = None
+    user_ids: List[str] = []
+    role_ids: List[str] = []  # Papéis aplicados a todos do grupo
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class UserGroupCreate(BaseModel):
+    nome: str
+    descricao: Optional[str] = None
+    user_ids: List[str] = []
+    role_ids: List[str] = []
+
+class PermissionHistory(BaseModel):
+    """Histórico de mudanças de permissões"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str  # Quem fez a mudança
+    user_nome: str
+    target_user_id: Optional[str] = None  # Usuário afetado
+    target_role_id: Optional[str] = None  # Papel afetado
+    acao: str  # role_created, role_updated, role_deleted, permission_added, permission_removed, user_role_changed
+    detalhes: dict
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class TwoFactorAuth(BaseModel):
+    """Configuração de 2FA"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    secret: str
+    ativo: bool = False
+    backup_codes: List[str] = []
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class PasswordPolicy(BaseModel):
+    """Política de senha"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    min_length: int = 8
+    require_uppercase: bool = True
+    require_lowercase: bool = True
+    require_numbers: bool = True
+    require_special_chars: bool = True
+    expiration_days: int = 90  # 0 = sem expiração
+    prevent_reuse: int = 5  # Quantas senhas antigas impedir reutilização
+    max_login_attempts: int = 5
+    lockout_duration_minutes: int = 30
+
+class TemporaryPermission(BaseModel):
+    """Permissão temporária"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    permission_ids: List[str]
+    granted_by: str  # ID do usuário que concedeu
+    valid_from: str
+    valid_until: str
+    motivo: str
+    ativo: bool = True
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class PermissionDelegation(BaseModel):
+    """Delegação de permissões"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    from_user_id: str  # Quem delegou
+    to_user_id: str  # Quem recebeu
+    permission_ids: List[str]
+    valid_from: str
+    valid_until: str
+    motivo: str
+    ativo: bool = True
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class UserSession(BaseModel):
+    """Sessão de usuário para controle"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    token: str
+    ip: str
+    user_agent: str
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    expires_at: str
+    ativo: bool = True
+
+# Atualizar modelo User para incluir novos campos
+class UserExtended(BaseModel):
+    """Usuário com suporte completo RBAC"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    email: EmailStr
+    nome: str
+    senha_hash: str
+    role_id: Optional[str] = None  # ID do papel customizável
+    papel: str = "vendedor"  # Manter compatibilidade (deprecated)
+    grupos: List[str] = []  # IDs dos grupos
+    ativo: bool = True
+    require_2fa: bool = False
+    senha_ultimo_change: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    senha_historia: List[str] = []  # Hashes de senhas antigas
+    login_attempts: int = 0
+    locked_until: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class UserUpdate(BaseModel):
+    nome: Optional[str] = None
+    email: Optional[EmailStr] = None
+    senha: Optional[str] = None
+    papel: Optional[str] = None
+    role_id: Optional[str] = None
+    ativo: Optional[bool] = None
+    require_2fa: Optional[bool] = None
+
 # ========== AUTH UTILS ==========
 
 def hash_password(password: str) -> str:
