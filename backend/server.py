@@ -1310,11 +1310,21 @@ async def get_historico_nota(nota_id: str, current_user: dict = Depends(get_curr
 
 @api_router.delete("/notas-fiscais/{nota_id}")
 async def delete_nota_fiscal(nota_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    Exclui nota fiscal (apenas rascunhos ou com autorização)
+    """
     nota = await db.notas_fiscais.find_one({"id": nota_id}, {"_id": 0})
     if not nota:
         raise HTTPException(status_code=404, detail="Nota fiscal não encontrada")
     
-    # Se a nota foi confirmada, reverter o estoque
+    # VALIDAÇÃO: Não pode excluir notas confirmadas ou canceladas
+    if nota["status"] in ["confirmada", "cancelada"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível excluir nota com status '{nota['status']}'. Use o cancelamento."
+        )
+    
+    # Se a nota foi confirmada anteriormente, reverter o estoque
     if nota.get("confirmado", False):
         for item in nota.get("itens", []):
             produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
@@ -1345,10 +1355,74 @@ async def delete_nota_fiscal(nota_id: str, current_user: dict = Depends(get_curr
         user_nome=current_user["nome"],
         tela="notas_fiscais",
         acao="deletar",
-        detalhes={"nota_id": nota_id, "numero": nota.get("numero"), "confirmado": nota.get("confirmado")}
+        detalhes={"nota_id": nota_id, "numero": nota.get("numero"), "status": nota.get("status")}
     )
     
     return {"message": "Nota fiscal excluída com sucesso"}
+
+@api_router.get("/relatorios/notas-fiscais")
+async def relatorio_notas_fiscais(
+    data_inicio: str = None,
+    data_fim: str = None,
+    fornecedor_id: str = None,
+    status: str = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Relatório de notas fiscais com filtros
+    """
+    filtro = {}
+    
+    if data_inicio and data_fim:
+        filtro["data_emissao"] = {"$gte": data_inicio, "$lte": data_fim}
+    
+    if fornecedor_id:
+        filtro["fornecedor_id"] = fornecedor_id
+    
+    if status:
+        filtro["status"] = status
+    
+    notas = await db.notas_fiscais.find(filtro, {"_id": 0}).to_list(5000)
+    
+    # Estatísticas
+    total_notas = len(notas)
+    valor_total = sum(n["valor_total"] for n in notas)
+    
+    # Por status
+    por_status = {}
+    for nota in notas:
+        st = nota["status"]
+        if st not in por_status:
+            por_status[st] = {"quantidade": 0, "valor": 0}
+        por_status[st]["quantidade"] += 1
+        por_status[st]["valor"] += nota["valor_total"]
+    
+    # Por fornecedor
+    por_fornecedor = {}
+    for nota in notas:
+        forn_id = nota["fornecedor_id"]
+        if forn_id not in por_fornecedor:
+            por_fornecedor[forn_id] = {"quantidade": 0, "valor": 0}
+        por_fornecedor[forn_id]["quantidade"] += 1
+        por_fornecedor[forn_id]["valor"] += nota["valor_total"]
+    
+    # Total de impostos
+    total_impostos = {
+        "icms": sum(n.get("icms", 0) for n in notas),
+        "ipi": sum(n.get("ipi", 0) for n in notas),
+        "pis": sum(n.get("pis", 0) for n in notas),
+        "cofins": sum(n.get("cofins", 0) for n in notas)
+    }
+    
+    return {
+        "periodo": {"data_inicio": data_inicio, "data_fim": data_fim},
+        "total_notas": total_notas,
+        "valor_total": valor_total,
+        "por_status": por_status,
+        "por_fornecedor": por_fornecedor,
+        "total_impostos": total_impostos,
+        "notas": notas[:100]  # Limitar a 100 notas na resposta
+    }
 
 # ========== ORÇAMENTOS ==========
 
