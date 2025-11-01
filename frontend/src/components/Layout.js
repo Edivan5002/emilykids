@@ -19,7 +19,8 @@ import {
   Truck,
   Receipt,
   ClipboardList,
-  UserCog
+  UserCog,
+  Shield
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
