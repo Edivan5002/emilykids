@@ -961,18 +961,21 @@ class EmilyKidsBackendTester:
         if hasattr(self, 'sample_permission_ids'):
             from datetime import datetime, timezone, timedelta
             
-            # Use query parameters as expected by the endpoint
-            params = {
-                "user_id": self.user_id,
-                "permission_ids": self.sample_permission_ids[:2],
-                "valid_from": datetime.now(timezone.utc).isoformat(),
-                "valid_until": (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat(),
-                "motivo": "Teste de permissão temporária"
-            }
+            # Build URL with query parameters for list items
+            base_url = f"{self.base_url}/temporary-permissions"
+            params = [
+                ("user_id", self.user_id),
+                ("valid_from", datetime.now(timezone.utc).isoformat()),
+                ("valid_until", (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()),
+                ("motivo", "Teste de permissão temporária")
+            ]
+            
+            # Add each permission_id as separate parameter
+            for perm_id in self.sample_permission_ids[:2]:
+                params.append(("permission_ids", perm_id))
             
             try:
-                response = requests.post(f"{self.base_url}/temporary-permissions", 
-                                       params=params, headers=self.get_headers())
+                response = requests.post(base_url, params=params, headers=self.get_headers())
                 if response.status_code == 200:
                     temp_perm_id = response.json()["id"]
                     self.log_test("RBAC - Grant Temporary Permission", True, f"Temporary permission granted: {temp_perm_id}")
