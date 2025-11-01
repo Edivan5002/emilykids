@@ -258,6 +258,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Módulo completo de Logs - Frontend"
     - "Endpoint de ajuste manual de estoque (POST /api/estoque/ajuste-manual)"
     - "Módulo completo de Estoque - todas as abas"
   stuck_tasks: []
