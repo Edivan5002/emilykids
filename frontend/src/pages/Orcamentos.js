@@ -167,7 +167,13 @@ const Orcamentos = () => {
     }
 
     try {
-      await axios.post(`${API}/orcamentos/${orcamentoId}/converter-venda?forma_pagamento=${formaPagamento}`);
+      // Enviar como JSON no corpo da requisição
+      await axios.post(`${API}/orcamentos/${orcamentoId}/converter-venda`, {
+        forma_pagamento: formaPagamento,
+        desconto: null,  // Mantém o desconto do orçamento
+        frete: null,     // Mantém o frete do orçamento
+        observacoes: null
+      });
       toast.success('Orçamento convertido em venda com sucesso!');
       fetchData();
     } catch (error) {
