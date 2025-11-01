@@ -2,18 +2,25 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Brain, Eye, EyeOff, Shield, Lock, AlertCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Brain, Eye, EyeOff, Shield, Lock, AlertCircle, Mail, ArrowLeft } from 'lucide-react';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const LoginPage = () => {
   const [loginData, setLoginData] = useState({ email: '', senha: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loginAttempts, setLoginAttempts] = useState(0);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -61,6 +68,29 @@ const LoginPage = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    
+    if (!forgotEmail) {
+      toast.error('Digite seu email');
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
+      await axios.post(`${API}/auth/forgot-password?email=${encodeURIComponent(forgotEmail)}`);
+      toast.success('Instruções enviadas! Verifique seu email (ou console do servidor em desenvolvimento).', {
+        duration: 6000
+      });
+      setShowForgotPassword(false);
+      setForgotEmail('');
+    } catch (error) {
+      toast.error('Erro ao solicitar recuperação de senha');
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -156,6 +186,16 @@ const LoginPage = () => {
                 </div>
               </div>
 
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm text-purple-600 hover:text-purple-800 hover:underline"
+                >
+                  Esqueceu a senha?
+                </button>
+              </div>
+
               <Button
                 type="submit"
                 data-testid="login-submit-btn"
@@ -211,6 +251,73 @@ const LoginPage = () => {
           © 2025 Emily Kids. Todos os direitos reservados.
         </div>
       </div>
+
+      {/* Modal Esqueceu a Senha */}
+      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="text-purple-600" size={24} />
+              Recuperar Senha
+            </DialogTitle>
+            <DialogDescription>
+              Digite seu email para receber instruções de recuperação
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email">Email</Label>
+              <Input
+                id="forgot-email"
+                type="email"
+                placeholder="seu@email.com"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                required
+                disabled={forgotLoading}
+                autoFocus
+              />
+            </div>
+
+            <Alert className="bg-blue-50 border-blue-200">
+              <Mail className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800 text-sm">
+                Você receberá um email com um link para redefinir sua senha. 
+                O link expira em 30 minutos e pode ser usado apenas uma vez.
+              </AlertDescription>
+            </Alert>
+
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowForgotPassword(false)}
+                disabled={forgotLoading}
+                className="flex-1"
+              >
+                <ArrowLeft size={16} className="mr-2" />
+                Voltar
+              </Button>
+              <Button
+                type="submit"
+                disabled={forgotLoading}
+                className="flex-1"
+                style={{backgroundColor: '#267698'}}
+              >
+                {forgotLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Enviando...
+                  </div>
+                ) : (
+                  'Enviar Email'
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
