@@ -1971,20 +1971,20 @@ async def relatorio_auditoria(
     
     # Filtros
     if data_inicio and data_fim:
-        logs = [l for l in logs if data_inicio <= l["timestamp"][:10] <= data_fim]
+        logs = [log for log in logs if data_inicio <= log["timestamp"][:10] <= data_fim]
     
     if user_id:
-        logs = [l for l in logs if l["user_id"] == user_id]
+        logs = [log for log in logs if log["user_id"] == user_id]
     
     if acao:
-        logs = [l for l in logs if l["acao"] == acao]
+        logs = [log for log in logs if log["acao"] == acao]
     
     # Estatísticas
     acoes_por_tipo = {}
     acoes_por_usuario = {}
     acoes_por_tela = {}
     
-    for log in logs:
+    for log_item in logs:
         # Por tipo de ação
         acao_tipo = log["acao"]
         if acao_tipo not in acoes_por_tipo:
