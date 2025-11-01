@@ -223,6 +223,21 @@ frontend:
         agent: "main"
         comment: "Criada aba Ajuste Manual com formulário completo (produto, tipo, quantidade, motivo). Integrado com AutorizacaoModal - vendedores precisam de autorização de supervisor/admin, admin/gerente podem ajustar direto. Mostra últimos 10 ajustes manuais realizados."
 
+  - task: "Módulo completo de Logs - Backend (8 endpoints robustos)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implementados 8 endpoints robustos de logs: GET /api/logs (lista com filtros), GET /api/logs/estatisticas (estatísticas avançadas), GET /api/logs/dashboard (KPIs últimos 7 dias), GET /api/logs/seguranca (logs específicos segurança), GET /api/logs/exportar (JSON/CSV), POST /api/logs/arquivar-antigos (arquivar logs antigos), GET /api/logs/atividade-suspeita (detecção IPs suspeitos), POST /api/logs/criar-indices (otimização MongoDB). Apenas usuários admin podem acessar."
+      - working: true
+        agent: "testing"
+        comment: "✅ TODOS OS 8 ENDPOINTS DE LOGS TESTADOS COM SUCESSO! Executei 14 testes abrangentes cobrindo todos os cenários: (1) GET /api/logs - lista básica e filtros funcionando perfeitamente; (2) GET /api/logs/estatisticas - estatísticas por severidade, ação, tela, dispositivo, navegador, top usuários e performance calculadas corretamente; (3) GET /api/logs/dashboard - KPIs dos últimos 7 dias (total logs, erros, eventos segurança, usuários ativos) e atividade por dia funcionando; (4) GET /api/logs/seguranca - logs de segurança com paginação funcionando; (5) GET /api/logs/exportar - exportação JSON e CSV funcionando, formato inválido corretamente rejeitado; (6) POST /api/logs/arquivar-antigos - arquivamento de logs antigos (90+ dias) funcionando; (7) GET /api/logs/atividade-suspeita - detecção de IPs suspeitos e acessos negados funcionando; (8) POST /api/logs/criar-indices - criação de índices MongoDB funcionando. AUTENTICAÇÃO: apenas admin pode acessar (403 para não-admin testado e funcionando). Taxa de sucesso: 100% (14/14 testes de logs). Sistema de logs COMPLETO e FUNCIONANDO PERFEITAMENTE."
+
   - task: "Módulo completo de Logs - Frontend"
     implemented: true
     working: "NA"
