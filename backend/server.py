@@ -1986,19 +1986,19 @@ async def relatorio_auditoria(
     
     for log_item in logs:
         # Por tipo de ação
-        acao_tipo = log["acao"]
+        acao_tipo = log_item["acao"]
         if acao_tipo not in acoes_por_tipo:
             acoes_por_tipo[acao_tipo] = 0
         acoes_por_tipo[acao_tipo] += 1
         
         # Por usuário
-        usuario = log["user_nome"]
+        usuario = log_item["user_nome"]
         if usuario not in acoes_por_usuario:
             acoes_por_usuario[usuario] = 0
         acoes_por_usuario[usuario] += 1
         
         # Por tela
-        tela = log["tela"]
+        tela = log_item["tela"]
         if tela not in acoes_por_tela:
             acoes_por_tela[tela] = 0
         acoes_por_tela[tela] += 1
