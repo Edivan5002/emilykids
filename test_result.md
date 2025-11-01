@@ -339,11 +339,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Conversão de Orçamento para Venda (POST /api/orcamentos/{orcamento_id}/converter-venda)"
-    - "Criação de Notas Fiscais com validação datetime (POST /api/notas-fiscais)"
-    - "Criação de Vendas com validação de estoque (POST /api/vendas)"
-    - "Validação de expiração de Orçamentos com datetime"
-    - "Endpoint de ajuste manual de estoque (POST /api/estoque/ajuste-manual)"
+    - "Sistema Completo de RBAC (Role-Based Access Control)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
