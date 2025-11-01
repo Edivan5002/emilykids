@@ -958,7 +958,8 @@ class EmilyKidsBackendTester:
         if hasattr(self, 'sample_permission_ids'):
             from datetime import datetime, timezone, timedelta
             
-            temp_perm_data = {
+            # Use query parameters as expected by the endpoint
+            params = {
                 "user_id": self.user_id,
                 "permission_ids": self.sample_permission_ids[:2],
                 "valid_from": datetime.now(timezone.utc).isoformat(),
@@ -968,7 +969,7 @@ class EmilyKidsBackendTester:
             
             try:
                 response = requests.post(f"{self.base_url}/temporary-permissions", 
-                                       json=temp_perm_data, headers=self.get_headers())
+                                       params=params, headers=self.get_headers())
                 if response.status_code == 200:
                     temp_perm_id = response.json()["id"]
                     self.log_test("RBAC - Grant Temporary Permission", True, f"Temporary permission granted: {temp_perm_id}")
