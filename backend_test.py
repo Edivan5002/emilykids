@@ -712,6 +712,397 @@ class EmilyKidsBackendTester:
         except Exception as e:
             self.log_test("Logs - Non-admin Access Control", False, f"Error: {str(e)}")
 
+    def test_rbac_system_complete(self):
+        """Test complete RBAC system - ALL ENDPOINTS as specified in review request"""
+        print("\n=== TESTING COMPLETE RBAC SYSTEM ===")
+        
+        # Test 1: Initialize RBAC system
+        print("\n--- Testing RBAC Initialization ---")
+        try:
+            response = requests.post(f"{self.base_url}/rbac/initialize", headers=self.get_headers())
+            if response.status_code == 200:
+                self.log_test("RBAC - Initialize System", True, "RBAC system initialized with default roles")
+            else:
+                self.log_test("RBAC - Initialize System", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("RBAC - Initialize System", False, f"Error: {str(e)}")
+        
+        # Test 2: List all roles (should have 4 default roles)
+        print("\n--- Testing GET /api/roles ---")
+        try:
+            response = requests.get(f"{self.base_url}/roles", headers=self.get_headers())
+            if response.status_code == 200:
+                roles = response.json()
+                if len(roles) >= 4:
+                    role_names = [role["nome"] for role in roles]
+                    expected_roles = ["Administrador", "Gerente", "Vendedor", "Visualizador"]
+                    if all(role in role_names for role in expected_roles):
+                        self.log_test("RBAC - List Default Roles", True, f"Found {len(roles)} roles including all 4 default roles")
+                        self.default_roles = {role["nome"]: role for role in roles}
+                    else:
+                        self.log_test("RBAC - List Default Roles", False, f"Missing default roles. Found: {role_names}")
+                else:
+                    self.log_test("RBAC - List Default Roles", False, f"Expected at least 4 roles, found {len(roles)}")
+            else:
+                self.log_test("RBAC - List Default Roles", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("RBAC - List Default Roles", False, f"Error: {str(e)}")
+        
+        # Test 3: Get specific role
+        if hasattr(self, 'default_roles') and "Administrador" in self.default_roles:
+            admin_role_id = self.default_roles["Administrador"]["id"]
+            try:
+                response = requests.get(f"{self.base_url}/roles/{admin_role_id}", headers=self.get_headers())
+                if response.status_code == 200:
+                    role_data = response.json()
+                    if role_data["nome"] == "Administrador" and role_data["is_sistema"]:
+                        self.log_test("RBAC - Get Specific Role", True, "Admin role retrieved successfully")
+                    else:
+                        self.log_test("RBAC - Get Specific Role", False, f"Unexpected role data: {role_data}")
+                else:
+                    self.log_test("RBAC - Get Specific Role", False, f"HTTP {response.status_code}: {response.text}")
+            except Exception as e:
+                self.log_test("RBAC - Get Specific Role", False, f"Error: {str(e)}")
+        
+        # Test 4: Create custom role
+        print("\n--- Testing POST /api/roles ---")
+        custom_role_data = {
+            "nome": "Supervisor Teste",
+            "descricao": "Papel customizado para testes",
+            "cor": "#FF5722",
+            "hierarquia_nivel": 75,
+            "permissoes": []  # Will add permissions after getting them
+        }
+        
+        custom_role_id = None
+        try:
+            response = requests.post(f"{self.base_url}/roles", json=custom_role_data, headers=self.get_headers())
+            if response.status_code == 200:
+                custom_role_id = response.json()["role_id"]
+                self.log_test("RBAC - Create Custom Role", True, f"Custom role created: {custom_role_id}")
+            else:
+                self.log_test("RBAC - Create Custom Role", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("RBAC - Create Custom Role", False, f"Error: {str(e)}")
+        
+        # Test 5: Try to create role with duplicate name (should fail)
+        try:
+            response = requests.post(f"{self.base_url}/roles", json=custom_role_data, headers=self.get_headers())
+            if response.status_code == 400:
+                error_msg = response.json().get("detail", response.text)
+                if "já existe" in error_msg.lower() or "nome" in error_msg.lower():
+                    self.log_test("RBAC - Prevent Duplicate Role Name", True, f"Correctly prevented duplicate: {error_msg}")
+                else:
+                    self.log_test("RBAC - Prevent Duplicate Role Name", False, f"Wrong error message: {error_msg}")
+            else:
+                self.log_test("RBAC - Prevent Duplicate Role Name", False, f"Expected 400 but got {response.status_code}")
+        except Exception as e:
+            self.log_test("RBAC - Prevent Duplicate Role Name", False, f"Error: {str(e)}")
+        
+        # Test 6: List all permissions
+        print("\n--- Testing GET /api/permissions ---")
+        try:
+            response = requests.get(f"{self.base_url}/permissions", headers=self.get_headers())
+            if response.status_code == 200:
+                permissions = response.json()
+                if len(permissions) > 0:
+                    self.log_test("RBAC - List Permissions", True, f"Found {len(permissions)} permissions")
+                    self.permissions = permissions
+                    # Sample some permission IDs for later tests
+                    self.sample_permission_ids = [perm["id"] for perm in permissions[:5]]
+                else:
+                    self.log_test("RBAC - List Permissions", False, "No permissions found")
+            else:
+                self.log_test("RBAC - List Permissions", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("RBAC - List Permissions", False, f"Error: {str(e)}")
+        
+        # Test 7: Get permissions by module
+        print("\n--- Testing GET /api/permissions/by-module ---")
+        try:
+            response = requests.get(f"{self.base_url}/permissions/by-module", headers=self.get_headers())
+            if response.status_code == 200:
+                by_module = response.json()
+                if isinstance(by_module, dict) and len(by_module) > 0:
+                    modules = list(by_module.keys())
+                    self.log_test("RBAC - Permissions by Module", True, f"Permissions grouped by {len(modules)} modules: {modules[:5]}")
+                else:
+                    self.log_test("RBAC - Permissions by Module", False, f"Invalid response format: {by_module}")
+            else:
+                self.log_test("RBAC - Permissions by Module", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("RBAC - Permissions by Module", False, f"Error: {str(e)}")
+        
+        # Test 8: Update custom role with permissions
+        if custom_role_id and hasattr(self, 'sample_permission_ids'):
+            print("\n--- Testing PUT /api/roles/{role_id} ---")
+            update_data = {
+                "descricao": "Papel customizado atualizado",
+                "permissoes": self.sample_permission_ids
+            }
+            
+            try:
+                response = requests.put(f"{self.base_url}/roles/{custom_role_id}", json=update_data, headers=self.get_headers())
+                if response.status_code == 200:
+                    self.log_test("RBAC - Update Custom Role", True, "Custom role updated with permissions")
+                else:
+                    self.log_test("RBAC - Update Custom Role", False, f"HTTP {response.status_code}: {response.text}")
+            except Exception as e:
+                self.log_test("RBAC - Update Custom Role", False, f"Error: {str(e)}")
+        
+        # Test 9: Try to edit system role (should fail)
+        if hasattr(self, 'default_roles') and "Administrador" in self.default_roles:
+            admin_role_id = self.default_roles["Administrador"]["id"]
+            try:
+                update_data = {"descricao": "Tentativa de editar papel do sistema"}
+                response = requests.put(f"{self.base_url}/roles/{admin_role_id}", json=update_data, headers=self.get_headers())
+                if response.status_code == 400:
+                    error_msg = response.json().get("detail", response.text)
+                    if "sistema" in error_msg.lower():
+                        self.log_test("RBAC - Prevent System Role Edit", True, f"Correctly prevented system role edit: {error_msg}")
+                    else:
+                        self.log_test("RBAC - Prevent System Role Edit", False, f"Wrong error message: {error_msg}")
+                else:
+                    self.log_test("RBAC - Prevent System Role Edit", False, f"Expected 400 but got {response.status_code}")
+            except Exception as e:
+                self.log_test("RBAC - Prevent System Role Edit", False, f"Error: {str(e)}")
+        
+        # Test 10: Duplicate role
+        if custom_role_id:
+            print("\n--- Testing POST /api/roles/{role_id}/duplicate ---")
+            try:
+                params = {"novo_nome": "Supervisor Teste Duplicado"}
+                response = requests.post(f"{self.base_url}/roles/{custom_role_id}/duplicate", 
+                                       params=params, headers=self.get_headers())
+                if response.status_code == 200:
+                    duplicated_role_id = response.json()["role_id"]
+                    self.log_test("RBAC - Duplicate Role", True, f"Role duplicated successfully: {duplicated_role_id}")
+                    self.duplicated_role_id = duplicated_role_id
+                else:
+                    self.log_test("RBAC - Duplicate Role", False, f"HTTP {response.status_code}: {response.text}")
+            except Exception as e:
+                self.log_test("RBAC - Duplicate Role", False, f"Error: {str(e)}")
+        
+        # Test 11: Create user group
+        print("\n--- Testing POST /api/user-groups ---")
+        group_data = {
+            "nome": "Grupo Teste RBAC",
+            "descricao": "Grupo para testes do sistema RBAC",
+            "user_ids": [self.user_id],  # Add current admin user
+            "role_ids": [custom_role_id] if custom_role_id else []
+        }
+        
+        group_id = None
+        try:
+            response = requests.post(f"{self.base_url}/user-groups", json=group_data, headers=self.get_headers())
+            if response.status_code == 200:
+                group_id = response.json()["group_id"]
+                self.log_test("RBAC - Create User Group", True, f"User group created: {group_id}")
+            else:
+                self.log_test("RBAC - Create User Group", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("RBAC - Create User Group", False, f"Error: {str(e)}")
+        
+        # Test 12: List user groups
+        print("\n--- Testing GET /api/user-groups ---")
+        try:
+            response = requests.get(f"{self.base_url}/user-groups", headers=self.get_headers())
+            if response.status_code == 200:
+                groups = response.json()
+                if len(groups) > 0:
+                    self.log_test("RBAC - List User Groups", True, f"Found {len(groups)} user groups")
+                else:
+                    self.log_test("RBAC - List User Groups", True, "No user groups found (expected for new system)")
+            else:
+                self.log_test("RBAC - List User Groups", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("RBAC - List User Groups", False, f"Error: {str(e)}")
+        
+        # Test 13: Update user group
+        if group_id:
+            print("\n--- Testing PUT /api/user-groups/{group_id} ---")
+            update_group_data = {
+                "nome": "Grupo Teste RBAC Atualizado",
+                "descricao": "Grupo atualizado para testes",
+                "user_ids": [self.user_id],
+                "role_ids": []
+            }
+            
+            try:
+                response = requests.put(f"{self.base_url}/user-groups/{group_id}", json=update_group_data, headers=self.get_headers())
+                if response.status_code == 200:
+                    self.log_test("RBAC - Update User Group", True, "User group updated successfully")
+                else:
+                    self.log_test("RBAC - Update User Group", False, f"HTTP {response.status_code}: {response.text}")
+            except Exception as e:
+                self.log_test("RBAC - Update User Group", False, f"Error: {str(e)}")
+        
+        # Test 14: Get user permissions
+        print("\n--- Testing GET /api/users/{user_id}/permissions ---")
+        try:
+            response = requests.get(f"{self.base_url}/users/{self.user_id}/permissions", headers=self.get_headers())
+            if response.status_code == 200:
+                user_perms = response.json()
+                required_fields = ["user_id", "total_permissions", "permissions", "by_module"]
+                if all(field in user_perms for field in required_fields):
+                    self.log_test("RBAC - Get User Permissions", True, f"User has {user_perms['total_permissions']} effective permissions")
+                else:
+                    self.log_test("RBAC - Get User Permissions", False, f"Missing fields in response: {user_perms.keys()}")
+            else:
+                self.log_test("RBAC - Get User Permissions", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("RBAC - Get User Permissions", False, f"Error: {str(e)}")
+        
+        # Test 15: Grant temporary permission
+        print("\n--- Testing POST /api/temporary-permissions ---")
+        if hasattr(self, 'sample_permission_ids'):
+            from datetime import datetime, timezone, timedelta
+            
+            temp_perm_data = {
+                "user_id": self.user_id,
+                "permission_ids": self.sample_permission_ids[:2],
+                "valid_from": datetime.now(timezone.utc).isoformat(),
+                "valid_until": (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat(),
+                "motivo": "Teste de permissão temporária"
+            }
+            
+            try:
+                response = requests.post(f"{self.base_url}/temporary-permissions", 
+                                       json=temp_perm_data, headers=self.get_headers())
+                if response.status_code == 200:
+                    temp_perm_id = response.json()["id"]
+                    self.log_test("RBAC - Grant Temporary Permission", True, f"Temporary permission granted: {temp_perm_id}")
+                else:
+                    self.log_test("RBAC - Grant Temporary Permission", False, f"HTTP {response.status_code}: {response.text}")
+            except Exception as e:
+                self.log_test("RBAC - Grant Temporary Permission", False, f"Error: {str(e)}")
+        
+        # Test 16: List user temporary permissions
+        print("\n--- Testing GET /api/users/{user_id}/temporary-permissions ---")
+        try:
+            response = requests.get(f"{self.base_url}/users/{self.user_id}/temporary-permissions", headers=self.get_headers())
+            if response.status_code == 200:
+                temp_perms = response.json()
+                self.log_test("RBAC - List User Temporary Permissions", True, f"Found {len(temp_perms)} temporary permissions")
+            else:
+                self.log_test("RBAC - List User Temporary Permissions", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("RBAC - List User Temporary Permissions", False, f"Error: {str(e)}")
+        
+        # Test 17: Get permission history
+        print("\n--- Testing GET /api/permission-history ---")
+        try:
+            response = requests.get(f"{self.base_url}/permission-history", headers=self.get_headers())
+            if response.status_code == 200:
+                history = response.json()
+                required_fields = ["total", "limit", "offset", "history"]
+                if all(field in history for field in required_fields):
+                    self.log_test("RBAC - Permission History", True, f"Found {history['total']} permission history entries")
+                else:
+                    self.log_test("RBAC - Permission History", False, f"Missing fields in response: {history.keys()}")
+            else:
+                self.log_test("RBAC - Permission History", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("RBAC - Permission History", False, f"Error: {str(e)}")
+        
+        # Test 18: Try to delete system role (should fail)
+        if hasattr(self, 'default_roles') and "Vendedor" in self.default_roles:
+            vendedor_role_id = self.default_roles["Vendedor"]["id"]
+            try:
+                response = requests.delete(f"{self.base_url}/roles/{vendedor_role_id}", headers=self.get_headers())
+                if response.status_code == 400:
+                    error_msg = response.json().get("detail", response.text)
+                    if "sistema" in error_msg.lower():
+                        self.log_test("RBAC - Prevent System Role Deletion", True, f"Correctly prevented system role deletion: {error_msg}")
+                    else:
+                        self.log_test("RBAC - Prevent System Role Deletion", False, f"Wrong error message: {error_msg}")
+                else:
+                    self.log_test("RBAC - Prevent System Role Deletion", False, f"Expected 400 but got {response.status_code}")
+            except Exception as e:
+                self.log_test("RBAC - Prevent System Role Deletion", False, f"Error: {str(e)}")
+        
+        # Test 19: Delete custom role
+        if custom_role_id:
+            print("\n--- Testing DELETE /api/roles/{role_id} ---")
+            try:
+                response = requests.delete(f"{self.base_url}/roles/{custom_role_id}", headers=self.get_headers())
+                if response.status_code == 200:
+                    self.log_test("RBAC - Delete Custom Role", True, "Custom role deleted successfully")
+                else:
+                    self.log_test("RBAC - Delete Custom Role", False, f"HTTP {response.status_code}: {response.text}")
+            except Exception as e:
+                self.log_test("RBAC - Delete Custom Role", False, f"Error: {str(e)}")
+        
+        # Test 20: Delete user group
+        if group_id:
+            print("\n--- Testing DELETE /api/user-groups/{group_id} ---")
+            try:
+                response = requests.delete(f"{self.base_url}/user-groups/{group_id}", headers=self.get_headers())
+                if response.status_code == 200:
+                    self.log_test("RBAC - Delete User Group", True, "User group deleted successfully")
+                else:
+                    self.log_test("RBAC - Delete User Group", False, f"HTTP {response.status_code}: {response.text}")
+            except Exception as e:
+                self.log_test("RBAC - Delete User Group", False, f"Error: {str(e)}")
+        
+        # Test 21: Test non-admin access (should get 403)
+        print("\n--- Testing Non-Admin Access Control ---")
+        
+        # Create a non-admin user for testing
+        non_admin_data = {
+            "email": "vendedor.rbac@emilykids.com",
+            "nome": "Vendedor RBAC Teste",
+            "senha": "senha123",
+            "papel": "vendedor"
+        }
+        
+        try:
+            # Register non-admin user
+            response = requests.post(f"{self.base_url}/auth/register", json=non_admin_data)
+            # Login as non-admin
+            login_data = {
+                "email": "vendedor.rbac@emilykids.com",
+                "senha": "senha123"
+            }
+            response = requests.post(f"{self.base_url}/auth/login", json=login_data)
+            if response.status_code == 200:
+                non_admin_token = response.json()["access_token"]
+                non_admin_headers = {
+                    "Authorization": f"Bearer {non_admin_token}",
+                    "Content-Type": "application/json"
+                }
+                
+                # Try to access RBAC endpoints with non-admin user
+                rbac_endpoints = [
+                    ("GET", "/roles"),
+                    ("POST", "/roles"),
+                    ("GET", "/permissions"),
+                    ("GET", "/user-groups"),
+                    ("POST", "/rbac/initialize")
+                ]
+                
+                access_denied_count = 0
+                for method, endpoint in rbac_endpoints:
+                    try:
+                        if method == "GET":
+                            response = requests.get(f"{self.base_url}{endpoint}", headers=non_admin_headers)
+                        else:
+                            response = requests.post(f"{self.base_url}{endpoint}", json={}, headers=non_admin_headers)
+                        
+                        if response.status_code == 403:
+                            access_denied_count += 1
+                    except:
+                        pass
+                
+                if access_denied_count >= 4:  # Most endpoints should deny access
+                    self.log_test("RBAC - Non-admin Access Control", True, f"Non-admin correctly denied access to {access_denied_count}/{len(rbac_endpoints)} RBAC endpoints")
+                else:
+                    self.log_test("RBAC - Non-admin Access Control", False, f"Only {access_denied_count}/{len(rbac_endpoints)} endpoints denied access")
+            else:
+                self.log_test("RBAC - Non-admin User Setup", False, f"Failed to login non-admin user: {response.status_code}")
+        except Exception as e:
+            self.log_test("RBAC - Non-admin Access Control", False, f"Error: {str(e)}")
+
     def test_manual_stock_adjustment(self):
         """Test manual stock adjustment endpoint - NEW FEATURE"""
         print("\n=== TESTING MANUAL STOCK ADJUSTMENT ENDPOINT ===")
