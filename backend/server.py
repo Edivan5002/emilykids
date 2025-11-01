@@ -2278,20 +2278,100 @@ async def delete_orcamento(orcamento_id: str, current_user: dict = Depends(get_c
 
 # ========== VENDAS ==========
 
+# ========== VENDAS ==========
+
+# Configurações
+VALOR_MINIMO_AUTORIZACAO_VENDA = 5000.00
+LIMITE_DESCONTO_VENDEDOR = 5.0  # 5%
+LIMITE_DESCONTO_GERENTE = 15.0  # 15%
+TAXA_CARTAO_PADRAO = 3.5  # 3.5%
+COMISSAO_VENDEDOR_PADRAO = 2.0  # 2%
+
+async def gerar_proximo_numero_venda() -> str:
+    """Gera próximo número sequencial de venda"""
+    ultima_venda = await db.vendas.find({}, {"_id": 0, "numero_venda": 1}).sort("created_at", -1).limit(1).to_list(1)
+    
+    if ultima_venda and "numero_venda" in ultima_venda[0]:
+        ultimo_numero = int(ultima_venda[0]["numero_venda"].split("-")[1])
+        proximo_numero = ultimo_numero + 1
+    else:
+        proximo_numero = 1
+    
+    return f"VEN-{proximo_numero:05d}"
+
+def calcular_parcelas(total: float, numero_parcelas: int, data_base: str = None) -> List[dict]:
+    """Calcula parcelas com datas de vencimento"""
+    if data_base is None:
+        data_base = datetime.now(timezone.utc).isoformat()
+    
+    valor_parcela = total / numero_parcelas
+    parcelas = []
+    
+    for i in range(numero_parcelas):
+        data_vencimento = datetime.fromisoformat(data_base) + timedelta(days=30 * (i + 1))
+        parcelas.append({
+            "numero": i + 1,
+            "valor": valor_parcela,
+            "data_vencimento": data_vencimento.isoformat(),
+            "data_pagamento": None,
+            "status": "pendente",
+            "juros": 0,
+            "multa": 0
+        })
+    
+    return parcelas
+
+@api_router.get("/vendas/proximo-numero")
+async def get_proximo_numero_venda(current_user: dict = Depends(get_current_user)):
+    """Retorna o próximo número de venda disponível"""
+    proximo = await gerar_proximo_numero_venda()
+    return {"proximo_numero": proximo}
+
 @api_router.get("/vendas", response_model=List[Venda])
-async def get_vendas(current_user: dict = Depends(get_current_user)):
-    vendas = await db.vendas.find({}, {"_id": 0}).to_list(1000)
+async def get_vendas(
+    status_venda: str = None,
+    status_entrega: str = None,
+    cliente_id: str = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Lista vendas com filtros"""
+    filtro = {}
+    if status_venda:
+        filtro["status_venda"] = status_venda
+    if status_entrega:
+        filtro["status_entrega"] = status_entrega
+    if cliente_id:
+        filtro["cliente_id"] = cliente_id
+    
+    vendas = await db.vendas.find(filtro, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return vendas
 
 @api_router.post("/vendas", response_model=Venda)
 async def create_venda(venda_data: VendaCreate, current_user: dict = Depends(get_current_user)):
-    # Validar estoque antes de criar a venda
-    orcamentos_abertos = await db.orcamentos.find({"status": "aberto"}, {"_id": 0}).to_list(1000)
+    """
+    Cria venda com validações completas e controle de pagamento
+    """
+    # Validar cliente
+    cliente = await db.clientes.find_one({"id": venda_data.cliente_id}, {"_id": 0})
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
     
+    # Validar estoque antes de criar a venda
+    orcamentos_abertos = await db.orcamentos.find(
+        {"status": {"$in": ["aberto", "aprovado"]}}, 
+        {"_id": 0}
+    ).to_list(1000)
+    
+    produtos_db = []
     for item in venda_data.itens:
         produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
         if not produto:
             raise HTTPException(status_code=404, detail=f"Produto {item['produto_id']} não encontrado")
+        
+        if produto.get("status") == "inativo":
+            raise HTTPException(status_code=400, detail=f"Produto '{produto['nome']}' está inativo")
+        
+        produtos_db.append(produto)
         
         estoque_atual = produto.get("estoque_atual", 0)
         
@@ -2307,31 +2387,295 @@ async def create_venda(venda_data: VendaCreate, current_user: dict = Depends(get
         if item["quantidade"] > estoque_disponivel:
             raise HTTPException(
                 status_code=400, 
-                detail=f"Estoque insuficiente para o produto '{produto['nome']}'. Disponível: {estoque_disponivel} unidades (Atual: {estoque_atual}, Reservado: {estoque_reservado})"
+                detail=f"Estoque insuficiente para '{produto['nome']}'. Disponível: {estoque_disponivel}"
             )
     
-    # Se passou pela validação, criar a venda
-    total = sum(item["quantidade"] * item["preco_unitario"] for item in venda_data.itens)
-    total = total - venda_data.desconto + venda_data.frete
+    # Calcular valores
+    subtotal = sum(item["quantidade"] * item["preco_unitario"] for item in venda_data.itens)
+    desconto_percentual = (venda_data.desconto / subtotal * 100) if subtotal > 0 else 0
+    
+    # VALIDAÇÃO: Limite de desconto por papel
+    papel = current_user["papel"]
+    if papel == "vendedor" and desconto_percentual > LIMITE_DESCONTO_VENDEDOR:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Vendedor pode dar no máximo {LIMITE_DESCONTO_VENDEDOR}% de desconto. Desconto solicitado: {desconto_percentual:.2f}%"
+        )
+    elif papel == "gerente" and desconto_percentual > LIMITE_DESCONTO_GERENTE:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Gerente pode dar no máximo {LIMITE_DESCONTO_GERENTE}% de desconto. Desconto solicitado: {desconto_percentual:.2f}%"
+        )
+    
+    # Calcular taxa de cartão
+    taxa_cartao = 0
+    taxa_cartao_percentual = 0
+    if venda_data.forma_pagamento == "cartao":
+        taxa_cartao_percentual = TAXA_CARTAO_PADRAO
+        taxa_cartao = subtotal * (taxa_cartao_percentual / 100)
+    
+    total = subtotal - venda_data.desconto + venda_data.frete
+    
+    # Verificar se precisa autorização por valor
+    requer_autorizacao = total >= VALOR_MINIMO_AUTORIZACAO_VENDA and papel == "vendedor"
+    status_inicial = "aguardando_pagamento" if not requer_autorizacao else "rascunho"
+    
+    # Gerar número sequencial
+    numero_venda = await gerar_proximo_numero_venda()
+    
+    # Calcular comissão
+    comissao_percentual = COMISSAO_VENDEDOR_PADRAO
+    comissao_vendedor = total * (comissao_percentual / 100)
+    
+    # Gerar parcelas
+    parcelas = calcular_parcelas(total, venda_data.numero_parcelas)
+    valor_parcela = total / venda_data.numero_parcelas
+    
+    # Determinar saldo pendente
+    valor_pago = 0
+    saldo_pendente = total
     
     venda = Venda(
+        numero_venda=numero_venda,
         cliente_id=venda_data.cliente_id,
         itens=venda_data.itens,
         desconto=venda_data.desconto,
+        desconto_percentual=desconto_percentual,
         frete=venda_data.frete,
+        subtotal=subtotal,
         total=total,
         forma_pagamento=venda_data.forma_pagamento,
+        numero_parcelas=venda_data.numero_parcelas,
+        valor_parcela=valor_parcela,
+        parcelas=parcelas,
+        taxa_cartao=taxa_cartao,
+        taxa_cartao_percentual=taxa_cartao_percentual,
+        valor_pago=valor_pago,
+        saldo_pendente=saldo_pendente,
+        comissao_vendedor=comissao_vendedor,
+        comissao_percentual=comissao_percentual,
+        status_venda=status_inicial,
+        observacoes=venda_data.observacoes,
+        observacoes_vendedor=venda_data.observacoes_vendedor,
+        requer_autorizacao=requer_autorizacao,
         orcamento_id=venda_data.orcamento_id,
-        user_id=current_user["id"]
+        user_id=current_user["id"],
+        vendedor_nome=current_user["nome"],
+        historico_alteracoes=[{
+            "data": datetime.now(timezone.utc).isoformat(),
+            "usuario": current_user["nome"],
+            "acao": "criacao",
+            "detalhes": f"Venda {numero_venda} criada com status '{status_inicial}'"
+        }]
     )
     
     await db.vendas.insert_one(venda.model_dump())
     
-    # Baixar estoque e registrar movimentações
-    for item in venda.itens:
+    # Baixar estoque e registrar movimentações (apenas se não precisa autorização)
+    if not requer_autorizacao:
+        for item in venda.itens:
+            produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
+            if produto:
+                novo_estoque = produto["estoque_atual"] - item["quantidade"]
+                await db.produtos.update_one(
+                    {"id": item["produto_id"]},
+                    {"$set": {"estoque_atual": novo_estoque}}
+                )
+                
+                movimentacao = MovimentacaoEstoque(
+                    produto_id=item["produto_id"],
+                    tipo="saida",
+                    quantidade=item["quantidade"],
+                    referencia_tipo="venda",
+                    referencia_id=venda.id,
+                    user_id=current_user["id"]
+                )
+                await db.movimentacoes_estoque.insert_one(movimentacao.model_dump())
+    
+    # Log
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="vendas",
+        acao="criar",
+        detalhes={
+            "venda_id": venda.id,
+            "numero_venda": numero_venda,
+            "cliente": cliente["nome"],
+            "total": total,
+            "requer_autorizacao": requer_autorizacao
+        }
+    )
+    
+    return venda
+
+@api_router.put("/vendas/{venda_id}")
+async def update_venda(
+    venda_id: str,
+    venda_data: VendaUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Edita venda (apenas rascunho ou aguardando_pagamento)
+    """
+    venda = await db.vendas.find_one({"id": venda_id}, {"_id": 0})
+    if not venda:
+        raise HTTPException(status_code=404, detail="Venda não encontrada")
+    
+    # Validar status
+    if venda["status_venda"] not in ["rascunho", "aguardando_pagamento"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível editar venda com status '{venda['status_venda']}'"
+        )
+    
+    # Preparar dados
+    update_data = {k: v for k, v in venda_data.model_dump().items() if v is not None}
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Nenhum campo para atualizar")
+    
+    # Se alterou itens, recalcular tudo
+    if "itens" in update_data:
+        subtotal = sum(item["quantidade"] * item["preco_unitario"] for item in update_data["itens"])
+        desconto = update_data.get("desconto", venda.get("desconto", 0))
+        frete = update_data.get("frete", venda.get("frete", 0))
+        
+        update_data["subtotal"] = subtotal
+        update_data["total"] = subtotal - desconto + frete
+        update_data["saldo_pendente"] = update_data["total"] - venda.get("valor_pago", 0)
+        
+        if subtotal > 0:
+            update_data["desconto_percentual"] = (desconto / subtotal * 100)
+    
+    # Registrar alterações
+    alteracoes = []
+    for campo, novo_valor in update_data.items():
+        if campo not in ["historico_alteracoes", "updated_at"]:
+            valor_antigo = venda.get(campo)
+            if valor_antigo != novo_valor:
+                alteracoes.append(f"{campo}: {valor_antigo} → {novo_valor}")
+    
+    if alteracoes:
+        historico_entry = {
+            "data": datetime.now(timezone.utc).isoformat(),
+            "usuario": current_user["nome"],
+            "acao": "edicao",
+            "detalhes": "; ".join(alteracoes)
+        }
+        
+        if "historico_alteracoes" not in venda:
+            venda["historico_alteracoes"] = []
+        venda["historico_alteracoes"].append(historico_entry)
+        update_data["historico_alteracoes"] = venda["historico_alteracoes"]
+    
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.vendas.update_one(
+        {"id": venda_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Venda atualizada com sucesso", "alteracoes": alteracoes}
+
+@api_router.post("/vendas/{venda_id}/registrar-pagamento")
+async def registrar_pagamento(
+    venda_id: str,
+    pagamento: RegistrarPagamentoRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Registra pagamento total ou parcial da venda
+    """
+    venda = await db.vendas.find_one({"id": venda_id}, {"_id": 0})
+    if not venda:
+        raise HTTPException(status_code=404, detail="Venda não encontrada")
+    
+    if venda["status_venda"] == "cancelada":
+        raise HTTPException(status_code=400, detail="Não é possível registrar pagamento em venda cancelada")
+    
+    valor_pago_atual = venda.get("valor_pago", 0)
+    saldo_pendente = venda.get("saldo_pendente", venda["total"])
+    
+    if pagamento.valor > saldo_pendente:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Valor de pagamento (R$ {pagamento.valor:.2f}) maior que saldo pendente (R$ {saldo_pendente:.2f})"
+        )
+    
+    novo_valor_pago = valor_pago_atual + pagamento.valor
+    novo_saldo = saldo_pendente - pagamento.valor
+    
+    # Determinar novo status
+    if novo_saldo == 0:
+        novo_status = "paga"
+    elif novo_valor_pago > 0:
+        novo_status = "parcialmente_paga"
+    else:
+        novo_status = venda["status_venda"]
+    
+    # Atualizar parcela se especificado
+    parcelas = venda.get("parcelas", [])
+    if pagamento.parcela_numero and parcelas:
+        for parcela in parcelas:
+            if parcela["numero"] == pagamento.parcela_numero:
+                parcela["status"] = "paga"
+                parcela["data_pagamento"] = pagamento.data_pagamento or datetime.now(timezone.utc).isoformat()
+    
+    # Histórico
+    historico_entry = {
+        "data": datetime.now(timezone.utc).isoformat(),
+        "usuario": current_user["nome"],
+        "acao": "pagamento",
+        "detalhes": f"Pagamento de R$ {pagamento.valor:.2f}. Novo saldo: R$ {novo_saldo:.2f}"
+    }
+    
+    if "historico_alteracoes" not in venda:
+        venda["historico_alteracoes"] = []
+    venda["historico_alteracoes"].append(historico_entry)
+    
+    await db.vendas.update_one(
+        {"id": venda_id},
+        {"$set": {
+            "valor_pago": novo_valor_pago,
+            "saldo_pendente": novo_saldo,
+            "status_venda": novo_status,
+            "data_pagamento": pagamento.data_pagamento or datetime.now(timezone.utc).isoformat(),
+            "parcelas": parcelas,
+            "historico_alteracoes": venda["historico_alteracoes"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {
+        "message": "Pagamento registrado com sucesso",
+        "valor_pago": novo_valor_pago,
+        "saldo_pendente": novo_saldo,
+        "status_venda": novo_status
+    }
+
+@api_router.post("/vendas/{venda_id}/cancelar")
+async def cancelar_venda(
+    venda_id: str,
+    cancelamento: CancelarVendaRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Cancela venda formalmente (diferente de excluir) com motivo
+    """
+    venda = await db.vendas.find_one({"id": venda_id}, {"_id": 0})
+    if not venda:
+        raise HTTPException(status_code=404, detail="Venda não encontrada")
+    
+    if venda.get("cancelada", False):
+        raise HTTPException(status_code=400, detail="Venda já está cancelada")
+    
+    # Devolver estoque
+    for item in venda.get("itens", []):
         produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
         if produto:
-            novo_estoque = produto["estoque_atual"] - item["quantidade"]
+            novo_estoque = produto["estoque_atual"] + item["quantidade"]
             await db.produtos.update_one(
                 {"id": item["produto_id"]},
                 {"$set": {"estoque_atual": novo_estoque}}
@@ -2339,15 +2683,300 @@ async def create_venda(venda_data: VendaCreate, current_user: dict = Depends(get
             
             movimentacao = MovimentacaoEstoque(
                 produto_id=item["produto_id"],
-                tipo="saida",
+                tipo="entrada",
                 quantidade=item["quantidade"],
-                referencia_tipo="venda",
-                referencia_id=venda.id,
+                referencia_tipo="cancelamento_venda",
+                referencia_id=venda_id,
                 user_id=current_user["id"]
             )
             await db.movimentacoes_estoque.insert_one(movimentacao.model_dump())
     
-    return venda
+    # Histórico
+    historico_entry = {
+        "data": datetime.now(timezone.utc).isoformat(),
+        "usuario": current_user["nome"],
+        "acao": "cancelamento",
+        "detalhes": f"Motivo: {cancelamento.motivo}"
+    }
+    
+    if "historico_alteracoes" not in venda:
+        venda["historico_alteracoes"] = []
+    venda["historico_alteracoes"].append(historico_entry)
+    
+    await db.vendas.update_one(
+        {"id": venda_id},
+        {"$set": {
+            "cancelada": True,
+            "status_venda": "cancelada",
+            "motivo_cancelamento": cancelamento.motivo,
+            "cancelada_por": current_user["id"],
+            "data_cancelamento": datetime.now(timezone.utc).isoformat(),
+            "historico_alteracoes": venda["historico_alteracoes"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Log
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="vendas",
+        acao="cancelar",
+        detalhes={
+            "venda_id": venda_id,
+            "numero_venda": venda.get("numero_venda"),
+            "motivo": cancelamento.motivo
+        }
+    )
+    
+    return {"message": "Venda cancelada com sucesso"}
+
+@api_router.post("/vendas/{venda_id}/devolucao-parcial")
+async def devolucao_parcial(
+    venda_id: str,
+    devolucao: DevolucaoParcialRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Devolve apenas alguns itens da venda (não a venda toda)
+    """
+    venda = await db.vendas.find_one({"id": venda_id}, {"_id": 0})
+    if not venda:
+        raise HTTPException(status_code=404, detail="Venda não encontrada")
+    
+    if venda["status_venda"] == "cancelada":
+        raise HTTPException(status_code=400, detail="Não é possível devolver itens de venda cancelada")
+    
+    valor_devolver = 0
+    itens_devolvidos_novos = []
+    
+    # Validar e calcular valor a devolver
+    for item_dev in devolucao.itens_devolver:
+        item_original = next((i for i in venda["itens"] if i["produto_id"] == item_dev["produto_id"]), None)
+        if not item_original:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Produto {item_dev['produto_id']} não encontrado na venda"
+            )
+        
+        # Verificar se quantidade já não foi devolvida
+        quantidade_ja_devolvida = 0
+        for dev in venda.get("itens_devolvidos", []):
+            if dev["produto_id"] == item_dev["produto_id"]:
+                quantidade_ja_devolvida += dev["quantidade"]
+        
+        quantidade_disponivel = item_original["quantidade"] - quantidade_ja_devolvida
+        
+        if item_dev["quantidade"] > quantidade_disponivel:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Quantidade a devolver ({item_dev['quantidade']}) maior que disponível ({quantidade_disponivel})"
+            )
+        
+        # Devolver ao estoque
+        produto = await db.produtos.find_one({"id": item_dev["produto_id"]}, {"_id": 0})
+        if produto:
+            novo_estoque = produto["estoque_atual"] + item_dev["quantidade"]
+            await db.produtos.update_one(
+                {"id": item_dev["produto_id"]},
+                {"$set": {"estoque_atual": novo_estoque}}
+            )
+            
+            movimentacao = MovimentacaoEstoque(
+                produto_id=item_dev["produto_id"],
+                tipo="entrada",
+                quantidade=item_dev["quantidade"],
+                referencia_tipo="devolucao_parcial",
+                referencia_id=venda_id,
+                user_id=current_user["id"]
+            )
+            await db.movimentacoes_estoque.insert_one(movimentacao.model_dump())
+        
+        # Calcular valor
+        valor_item = item_dev["quantidade"] * item_original["preco_unitario"]
+        valor_devolver += valor_item
+        
+        itens_devolvidos_novos.append({
+            "produto_id": item_dev["produto_id"],
+            "quantidade": item_dev["quantidade"],
+            "valor": valor_item,
+            "data": datetime.now(timezone.utc).isoformat()
+        })
+    
+    # Atualizar venda
+    itens_devolvidos_total = venda.get("itens_devolvidos", []) + itens_devolvidos_novos
+    valor_devolvido_total = venda.get("valor_devolvido", 0) + valor_devolver
+    
+    # Histórico
+    historico_entry = {
+        "data": datetime.now(timezone.utc).isoformat(),
+        "usuario": current_user["nome"],
+        "acao": "devolucao_parcial",
+        "detalhes": f"Devolvidos {len(devolucao.itens_devolver)} itens. Valor: R$ {valor_devolver:.2f}. Motivo: {devolucao.motivo}"
+    }
+    
+    if "historico_alteracoes" not in venda:
+        venda["historico_alteracoes"] = []
+    venda["historico_alteracoes"].append(historico_entry)
+    
+    await db.vendas.update_one(
+        {"id": venda_id},
+        {"$set": {
+            "devolvida": True,
+            "itens_devolvidos": itens_devolvidos_total,
+            "valor_devolvido": valor_devolvido_total,
+            "historico_alteracoes": venda["historico_alteracoes"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {
+        "message": "Devolução parcial registrada com sucesso",
+        "valor_devolvido": valor_devolver,
+        "valor_devolvido_total": valor_devolvido_total
+    }
+
+@api_router.post("/vendas/{venda_id}/trocar-produto")
+async def trocar_produto(
+    venda_id: str,
+    troca: TrocaProdutoRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Registra troca de produto (retira um, adiciona outro)
+    """
+    venda = await db.vendas.find_one({"id": venda_id}, {"_id": 0})
+    if not venda:
+        raise HTTPException(status_code=404, detail="Venda não encontrada")
+    
+    # Validar produtos
+    produto_saida = await db.produtos.find_one({"id": troca.produto_saida_id}, {"_id": 0})
+    produto_entrada = await db.produtos.find_one({"id": troca.produto_entrada_id}, {"_id": 0})
+    
+    if not produto_saida or not produto_entrada:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    
+    # Devolver produto antigo ao estoque
+    await db.produtos.update_one(
+        {"id": troca.produto_saida_id},
+        {"$inc": {"estoque_atual": troca.quantidade_saida}}
+    )
+    
+    # Retirar novo produto do estoque
+    if produto_entrada["estoque_atual"] < troca.quantidade_entrada:
+        raise HTTPException(status_code=400, detail=f"Estoque insuficiente de '{produto_entrada['nome']}'")
+    
+    await db.produtos.update_one(
+        {"id": troca.produto_entrada_id},
+        {"$inc": {"estoque_atual": -troca.quantidade_entrada}}
+    )
+    
+    # Registrar movimentações
+    mov_saida = MovimentacaoEstoque(
+        produto_id=troca.produto_saida_id,
+        tipo="entrada",
+        quantidade=troca.quantidade_saida,
+        referencia_tipo="troca_produto",
+        referencia_id=venda_id,
+        user_id=current_user["id"]
+    )
+    await db.movimentacoes_estoque.insert_one(mov_saida.model_dump())
+    
+    mov_entrada = MovimentacaoEstoque(
+        produto_id=troca.produto_entrada_id,
+        tipo="saida",
+        quantidade=troca.quantidade_entrada,
+        referencia_tipo="troca_produto",
+        referencia_id=venda_id,
+        user_id=current_user["id"]
+    )
+    await db.movimentacoes_estoque.insert_one(mov_entrada.model_dump())
+    
+    # Histórico
+    historico_entry = {
+        "data": datetime.now(timezone.utc).isoformat(),
+        "usuario": current_user["nome"],
+        "acao": "troca_produto",
+        "detalhes": f"Trocado {produto_saida['nome']} por {produto_entrada['nome']}. Motivo: {troca.motivo}"
+    }
+    
+    if "historico_alteracoes" not in venda:
+        venda["historico_alteracoes"] = []
+    venda["historico_alteracoes"].append(historico_entry)
+    
+    await db.vendas.update_one(
+        {"id": venda_id},
+        {"$set": {
+            "historico_alteracoes": venda["historico_alteracoes"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Troca de produto registrada com sucesso"}
+
+@api_router.put("/vendas/{venda_id}/entrega")
+async def atualizar_entrega(
+    venda_id: str,
+    entrega: AtualizarEntregaRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Atualiza status de entrega da venda
+    """
+    venda = await db.vendas.find_one({"id": venda_id}, {"_id": 0})
+    if not venda:
+        raise HTTPException(status_code=404, detail="Venda não encontrada")
+    
+    update_data = {
+        "status_entrega": entrega.status_entrega,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    if entrega.codigo_rastreio:
+        update_data["codigo_rastreio"] = entrega.codigo_rastreio
+    
+    if entrega.observacoes_entrega:
+        update_data["observacoes_entrega"] = entrega.observacoes_entrega
+    
+    if entrega.status_entrega == "entregue":
+        update_data["data_entrega"] = datetime.now(timezone.utc).isoformat()
+    
+    # Histórico
+    historico_entry = {
+        "data": datetime.now(timezone.utc).isoformat(),
+        "usuario": current_user["nome"],
+        "acao": "atualizacao_entrega",
+        "detalhes": f"Status de entrega alterado para '{entrega.status_entrega}'"
+    }
+    
+    if "historico_alteracoes" not in venda:
+        venda["historico_alteracoes"] = []
+    venda["historico_alteracoes"].append(historico_entry)
+    update_data["historico_alteracoes"] = venda["historico_alteracoes"]
+    
+    await db.vendas.update_one(
+        {"id": venda_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Status de entrega atualizado com sucesso"}
+
+@api_router.get("/vendas/{venda_id}/historico")
+async def get_historico_venda(venda_id: str, current_user: dict = Depends(get_current_user)):
+    """Retorna histórico completo da venda"""
+    venda = await db.vendas.find_one({"id": venda_id}, {"_id": 0})
+    if not venda:
+        raise HTTPException(status_code=404, detail="Venda não encontrada")
+    
+    return {
+        "venda_id": venda_id,
+        "numero_venda": venda.get("numero_venda"),
+        "cliente_id": venda.get("cliente_id"),
+        "status_venda": venda.get("status_venda"),
+        "status_entrega": venda.get("status_entrega"),
+        "historico": venda.get("historico_alteracoes", [])
+    }
 
 @api_router.delete("/vendas/{venda_id}")
 async def delete_venda(venda_id: str, current_user: dict = Depends(get_current_user)):
