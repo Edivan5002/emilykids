@@ -171,13 +171,14 @@ class EmilyKidsBackendTester:
                 if response.status_code == 200:
                     supplier_id = response.json()["id"]
                     
-                    # Create fiscal note to add stock
+                    # Create fiscal note to add stock - FIX CALCULATION
+                    # 20 * 25.00 + 15 * 35.00 + 10 * 45.00 = 500 + 525 + 450 = 1475.00
                     nota_data = {
                         "numero": "000001",
                         "serie": "1",
                         "fornecedor_id": supplier_id,
                         "data_emissao": datetime.now().isoformat(),
-                        "valor_total": 315.00,
+                        "valor_total": 1475.00,  # Correct calculation
                         "itens": [
                             {"produto_id": self.test_products[0]["id"], "quantidade": 20, "preco_unitario": 25.00},
                             {"produto_id": self.test_products[1]["id"], "quantidade": 15, "preco_unitario": 35.00},
