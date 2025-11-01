@@ -240,15 +240,18 @@ frontend:
 
   - task: "Módulo completo de Logs - Frontend"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/frontend/src/pages/Logs.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Criado frontend completo para módulo de Logs com 5 abas: (1) Dashboard - KPIs (total logs, erros, eventos segurança, usuários ativos) e atividade por dia dos últimos 7 dias com gráfico de barras e logs de segurança recentes; (2) Logs - lista completa com filtros avançados (data início/fim, severidade, tela, ação, método HTTP), paginação, exibição detalhada (IP, navegador, SO, dispositivo, tempo execução, erros, detalhes JSON expandíveis); (3) Estatísticas - análises por severidade, ação, tela, dispositivo, navegador, top 10 usuários mais ativos, métricas de performance; (4) Segurança - logs de segurança específicos com paginação; (5) Atividades Suspeitas - detecção de IPs com múltiplas tentativas de login falhas e acessos negados recentes. Inclui funcionalidades de exportação (JSON/CSV) e arquivamento de logs antigos. Interface profissional com badges coloridos por severidade e detalhes expandíveis."
+      - working: false
+        agent: "user"
+        comment: "Usuário reportou: a aba logs não está funcionando. Investigar problema."
 
 metadata:
   created_by: "main_agent"
