@@ -66,13 +66,81 @@ class Token(BaseModel):
 class Log(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    ip: str
+    
+    # Identificação
+    request_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    session_id: Optional[str] = None
+    
+    # Usuário
     user_id: str
     user_nome: str
+    user_email: Optional[str] = None
+    user_papel: Optional[str] = None
+    
+    # Requisição
+    ip: str
+    user_agent: Optional[str] = None
+    navegador: Optional[str] = None
+    sistema_operacional: Optional[str] = None
+    dispositivo: Optional[str] = None
+    
+    # Geolocalização (básica via IP)
+    pais: Optional[str] = None
+    cidade: Optional[str] = None
+    
+    # Contexto da Requisição
+    metodo_http: Optional[str] = None  # GET, POST, PUT, DELETE
+    url: Optional[str] = None
+    endpoint: Optional[str] = None
+    status_code: Optional[int] = None
+    
+    # Ação
     tela: str
-    acao: str  # login, logout, inserir, editar, deletar, erro
-    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    acao: str  # login, logout, criar, editar, deletar, visualizar, exportar, etc
+    severidade: str = "INFO"  # INFO, WARNING, ERROR, CRITICAL, SECURITY
+    
+    # Performance
+    tempo_execucao_ms: Optional[float] = None
+    
+    # Detalhes
     detalhes: Optional[dict] = None
+    detalhes_criptografados: Optional[str] = None
+    
+    # Erro (se aplicável)
+    erro: Optional[str] = None
+    stack_trace: Optional[str] = None
+    
+    # Timestamp
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    
+    # Arquivamento
+    arquivado: bool = False
+    data_arquivamento: Optional[str] = None
+
+class LogSeguranca(BaseModel):
+    """Log específico para eventos de segurança"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    tipo: str  # login_falho, acesso_negado, tentativa_suspeita, mudanca_senha, mudanca_permissao
+    user_id: Optional[str] = None
+    user_email: Optional[str] = None
+    ip: str
+    user_agent: Optional[str] = None
+    detalhes: dict
+    severidade: str = "SECURITY"
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    investigado: bool = False
+    falso_positivo: bool = False
+
+class FiltrosLog(BaseModel):
+    data_inicio: Optional[str] = None
+    data_fim: Optional[str] = None
+    user_id: Optional[str] = None
+    severidade: Optional[str] = None
+    tela: Optional[str] = None
+    acao: Optional[str] = None
+    metodo_http: Optional[str] = None
+    limit: int = 50
+    offset: int = 0
 
 class Cliente(BaseModel):
     model_config = ConfigDict(extra="ignore")
