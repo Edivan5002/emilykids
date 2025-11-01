@@ -23,6 +23,7 @@ import IAInsights from './pages/IAInsights';
 import Logs from './pages/Logs';
 import Usuarios from './pages/Usuarios';
 import PapeisPermissoes from './pages/PapeisPermissoes';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // Layout
 import Layout from './components/Layout';
