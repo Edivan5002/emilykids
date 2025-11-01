@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Backend Test Suite for Emily Kids ERP - Complete Logs Module Testing
-Tests all 8 robust log endpoints and stock validation implementation
-Focus: Complete Logs module with admin authentication and all endpoints
+Backend Test Suite for Emily Kids ERP - Orçamentos, Notas Fiscais e Vendas Testing
+Tests critical endpoints after corrections applied for datetime issues and conversion problems
+Focus: Orçamento conversion to Venda, Notas Fiscais datetime validation, Vendas creation
 """
 
 import requests
