@@ -73,6 +73,7 @@ function AppContent() {
                     <Route path="/ia-insights" element={<IAInsights />} />
                     <Route path="/logs" element={<Logs />} />
                     <Route path="/usuarios" element={<Usuarios />} />
+                    <Route path="/papeis-permissoes" element={<PapeisPermissoes />} />
                   </Routes>
                 </Layout>
               </PrivateRoute>
