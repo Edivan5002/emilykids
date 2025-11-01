@@ -194,9 +194,39 @@ class NotaFiscal(BaseModel):
     data_emissao: str
     valor_total: float
     xml: Optional[str] = None
+    caminho_xml: Optional[str] = None
+    chave_acesso_nfe: Optional[str] = None
     itens: List[dict]  # [{"produto_id": "", "quantidade": 0, "preco_unitario": 0}]
-    confirmado: bool = False
+    
+    # Status workflow
+    status: str = "rascunho"  # rascunho, aguardando_aprovacao, confirmada, cancelada
+    confirmado: bool = False  # Manter compatibilidade
+    
+    # Impostos
+    icms: float = 0
+    ipi: float = 0
+    pis: float = 0
+    cofins: float = 0
+    
+    # Pagamento
+    condicoes_pagamento: Optional[str] = None
+    data_vencimento: Optional[str] = None
+    numero_parcelas: int = 1
+    
+    # Cancelamento
+    cancelada: bool = False
+    motivo_cancelamento: Optional[str] = None
+    cancelada_por: Optional[str] = None
+    data_cancelamento: Optional[str] = None
+    
+    # Auditoria
+    criado_por: Optional[str] = None
+    aprovado_por: Optional[str] = None
+    data_aprovacao: Optional[str] = None
+    historico_alteracoes: List[dict] = []
+    
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: Optional[str] = None
 
 class NotaFiscalCreate(BaseModel):
     numero: str
@@ -205,7 +235,33 @@ class NotaFiscalCreate(BaseModel):
     data_emissao: str
     valor_total: float
     xml: Optional[str] = None
+    chave_acesso_nfe: Optional[str] = None
     itens: List[dict]
+    icms: float = 0
+    ipi: float = 0
+    pis: float = 0
+    cofins: float = 0
+    condicoes_pagamento: Optional[str] = None
+    data_vencimento: Optional[str] = None
+    numero_parcelas: int = 1
+
+class NotaFiscalUpdate(BaseModel):
+    numero: Optional[str] = None
+    serie: Optional[str] = None
+    fornecedor_id: Optional[str] = None
+    data_emissao: Optional[str] = None
+    valor_total: Optional[float] = None
+    itens: Optional[List[dict]] = None
+    icms: Optional[float] = None
+    ipi: Optional[float] = None
+    pis: Optional[float] = None
+    cofins: Optional[float] = None
+    condicoes_pagamento: Optional[str] = None
+    data_vencimento: Optional[str] = None
+    numero_parcelas: Optional[int] = None
+
+class CancelarNotaRequest(BaseModel):
+    motivo: str
 
 class MovimentacaoEstoque(BaseModel):
     model_config = ConfigDict(extra="ignore")
