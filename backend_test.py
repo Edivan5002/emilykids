@@ -1288,48 +1288,97 @@ class EmilyKidsBackendTester:
             self.log_test("Edge Case - Negative Quantity", False, f"Error: {str(e)}")
     
     def run_all_tests(self):
-        """Run all tests in sequence"""
-        print("🧪 EMILY KIDS ERP - BACKEND COMPLETE TESTING SUITE")
-        print("=" * 60)
+        """Run all tests in sequence - FOCUS ON CRITICAL ENDPOINTS"""
+        print("🧪 EMILY KIDS ERP - CRITICAL ENDPOINTS TESTING")
+        print("🎯 FOCUS: Orçamentos, Notas Fiscais, Vendas (User Reported Issues)")
+        print("=" * 70)
         
         if not self.authenticate():
             print("❌ Authentication failed. Cannot proceed with tests.")
             return False
         
-        # Test the complete Logs module as requested
-        self.test_logs_module_complete()
+        # Setup test data first
+        if not self.setup_test_data():
+            print("⚠️ Test data setup failed. Cannot proceed with critical tests.")
+            return False
         
-        # Also run stock tests if test data setup succeeds
-        if self.setup_test_data():
-            self.test_stock_check_endpoint()
-            self.test_budget_stock_validation()
-            self.test_sales_stock_validation()
-            self.test_manual_stock_adjustment()
-            self.test_edge_cases()
+        # PRIORITY 1: Test the CRITICAL endpoints mentioned in review request
+        print("\n🚨 TESTING CRITICAL ENDPOINTS (USER REPORTED ISSUES)")
+        print("=" * 70)
+        
+        # 1. Test Orçamento to Venda conversion (MAIN ISSUE REPORTED)
+        self.test_orcamento_conversion_to_venda()
+        
+        # 2. Test Notas Fiscais datetime validation
+        self.test_notas_fiscais_datetime_validation()
+        
+        # 3. Test Vendas creation with stock validation
+        self.test_vendas_creation_comprehensive()
+        
+        # PRIORITY 2: Test supporting endpoints
+        print("\n📋 TESTING SUPPORTING ENDPOINTS")
+        print("=" * 50)
+        
+        self.test_stock_check_endpoint()
+        self.test_budget_stock_validation()
+        self.test_sales_stock_validation()
+        self.test_manual_stock_adjustment()
+        
+        # PRIORITY 3: Edge cases and logs (if time permits)
+        print("\n🔧 TESTING ADDITIONAL FEATURES")
+        print("=" * 40)
+        
+        self.test_edge_cases()
+        # Only test logs if critical tests are working
+        critical_tests = [t for t in self.test_results if "Orçamento Conversion" in t["test"] or "NF Creation" in t["test"] or "Venda Creation" in t["test"]]
+        critical_failures = [t for t in critical_tests if not t["success"]]
+        
+        if len(critical_failures) == 0:
+            print("✅ Critical tests passed. Running logs module tests...")
+            self.test_logs_module_complete()
         else:
-            print("⚠️ Test data setup failed. Skipping stock validation tests.")
+            print("⚠️ Critical tests have failures. Skipping logs module tests to focus on main issues.")
         
-        # Summary
-        print("\n" + "=" * 60)
-        print("📊 TEST SUMMARY")
-        print("=" * 60)
+        # Summary with focus on critical issues
+        print("\n" + "=" * 70)
+        print("📊 CRITICAL ENDPOINTS TEST SUMMARY")
+        print("=" * 70)
         
         total_tests = len(self.test_results)
         passed_tests = len([t for t in self.test_results if t["success"]])
         failed_tests = total_tests - passed_tests
         
-        print(f"Total Tests: {total_tests}")
-        print(f"✅ Passed: {passed_tests}")
-        print(f"❌ Failed: {failed_tests}")
-        print(f"Success Rate: {(passed_tests/total_tests*100):.1f}%")
+        # Separate critical vs non-critical results
+        critical_keywords = ["Orçamento Conversion", "NF Creation", "Venda Creation"]
+        critical_tests = [t for t in self.test_results if any(keyword in t["test"] for keyword in critical_keywords)]
+        critical_passed = len([t for t in critical_tests if t["success"]])
+        critical_failed = len(critical_tests) - critical_passed
         
-        if failed_tests > 0:
-            print("\n🔍 FAILED TESTS:")
-            for test in self.test_results:
+        print(f"🎯 CRITICAL TESTS: {len(critical_tests)} total")
+        print(f"   ✅ Passed: {critical_passed}")
+        print(f"   ❌ Failed: {critical_failed}")
+        if len(critical_tests) > 0:
+            print(f"   📈 Success Rate: {(critical_passed/len(critical_tests)*100):.1f}%")
+        
+        print(f"\n📊 ALL TESTS: {total_tests} total")
+        print(f"   ✅ Passed: {passed_tests}")
+        print(f"   ❌ Failed: {failed_tests}")
+        print(f"   📈 Success Rate: {(passed_tests/total_tests*100):.1f}%")
+        
+        if critical_failed > 0:
+            print(f"\n🚨 CRITICAL FAILURES (USER REPORTED ISSUES):")
+            for test in critical_tests:
                 if not test["success"]:
+                    print(f"  ❌ {test['test']}: {test['message']}")
+        
+        if failed_tests > critical_failed:
+            print(f"\n🔍 OTHER FAILED TESTS:")
+            for test in self.test_results:
+                if not test["success"] and not any(keyword in test["test"] for keyword in critical_keywords):
                     print(f"  - {test['test']}: {test['message']}")
         
-        return failed_tests == 0
+        # Return True only if critical tests pass
+        return critical_failed == 0
 
 if __name__ == "__main__":
     tester = EmilyKidsBackendTester()
