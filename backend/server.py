@@ -1136,48 +1136,289 @@ async def detectar_atividade_suspeita(user_id: str = None, ip: str = None) -> di
 async def root():
     return {"message": "InventoAI API - Sistema de Vendas com IA", "status": "online"}
 
-@api_router.post("/auth/register", response_model=User)
-async def register(user_data: UserCreate):
-    existing = await db.users.find_one({"email": user_data.email}, {"_id": 0})
-    if existing:
-        raise HTTPException(status_code=400, detail="Email já cadastrado")
-    
-    user = User(
-        email=user_data.email,
-        nome=user_data.nome,
-        senha_hash=hash_password(user_data.senha),
-        papel=user_data.papel
-    )
-    await db.users.insert_one(user.model_dump())
-    return user
+
+# ========== AUTH ENDPOINTS ==========
 
 @api_router.post("/auth/login", response_model=Token)
-async def login(login_data: UserLogin):
+async def login(login_data: UserLogin, request: Request):
+    """Login com proteção contra brute force e logging detalhado"""
+    
+    # Buscar usuário
     user = await db.users.find_one({"email": login_data.email}, {"_id": 0})
-    if not user or not verify_password(login_data.senha, user["senha_hash"]):
-        raise HTTPException(status_code=401, detail="Email ou senha incorretos")
     
+    # Se usuário não existe, retornar erro genérico (não revelar se email existe)
+    if not user:
+        # Log tentativa de login com email inexistente
+        await log_action(
+            ip=request.client.host if request.client else "0.0.0.0",
+            user_id="",
+            user_nome="Desconhecido",
+            user_email=login_data.email,
+            tela="login",
+            acao="login_falha",
+            severidade="WARNING",
+            detalhes={"motivo": "Email não encontrado"}
+        )
+        raise HTTPException(status_code=401, detail="Credenciais inválidas")
+    
+    # Verificar se conta está bloqueada
+    if user.get("locked_until"):
+        locked_until = datetime.fromisoformat(user["locked_until"])
+        if locked_until.tzinfo is None:
+            locked_until = locked_until.replace(tzinfo=timezone.utc)
+        
+        if locked_until > datetime.now(timezone.utc):
+            tempo_restante = (locked_until - datetime.now(timezone.utc)).seconds // 60
+            await log_action(
+                ip=request.client.host if request.client else "0.0.0.0",
+                user_id=user["id"],
+                user_nome=user["nome"],
+                user_email=user["email"],
+                tela="login",
+                acao="login_bloqueado",
+                severidade="SECURITY",
+                detalhes={"tempo_restante_minutos": tempo_restante}
+            )
+            raise HTTPException(
+                status_code=403,
+                detail=f"Conta bloqueada. Tente novamente em {tempo_restante} minutos."
+            )
+        else:
+            # Desbloquear conta se tempo expirou
+            await db.users.update_one(
+                {"id": user["id"]},
+                {"$set": {"locked_until": None, "login_attempts": 0}}
+            )
+            user["login_attempts"] = 0
+    
+    # Verificar senha
+    if not verify_password(login_data.senha, user["senha_hash"]):
+        # Incrementar tentativas falhadas
+        login_attempts = user.get("login_attempts", 0) + 1
+        update_data = {"login_attempts": login_attempts}
+        
+        # Bloquear após 5 tentativas
+        if login_attempts >= 5:
+            locked_until = datetime.now(timezone.utc) + timedelta(minutes=30)
+            update_data["locked_until"] = locked_until.isoformat()
+            
+            await db.users.update_one({"id": user["id"]}, {"$set": update_data})
+            
+            # Log de segurança
+            await log_action(
+                ip=request.client.host if request.client else "0.0.0.0",
+                user_id=user["id"],
+                user_nome=user["nome"],
+                user_email=user["email"],
+                tela="login",
+                acao="conta_bloqueada",
+                severidade="SECURITY",
+                detalhes={"tentativas": login_attempts, "bloqueado_ate": locked_until.isoformat()}
+            )
+            
+            raise HTTPException(
+                status_code=403,
+                detail="Muitas tentativas falhadas. Conta bloqueada por 30 minutos."
+            )
+        
+        await db.users.update_one({"id": user["id"]}, {"$set": update_data})
+        
+        # Log tentativa falhada
+        await log_action(
+            ip=request.client.host if request.client else "0.0.0.0",
+            user_id=user["id"],
+            user_nome=user["nome"],
+            user_email=user["email"],
+            tela="login",
+            acao="login_falha",
+            severidade="WARNING",
+            detalhes={"tentativas": login_attempts, "motivo": "Senha incorreta"}
+        )
+        
+        raise HTTPException(status_code=401, detail="Credenciais inválidas")
+    
+    # Verificar se usuário está ativo
     if not user.get("ativo", True):
-        raise HTTPException(status_code=403, detail="Usuário inativo")
+        await log_action(
+            ip=request.client.host if request.client else "0.0.0.0",
+            user_id=user["id"],
+            user_nome=user["nome"],
+            user_email=user["email"],
+            tela="login",
+            acao="login_usuario_inativo",
+            severidade="WARNING",
+            detalhes={"motivo": "Usuário inativo"}
+        )
+        raise HTTPException(status_code=403, detail="Usuário inativo. Entre em contato com o administrador.")
     
-    access_token = create_access_token(data={"sub": user["id"], "email": user["email"]})
+    # Verificar se senha expirou (se política estiver ativa)
+    senha_ultimo_change = user.get("senha_ultimo_change")
+    if senha_ultimo_change:
+        last_change = datetime.fromisoformat(senha_ultimo_change)
+        if last_change.tzinfo is None:
+            last_change = last_change.replace(tzinfo=timezone.utc)
+        
+        days_since_change = (datetime.now(timezone.utc) - last_change).days
+        
+        # Política: senha expira em 90 dias (pode ser customizado)
+        if days_since_change > 90:
+            await log_action(
+                ip=request.client.host if request.client else "0.0.0.0",
+                user_id=user["id"],
+                user_nome=user["nome"],
+                user_email=user["email"],
+                tela="login",
+                acao="senha_expirada",
+                severidade="WARNING",
+                detalhes={"dias_desde_mudanca": days_since_change}
+            )
+            raise HTTPException(
+                status_code=403,
+                detail="Senha expirada. Entre em contato com o administrador para redefinir."
+            )
     
-    await log_action(
-        ip="0.0.0.0",
-        user_id=user["id"],
-        user_nome=user["nome"],
-        tela="login",
-        acao="login"
+    # Resetar tentativas falhadas
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"login_attempts": 0, "locked_until": None}}
     )
     
-    user_data = {k: v for k, v in user.items() if k != "senha_hash"}
+    # Criar token
+    access_token = create_access_token(data={"sub": user["id"], "email": user["email"]})
+    
+    # Registrar sessão
+    user_agent = request.headers.get("user-agent", "Unknown")
+    session = UserSession(
+        user_id=user["id"],
+        token=access_token,
+        ip=request.client.host if request.client else "0.0.0.0",
+        user_agent=user_agent,
+        expires_at=(datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+    )
+    await db.user_sessions.insert_one(session.model_dump())
+    
+    # Log sucesso
+    await log_action(
+        ip=request.client.host if request.client else "0.0.0.0",
+        user_id=user["id"],
+        user_nome=user["nome"],
+        user_email=user["email"],
+        tela="login",
+        acao="login",
+        severidade="INFO",
+        detalhes={"dispositivo": user_agent[:100]}
+    )
+    
+    # Remover dados sensíveis
+    user_data = {k: v for k, v in user.items() if k not in ["senha_hash", "senha_historia", "locked_until"]}
     
     return Token(access_token=access_token, token_type="bearer", user=user_data)
 
+@api_router.post("/auth/logout")
+async def logout(request: Request, current_user: dict = Depends(get_current_user)):
+    """Logout - invalida sessão"""
+    
+    # Extrair token do header
+    auth_header = request.headers.get("authorization", "")
+    token = auth_header.replace("Bearer ", "") if auth_header else ""
+    
+    if token:
+        # Desativar sessão
+        await db.user_sessions.update_many(
+            {"user_id": current_user["id"], "token": token},
+            {"$set": {"ativo": False}}
+        )
+    
+    # Log
+    await log_action(
+        ip=request.client.host if request.client else "0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        user_email=current_user.get("email", ""),
+        tela="login",
+        acao="logout",
+        severidade="INFO"
+    )
+    
+    return {"message": "Logout realizado com sucesso"}
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(email: EmailStr, request: Request):
+    """Solicita redefinição de senha"""
+    
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+    
+    # Por segurança, sempre retornar sucesso (não revelar se email existe)
+    if not user:
+        await log_action(
+            ip=request.client.host if request.client else "0.0.0.0",
+            user_id="",
+            user_nome="Desconhecido",
+            user_email=email,
+            tela="recuperacao_senha",
+            acao="solicitacao_email_inexistente",
+            severidade="WARNING"
+        )
+        return {"message": "Se o email estiver cadastrado, você receberá instruções para redefinir sua senha."}
+    
+    # Log solicitação
+    await log_action(
+        ip=request.client.host if request.client else "0.0.0.0",
+        user_id=user["id"],
+        user_nome=user["nome"],
+        user_email=email,
+        tela="recuperacao_senha",
+        acao="solicitacao",
+        severidade="INFO"
+    )
+    
+    # TODO: Implementar envio de email com token de redefinição
+    # Por enquanto, admin deve resetar manualmente
+    
+    return {"message": "Se o email estiver cadastrado, você receberá instruções para redefinir sua senha."}
+
 @api_router.get("/auth/me")
 async def get_me(current_user: dict = Depends(get_current_user)):
-    user_data = {k: v for k, v in current_user.items() if k != "senha_hash"}
+    """Retorna dados do usuário logado"""
+    user_data = {k: v for k, v in current_user.items() if k not in ["senha_hash", "senha_historia", "locked_until"]}
     return user_data
+
+@api_router.get("/auth/sessions")
+async def get_my_sessions(current_user: dict = Depends(get_current_user)):
+    """Lista sessões ativas do usuário"""
+    sessions = await db.user_sessions.find(
+        {"user_id": current_user["id"], "ativo": True},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    
+    return {
+        "total": len(sessions),
+        "sessions": sessions
+    }
+
+@api_router.post("/auth/sessions/{session_id}/revoke")
+async def revoke_session(session_id: str, current_user: dict = Depends(get_current_user)):
+    """Revoga sessão específica"""
+    
+    result = await db.user_sessions.update_one(
+        {"id": session_id, "user_id": current_user["id"]},
+        {"$set": {"ativo": False}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="sessoes",
+        acao="revogar_sessao",
+        detalhes={"session_id": session_id}
+    )
+    
+    return {"message": "Sessão revogada com sucesso"}
+
 
 # ========== USUÁRIOS (ADMIN) ==========
 
