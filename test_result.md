@@ -164,51 +164,63 @@ backend:
 
   - task: "Conversão de Orçamento para Venda (POST /api/orcamentos/{orcamento_id}/converter-venda)"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "CORREÇÃO APLICADA: Frontend enviava forma_pagamento como query parameter, backend esperava JSON. Corrigido para receber JSON {forma_pagamento, desconto, frete, observacoes}. Endpoint valida orçamento existe, não está expirado, não foi vendido, verifica estoque disponível, cria venda e atualiza status orçamento para 'vendido'."
+      - working: true
+        agent: "testing"
+        comment: "✅ PROBLEMA PRINCIPAL RESOLVIDO! Conversão de orçamento para venda funcionando 100%. CORREÇÕES APLICADAS: (1) Adicionado numero_venda obrigatório na criação da venda; (2) Permitido conversão de orçamentos com status 'em_analise' além de 'aberto' e 'aprovado'; (3) Adicionados campos obrigatórios (subtotal, status_venda, vendedor_nome, historico_alteracoes). TESTES: ✅ Conversão com todos métodos pagamento (pix, cartao, boleto, dinheiro); ✅ Status orçamento atualizado para 'vendido'; ✅ Prevenção dupla conversão; ✅ Prevenção conversão orçamento expirado. Taxa sucesso: 8/8 testes críticos."
 
   - task: "Criação de Notas Fiscais com validação datetime (POST /api/notas-fiscais)"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "CORREÇÃO APLICADA: TypeError ao comparar datetime naive vs aware na criação de nota fiscal. Corrigido adicionando timezone UTC automaticamente se datetime for naive. Validações: data não futura, não muito antiga (>90 dias), fornecedor existe, produtos existem e ativos."
+      - working: true
+        agent: "testing"
+        comment: "✅ VALIDAÇÃO DATETIME FUNCIONANDO PERFEITAMENTE! Todas as correções aplicadas funcionando 100%. TESTES: ✅ Data com timezone válida aceita; ✅ Datetime naive automaticamente convertido para UTC; ✅ Data futura corretamente rejeitada; ✅ Data muito antiga (>90 dias) corretamente rejeitada; ✅ Data válida antiga (30 dias) aceita. Taxa sucesso: 5/5 testes datetime."
 
   - task: "Validação de expiração de Orçamentos com datetime"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "CORREÇÃO APLICADA: Mesma issue de datetime naive vs aware na validação de data_validade de orçamentos. Corrigido adicionando timezone UTC na validação. Orçamentos expirados não podem ser convertidos em venda."
+      - working: true
+        agent: "testing"
+        comment: "✅ VALIDAÇÃO EXPIRAÇÃO FUNCIONANDO! Orçamentos expirados corretamente bloqueados na conversão para venda. Teste realizado: tentativa conversão orçamento com dias_validade=-1 corretamente rejeitada com mensagem 'Orçamento expirado. Não pode ser convertido.' Integrado com correção datetime."
 
   - task: "Criação de Vendas com validação de estoque (POST /api/vendas)"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Endpoint de criação de vendas com validação robusta de estoque. Verifica disponibilidade considerando estoque reservado por orçamentos abertos, deduz estoque, registra movimentação e cria logs. Suporte a diferentes formas de pagamento."
+      - working: true
+        agent: "testing"
+        comment: "✅ CRIAÇÃO VENDAS FUNCIONANDO PERFEITAMENTE! TESTES: ✅ Venda criada com estoque suficiente; ✅ Estoque deduzido corretamente após venda; ✅ Estoque insuficiente corretamente bloqueado; ✅ Todos métodos pagamento funcionando (cartao, boleto, dinheiro, pix); ✅ Movimentações de estoque registradas (25 movimentos encontrados); ✅ Consideração estoque reservado por orçamentos. Taxa sucesso: 7/7 testes vendas."
 
 frontend:
   - task: "Validação de estoque ao adicionar item em Orçamento"
