@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Backend Test Suite for Emily Kids ERP - Stock Validation Testing
-Tests the complete stock validation implementation for Budgets and Sales
+Backend Test Suite for Emily Kids ERP - Complete Logs Module Testing
+Tests all 8 robust log endpoints and stock validation implementation
+Focus: Complete Logs module with admin authentication and all endpoints
 """
 
 import requests
