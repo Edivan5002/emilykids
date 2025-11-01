@@ -462,6 +462,254 @@ class EmilyKidsBackendTester:
         except Exception as e:
             self.log_test("Sale Creation - Reserved Stock Check", False, f"Error: {str(e)}")
     
+    def test_logs_module_complete(self):
+        """Test complete Logs module - ALL 8 ENDPOINTS"""
+        print("\n=== TESTING COMPLETE LOGS MODULE ===")
+        
+        # Test 1: GET /api/logs - Lista de logs com filtros
+        print("\n--- Testing GET /api/logs ---")
+        try:
+            # Test basic logs listing
+            response = requests.get(f"{self.base_url}/logs", headers=self.get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ["logs", "total", "limit", "offset", "has_more"]
+                if all(field in data for field in required_fields):
+                    self.log_test("Logs - Basic Listing", True, f"Retrieved {len(data['logs'])} logs with pagination")
+                else:
+                    self.log_test("Logs - Basic Listing", False, f"Missing required fields in response: {data.keys()}")
+            else:
+                self.log_test("Logs - Basic Listing", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Logs - Basic Listing", False, f"Error: {str(e)}")
+        
+        # Test with filters
+        try:
+            params = {
+                "severidade": "INFO",
+                "limit": 10,
+                "offset": 0
+            }
+            response = requests.get(f"{self.base_url}/logs", params=params, headers=self.get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                self.log_test("Logs - Filtered by Severity", True, f"Filtered logs: {len(data['logs'])} results")
+            else:
+                self.log_test("Logs - Filtered by Severity", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Logs - Filtered by Severity", False, f"Error: {str(e)}")
+        
+        # Test 2: GET /api/logs/estatisticas - Estatísticas avançadas
+        print("\n--- Testing GET /api/logs/estatisticas ---")
+        try:
+            response = requests.get(f"{self.base_url}/logs/estatisticas", headers=self.get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ["por_severidade", "por_acao", "por_tela", "por_dispositivo", "por_navegador", "top_usuarios", "performance"]
+                if all(field in data for field in required_fields):
+                    self.log_test("Logs - Statistics", True, f"Statistics generated: {data['total_logs']} logs analyzed")
+                else:
+                    self.log_test("Logs - Statistics", False, f"Missing required fields: {data.keys()}")
+            else:
+                self.log_test("Logs - Statistics", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Logs - Statistics", False, f"Error: {str(e)}")
+        
+        # Test with date filters
+        try:
+            from datetime import datetime, timedelta
+            data_inicio = (datetime.now() - timedelta(days=7)).isoformat()
+            data_fim = datetime.now().isoformat()
+            params = {
+                "data_inicio": data_inicio,
+                "data_fim": data_fim
+            }
+            response = requests.get(f"{self.base_url}/logs/estatisticas", params=params, headers=self.get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                self.log_test("Logs - Statistics with Date Filter", True, f"Filtered statistics for last 7 days")
+            else:
+                self.log_test("Logs - Statistics with Date Filter", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Logs - Statistics with Date Filter", False, f"Error: {str(e)}")
+        
+        # Test 3: GET /api/logs/dashboard - Dashboard últimos 7 dias
+        print("\n--- Testing GET /api/logs/dashboard ---")
+        try:
+            response = requests.get(f"{self.base_url}/logs/dashboard", headers=self.get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ["kpis", "atividade_por_dia", "logs_seguranca_recentes"]
+                kpi_fields = ["total_logs", "total_erros", "total_security", "usuarios_ativos"]
+                
+                if all(field in data for field in required_fields) and all(kpi in data["kpis"] for kpi in kpi_fields):
+                    kpis = data["kpis"]
+                    self.log_test("Logs - Dashboard", True, f"Dashboard KPIs: {kpis['total_logs']} logs, {kpis['total_erros']} errors, {kpis['usuarios_ativos']} active users")
+                else:
+                    self.log_test("Logs - Dashboard", False, f"Missing required dashboard fields")
+            else:
+                self.log_test("Logs - Dashboard", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Logs - Dashboard", False, f"Error: {str(e)}")
+        
+        # Test 4: GET /api/logs/seguranca - Logs de segurança específicos
+        print("\n--- Testing GET /api/logs/seguranca ---")
+        try:
+            response = requests.get(f"{self.base_url}/logs/seguranca", headers=self.get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ["logs", "total", "limit", "offset"]
+                if all(field in data for field in required_fields):
+                    self.log_test("Logs - Security Logs", True, f"Security logs: {data['total']} total, {len(data['logs'])} retrieved")
+                else:
+                    self.log_test("Logs - Security Logs", False, f"Missing required fields in security logs response")
+            else:
+                self.log_test("Logs - Security Logs", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Logs - Security Logs", False, f"Error: {str(e)}")
+        
+        # Test with pagination
+        try:
+            params = {"limit": 5, "offset": 0}
+            response = requests.get(f"{self.base_url}/logs/seguranca", params=params, headers=self.get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                self.log_test("Logs - Security Logs Pagination", True, f"Paginated security logs: {len(data['logs'])} results")
+            else:
+                self.log_test("Logs - Security Logs Pagination", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Logs - Security Logs Pagination", False, f"Error: {str(e)}")
+        
+        # Test 5: GET /api/logs/exportar - Exportar logs
+        print("\n--- Testing GET /api/logs/exportar ---")
+        
+        # Test JSON export
+        try:
+            params = {"formato": "json"}
+            response = requests.get(f"{self.base_url}/logs/exportar", params=params, headers=self.get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("formato") == "json" and "logs" in data and "total" in data:
+                    self.log_test("Logs - Export JSON", True, f"JSON export: {data['total']} logs exported")
+                else:
+                    self.log_test("Logs - Export JSON", False, f"Invalid JSON export format: {data.keys()}")
+            else:
+                self.log_test("Logs - Export JSON", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Logs - Export JSON", False, f"Error: {str(e)}")
+        
+        # Test CSV export
+        try:
+            params = {"formato": "csv"}
+            response = requests.get(f"{self.base_url}/logs/exportar", params=params, headers=self.get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("formato") == "csv" and "data" in data and "total" in data:
+                    csv_lines = data["data"].split("\n")
+                    self.log_test("Logs - Export CSV", True, f"CSV export: {data['total']} logs, {len(csv_lines)} lines")
+                else:
+                    self.log_test("Logs - Export CSV", False, f"Invalid CSV export format: {data.keys()}")
+            else:
+                self.log_test("Logs - Export CSV", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Logs - Export CSV", False, f"Error: {str(e)}")
+        
+        # Test invalid format
+        try:
+            params = {"formato": "xml"}
+            response = requests.get(f"{self.base_url}/logs/exportar", params=params, headers=self.get_headers())
+            if response.status_code == 400:
+                self.log_test("Logs - Export Invalid Format", True, "Correctly rejected invalid export format")
+            else:
+                self.log_test("Logs - Export Invalid Format", False, f"Expected 400 but got {response.status_code}")
+        except Exception as e:
+            self.log_test("Logs - Export Invalid Format", False, f"Error: {str(e)}")
+        
+        # Test 6: POST /api/logs/arquivar-antigos - Arquivar logs antigos
+        print("\n--- Testing POST /api/logs/arquivar-antigos ---")
+        try:
+            response = requests.post(f"{self.base_url}/logs/arquivar-antigos", headers=self.get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ["message", "total_arquivados", "data_limite", "dias_retencao"]
+                if all(field in data for field in required_fields):
+                    self.log_test("Logs - Archive Old Logs", True, f"Archived {data['total_arquivados']} logs older than {data['dias_retencao']} days")
+                else:
+                    self.log_test("Logs - Archive Old Logs", False, f"Missing required fields in archive response")
+            else:
+                self.log_test("Logs - Archive Old Logs", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Logs - Archive Old Logs", False, f"Error: {str(e)}")
+        
+        # Test 7: GET /api/logs/atividade-suspeita - Detecção de atividades suspeitas
+        print("\n--- Testing GET /api/logs/atividade-suspeita ---")
+        try:
+            response = requests.get(f"{self.base_url}/logs/atividade-suspeita", headers=self.get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ["ips_suspeitos", "total_ips_suspeitos", "acessos_negados_recentes"]
+                if all(field in data for field in required_fields):
+                    self.log_test("Logs - Suspicious Activity", True, f"Suspicious activity check: {data['total_ips_suspeitos']} suspicious IPs, {data['acessos_negados_recentes']} denied accesses")
+                else:
+                    self.log_test("Logs - Suspicious Activity", False, f"Missing required fields in suspicious activity response")
+            else:
+                self.log_test("Logs - Suspicious Activity", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Logs - Suspicious Activity", False, f"Error: {str(e)}")
+        
+        # Test 8: POST /api/logs/criar-indices - Criar índices MongoDB
+        print("\n--- Testing POST /api/logs/criar-indices ---")
+        try:
+            response = requests.post(f"{self.base_url}/logs/criar-indices", headers=self.get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                if "message" in data and "sucesso" in data["message"].lower():
+                    self.log_test("Logs - Create Indices", True, "MongoDB indices created successfully")
+                else:
+                    self.log_test("Logs - Create Indices", False, f"Unexpected response: {data}")
+            else:
+                self.log_test("Logs - Create Indices", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Logs - Create Indices", False, f"Error: {str(e)}")
+        
+        # Test 9: Authentication - Non-admin user should get 403
+        print("\n--- Testing Authentication (Non-admin access) ---")
+        
+        # Create a non-admin user for testing
+        non_admin_data = {
+            "email": "vendedor.teste@emilykids.com",
+            "nome": "Vendedor Teste",
+            "senha": "senha123",
+            "papel": "vendedor"
+        }
+        
+        try:
+            # Register non-admin user
+            response = requests.post(f"{self.base_url}/auth/register", json=non_admin_data)
+            # Login as non-admin
+            login_data = {
+                "email": "vendedor.teste@emilykids.com",
+                "senha": "senha123"
+            }
+            response = requests.post(f"{self.base_url}/auth/login", json=login_data)
+            if response.status_code == 200:
+                non_admin_token = response.json()["access_token"]
+                non_admin_headers = {
+                    "Authorization": f"Bearer {non_admin_token}",
+                    "Content-Type": "application/json"
+                }
+                
+                # Try to access logs with non-admin user
+                response = requests.get(f"{self.base_url}/logs", headers=non_admin_headers)
+                if response.status_code == 403:
+                    self.log_test("Logs - Non-admin Access Control", True, "Non-admin user correctly denied access (403)")
+                else:
+                    self.log_test("Logs - Non-admin Access Control", False, f"Expected 403 but got {response.status_code}")
+            else:
+                self.log_test("Logs - Non-admin User Setup", False, f"Failed to login non-admin user: {response.status_code}")
+        except Exception as e:
+            self.log_test("Logs - Non-admin Access Control", False, f"Error: {str(e)}")
+
     def test_manual_stock_adjustment(self):
         """Test manual stock adjustment endpoint - NEW FEATURE"""
         print("\n=== TESTING MANUAL STOCK ADJUSTMENT ENDPOINT ===")
@@ -615,7 +863,8 @@ class EmilyKidsBackendTester:
         try:
             response = requests.get(f"{self.base_url}/logs", headers=self.get_headers())
             if response.status_code == 200:
-                logs = response.json()
+                logs_data = response.json()
+                logs = logs_data.get("logs", [])
                 # Look for recent manual adjustment logs
                 adjustment_logs = [l for l in logs if l.get("acao") == "ajuste_manual"]
                 if len(adjustment_logs) >= 1:
