@@ -1723,19 +1723,19 @@ class EmilyKidsBackendTester:
         print(f"   📈 Success Rate: {(passed_tests/total_tests*100):.1f}%")
         
         if rbac_failed > 0:
-            print(f"\n🚨 CRITICAL FAILURES (USER REPORTED ISSUES):")
-            for test in critical_tests:
+            print(f"\n🚨 RBAC FAILURES:")
+            for test in rbac_tests:
                 if not test["success"]:
                     print(f"  ❌ {test['test']}: {test['message']}")
         
-        if failed_tests > critical_failed:
+        if failed_tests > rbac_failed:
             print(f"\n🔍 OTHER FAILED TESTS:")
             for test in self.test_results:
-                if not test["success"] and not any(keyword in test["test"] for keyword in critical_keywords):
+                if not test["success"] and not any(keyword in test["test"] for keyword in rbac_keywords):
                     print(f"  - {test['test']}: {test['message']}")
         
-        # Return True only if critical tests pass
-        return critical_failed == 0
+        # Return True only if RBAC tests pass
+        return rbac_failed == 0
 
 if __name__ == "__main__":
     tester = EmilyKidsBackendTester()
