@@ -2174,16 +2174,30 @@ async def converter_orcamento_venda(
     subtotal = sum(item["quantidade"] * item["preco_unitario"] for item in orcamento["itens"])
     total_final = subtotal - desconto_final + frete_final
     
+    # Gerar número sequencial para a venda
+    numero_venda = await gerar_proximo_numero_venda()
+    
     # Criar venda
     venda = Venda(
+        numero_venda=numero_venda,
         cliente_id=orcamento["cliente_id"],
         itens=orcamento["itens"],
         desconto=desconto_final,
         frete=frete_final,
+        subtotal=subtotal,
         total=total_final,
         forma_pagamento=conversao.forma_pagamento,
+        status_venda="aguardando_pagamento",
         orcamento_id=orcamento_id,
-        user_id=current_user["id"]
+        user_id=current_user["id"],
+        vendedor_nome=current_user["nome"],
+        observacoes=conversao.observacoes,
+        historico_alteracoes=[{
+            "data": datetime.now(timezone.utc).isoformat(),
+            "usuario": current_user["nome"],
+            "acao": "conversao_orcamento",
+            "detalhes": f"Venda {numero_venda} criada a partir do orçamento {orcamento_id}"
+        }]
     )
     
     await db.vendas.insert_one(venda.model_dump())
