@@ -877,6 +877,383 @@ class EmilyKidsBackendTester:
         except Exception as e:
             self.log_test("Manual Adjustment - Action Logging", False, f"Error: {str(e)}")
 
+    def test_orcamento_conversion_to_venda(self):
+        """Test the critical Orçamento to Venda conversion - MAIN ISSUE REPORTED"""
+        print("\n=== TESTING ORÇAMENTO CONVERSION TO VENDA (CRITICAL) ===")
+        
+        if not self.test_products or not hasattr(self, 'test_client_id'):
+            self.log_test("Orçamento Conversion Tests", False, "Missing test data")
+            return
+        
+        # Step 1: Create a valid orçamento first
+        orcamento_data = {
+            "cliente_id": self.test_client_id,
+            "itens": [
+                {
+                    "produto_id": self.test_products[0]["id"],  # Vestido
+                    "quantidade": 2,
+                    "preco_unitario": 45.90
+                },
+                {
+                    "produto_id": self.test_products[1]["id"],  # Tênis
+                    "quantidade": 1,
+                    "preco_unitario": 65.90
+                }
+            ],
+            "desconto": 5.00,
+            "frete": 10.00,
+            "dias_validade": 7,
+            "observacoes": "Orçamento para teste de conversão"
+        }
+        
+        orcamento_id = None
+        try:
+            response = requests.post(f"{self.base_url}/orcamentos", json=orcamento_data, headers=self.get_headers())
+            if response.status_code == 200:
+                orcamento_id = response.json()["id"]
+                self.log_test("Create Orçamento for Conversion", True, f"Orçamento created: {orcamento_id}")
+            else:
+                self.log_test("Create Orçamento for Conversion", False, f"HTTP {response.status_code}: {response.text}")
+                return
+        except Exception as e:
+            self.log_test("Create Orçamento for Conversion", False, f"Error: {str(e)}")
+            return
+        
+        # Step 2: Test conversion with correct JSON format (MAIN FIX)
+        conversion_data = {
+            "forma_pagamento": "pix",
+            "desconto": None,  # Keep original discount
+            "frete": None,     # Keep original freight
+            "observacoes": "Conversão de orçamento para venda - teste"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/orcamentos/{orcamento_id}/converter-venda", 
+                                   json=conversion_data, headers=self.get_headers())
+            if response.status_code == 200:
+                venda_data = response.json()
+                self.log_test("Orçamento Conversion - Success", True, 
+                            f"✅ CONVERSÃO FUNCIONOU! Venda criada: {venda_data.get('id', 'N/A')}")
+                
+                # Verify the orçamento status changed to "vendido"
+                response = requests.get(f"{self.base_url}/orcamentos", headers=self.get_headers())
+                if response.status_code == 200:
+                    orcamentos = response.json()
+                    converted_orcamento = next((o for o in orcamentos if o["id"] == orcamento_id), None)
+                    if converted_orcamento and converted_orcamento.get("status") == "vendido":
+                        self.log_test("Orçamento Status Update", True, "Orçamento status correctly updated to 'vendido'")
+                    else:
+                        self.log_test("Orçamento Status Update", False, f"Status not updated: {converted_orcamento.get('status') if converted_orcamento else 'Not found'}")
+                
+            else:
+                error_detail = response.json().get("detail", response.text) if response.headers.get("content-type", "").startswith("application/json") else response.text
+                self.log_test("Orçamento Conversion - Success", False, 
+                            f"❌ CONVERSÃO FALHOU: HTTP {response.status_code} - {error_detail}")
+        except Exception as e:
+            self.log_test("Orçamento Conversion - Success", False, f"❌ ERRO NA CONVERSÃO: {str(e)}")
+        
+        # Step 3: Test conversion with different payment methods
+        payment_methods = ["cartao", "boleto", "dinheiro"]
+        for payment in payment_methods:
+            # Create another orçamento for each payment method test
+            try:
+                response = requests.post(f"{self.base_url}/orcamentos", json=orcamento_data, headers=self.get_headers())
+                if response.status_code == 200:
+                    test_orcamento_id = response.json()["id"]
+                    
+                    conversion_data = {
+                        "forma_pagamento": payment,
+                        "desconto": 2.00,  # Different discount
+                        "frete": 5.00,    # Different freight
+                        "observacoes": f"Teste conversão com {payment}"
+                    }
+                    
+                    response = requests.post(f"{self.base_url}/orcamentos/{test_orcamento_id}/converter-venda", 
+                                           json=conversion_data, headers=self.get_headers())
+                    if response.status_code == 200:
+                        self.log_test(f"Conversion with {payment}", True, f"Conversion successful with {payment}")
+                    else:
+                        self.log_test(f"Conversion with {payment}", False, f"Failed: {response.status_code} - {response.text}")
+                        
+            except Exception as e:
+                self.log_test(f"Conversion with {payment}", False, f"Error: {str(e)}")
+        
+        # Step 4: Test conversion of already converted orçamento (should fail)
+        if orcamento_id:
+            try:
+                response = requests.post(f"{self.base_url}/orcamentos/{orcamento_id}/converter-venda", 
+                                       json=conversion_data, headers=self.get_headers())
+                if response.status_code == 400:
+                    self.log_test("Prevent Double Conversion", True, "Correctly prevented conversion of already sold orçamento")
+                else:
+                    self.log_test("Prevent Double Conversion", False, f"Expected 400 but got {response.status_code}")
+            except Exception as e:
+                self.log_test("Prevent Double Conversion", False, f"Error: {str(e)}")
+        
+        # Step 5: Test conversion of expired orçamento
+        expired_orcamento_data = orcamento_data.copy()
+        expired_orcamento_data["dias_validade"] = -1  # Already expired
+        
+        try:
+            response = requests.post(f"{self.base_url}/orcamentos", json=expired_orcamento_data, headers=self.get_headers())
+            if response.status_code == 200:
+                expired_id = response.json()["id"]
+                
+                response = requests.post(f"{self.base_url}/orcamentos/{expired_id}/converter-venda", 
+                                       json=conversion_data, headers=self.get_headers())
+                if response.status_code == 400:
+                    error_msg = response.json().get("detail", response.text)
+                    if "expirado" in error_msg.lower():
+                        self.log_test("Prevent Expired Conversion", True, f"Correctly prevented expired orçamento conversion: {error_msg}")
+                    else:
+                        self.log_test("Prevent Expired Conversion", False, f"Wrong error message: {error_msg}")
+                else:
+                    self.log_test("Prevent Expired Conversion", False, f"Expected 400 but got {response.status_code}")
+        except Exception as e:
+            self.log_test("Prevent Expired Conversion", False, f"Error: {str(e)}")
+
+    def test_notas_fiscais_datetime_validation(self):
+        """Test Notas Fiscais creation with datetime validation fixes"""
+        print("\n=== TESTING NOTAS FISCAIS DATETIME VALIDATION ===")
+        
+        # First ensure we have a supplier
+        supplier_data = {
+            "razao_social": "Fornecedor Teste Datetime Ltda",
+            "cnpj": "98.765.432/0001-10",
+            "telefone": "(11) 5555-6666"
+        }
+        
+        supplier_id = None
+        try:
+            response = requests.post(f"{self.base_url}/fornecedores", json=supplier_data, headers=self.get_headers())
+            if response.status_code == 200:
+                supplier_id = response.json()["id"]
+                self.log_test("Create Supplier for NF Tests", True, "Supplier created successfully")
+            else:
+                self.log_test("Create Supplier for NF Tests", False, f"HTTP {response.status_code}: {response.text}")
+                return
+        except Exception as e:
+            self.log_test("Create Supplier for NF Tests", False, f"Error: {str(e)}")
+            return
+        
+        if not self.test_products:
+            self.log_test("Notas Fiscais Tests", False, "No test products available")
+            return
+        
+        # Test 1: Create nota fiscal with current date (should work)
+        from datetime import datetime, timezone, timedelta
+        
+        nota_data_valid = {
+            "numero": "000123",
+            "serie": "1",
+            "fornecedor_id": supplier_id,
+            "data_emissao": datetime.now(timezone.utc).isoformat(),  # Current date with timezone
+            "valor_total": 150.00,
+            "itens": [
+                {
+                    "produto_id": self.test_products[0]["id"],
+                    "quantidade": 3,
+                    "preco_unitario": 50.00
+                }
+            ],
+            "icms": 15.00,
+            "ipi": 5.00
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/notas-fiscais", json=nota_data_valid, headers=self.get_headers())
+            if response.status_code == 200:
+                nota_id = response.json()["id"]
+                self.log_test("NF Creation - Valid Date with Timezone", True, f"✅ Nota fiscal created successfully: {nota_id}")
+            else:
+                error_detail = response.json().get("detail", response.text) if response.headers.get("content-type", "").startswith("application/json") else response.text
+                self.log_test("NF Creation - Valid Date with Timezone", False, f"❌ Failed: HTTP {response.status_code} - {error_detail}")
+        except Exception as e:
+            self.log_test("NF Creation - Valid Date with Timezone", False, f"❌ Error: {str(e)}")
+        
+        # Test 2: Create nota fiscal with date without timezone (should work with auto-fix)
+        nota_data_naive = nota_data_valid.copy()
+        nota_data_naive["numero"] = "000124"
+        nota_data_naive["data_emissao"] = datetime.now().isoformat()  # No timezone info
+        
+        try:
+            response = requests.post(f"{self.base_url}/notas-fiscais", json=nota_data_naive, headers=self.get_headers())
+            if response.status_code == 200:
+                self.log_test("NF Creation - Naive Datetime Auto-fix", True, "✅ Naive datetime automatically converted to UTC")
+            else:
+                error_detail = response.json().get("detail", response.text) if response.headers.get("content-type", "").startswith("application/json") else response.text
+                self.log_test("NF Creation - Naive Datetime Auto-fix", False, f"❌ Failed: {error_detail}")
+        except Exception as e:
+            self.log_test("NF Creation - Naive Datetime Auto-fix", False, f"❌ Error: {str(e)}")
+        
+        # Test 3: Create nota fiscal with future date (should fail)
+        nota_data_future = nota_data_valid.copy()
+        nota_data_future["numero"] = "000125"
+        nota_data_future["data_emissao"] = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
+        
+        try:
+            response = requests.post(f"{self.base_url}/notas-fiscais", json=nota_data_future, headers=self.get_headers())
+            if response.status_code == 400:
+                error_msg = response.json().get("detail", response.text)
+                if "futura" in error_msg.lower():
+                    self.log_test("NF Creation - Future Date Validation", True, f"Correctly rejected future date: {error_msg}")
+                else:
+                    self.log_test("NF Creation - Future Date Validation", False, f"Wrong error message: {error_msg}")
+            else:
+                self.log_test("NF Creation - Future Date Validation", False, f"Expected 400 but got {response.status_code}")
+        except Exception as e:
+            self.log_test("NF Creation - Future Date Validation", False, f"Error: {str(e)}")
+        
+        # Test 4: Create nota fiscal with very old date (should fail)
+        nota_data_old = nota_data_valid.copy()
+        nota_data_old["numero"] = "000126"
+        nota_data_old["data_emissao"] = (datetime.now(timezone.utc) - timedelta(days=100)).isoformat()
+        
+        try:
+            response = requests.post(f"{self.base_url}/notas-fiscais", json=nota_data_old, headers=self.get_headers())
+            if response.status_code == 400:
+                error_msg = response.json().get("detail", response.text)
+                if "antiga" in error_msg.lower() or "90 dias" in error_msg:
+                    self.log_test("NF Creation - Old Date Validation", True, f"Correctly rejected old date: {error_msg}")
+                else:
+                    self.log_test("NF Creation - Old Date Validation", False, f"Wrong error message: {error_msg}")
+            else:
+                self.log_test("NF Creation - Old Date Validation", False, f"Expected 400 but got {response.status_code}")
+        except Exception as e:
+            self.log_test("NF Creation - Old Date Validation", False, f"Error: {str(e)}")
+        
+        # Test 5: Create nota fiscal with valid old date (30 days ago - should work)
+        nota_data_valid_old = nota_data_valid.copy()
+        nota_data_valid_old["numero"] = "000127"
+        nota_data_valid_old["data_emissao"] = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+        
+        try:
+            response = requests.post(f"{self.base_url}/notas-fiscais", json=nota_data_valid_old, headers=self.get_headers())
+            if response.status_code == 200:
+                self.log_test("NF Creation - Valid Old Date", True, "30-day old date accepted correctly")
+            else:
+                error_detail = response.json().get("detail", response.text) if response.headers.get("content-type", "").startswith("application/json") else response.text
+                self.log_test("NF Creation - Valid Old Date", False, f"Failed: {error_detail}")
+        except Exception as e:
+            self.log_test("NF Creation - Valid Old Date", False, f"Error: {str(e)}")
+
+    def test_vendas_creation_comprehensive(self):
+        """Test Vendas creation with stock validation"""
+        print("\n=== TESTING VENDAS CREATION WITH STOCK VALIDATION ===")
+        
+        if not self.test_products or not hasattr(self, 'test_client_id'):
+            self.log_test("Vendas Creation Tests", False, "Missing test data")
+            return
+        
+        # Test 1: Create venda with sufficient stock
+        venda_data = {
+            "cliente_id": self.test_client_id,
+            "itens": [
+                {
+                    "produto_id": self.test_products[0]["id"],  # Vestido
+                    "quantidade": 1,
+                    "preco_unitario": 45.90
+                }
+            ],
+            "desconto": 0,
+            "frete": 5.00,
+            "forma_pagamento": "pix",
+            "observacoes": "Venda teste com estoque suficiente"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/vendas", json=venda_data, headers=self.get_headers())
+            if response.status_code == 200:
+                venda_id = response.json()["id"]
+                self.log_test("Venda Creation - Sufficient Stock", True, f"✅ Venda created successfully: {venda_id}")
+                
+                # Verify stock was deducted
+                check_data = {
+                    "produto_id": self.test_products[0]["id"],
+                    "quantidade": 1
+                }
+                response = requests.post(f"{self.base_url}/estoque/check-disponibilidade", json=check_data, headers=self.get_headers())
+                if response.status_code == 200:
+                    stock_data = response.json()
+                    self.log_test("Stock Deduction Verification", True, f"Stock after sale: {stock_data['estoque_atual']} units")
+                
+            else:
+                error_detail = response.json().get("detail", response.text) if response.headers.get("content-type", "").startswith("application/json") else response.text
+                self.log_test("Venda Creation - Sufficient Stock", False, f"❌ Failed: HTTP {response.status_code} - {error_detail}")
+        except Exception as e:
+            self.log_test("Venda Creation - Sufficient Stock", False, f"❌ Error: {str(e)}")
+        
+        # Test 2: Try to create venda with insufficient stock
+        venda_data_insufficient = {
+            "cliente_id": self.test_client_id,
+            "itens": [
+                {
+                    "produto_id": self.test_products[1]["id"],  # Tênis
+                    "quantidade": 100,  # More than available
+                    "preco_unitario": 65.90
+                }
+            ],
+            "desconto": 0,
+            "frete": 0,
+            "forma_pagamento": "cartao"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/vendas", json=venda_data_insufficient, headers=self.get_headers())
+            if response.status_code == 400:
+                error_msg = response.json().get("detail", response.text)
+                if "insuficiente" in error_msg.lower():
+                    self.log_test("Venda Creation - Insufficient Stock", True, f"✅ Correctly blocked insufficient stock: {error_msg}")
+                else:
+                    self.log_test("Venda Creation - Insufficient Stock", False, f"Wrong error message: {error_msg}")
+            else:
+                self.log_test("Venda Creation - Insufficient Stock", False, f"Expected 400 but got {response.status_code}")
+        except Exception as e:
+            self.log_test("Venda Creation - Insufficient Stock", False, f"Error: {str(e)}")
+        
+        # Test 3: Test different payment methods
+        payment_methods = ["cartao", "boleto", "dinheiro", "pix"]
+        for payment in payment_methods:
+            venda_test = {
+                "cliente_id": self.test_client_id,
+                "itens": [
+                    {
+                        "produto_id": self.test_products[2]["id"],  # Boneca
+                        "quantidade": 1,
+                        "preco_unitario": 89.90
+                    }
+                ],
+                "desconto": 5.00,
+                "frete": 0,
+                "forma_pagamento": payment,
+                "observacoes": f"Teste venda com {payment}"
+            }
+            
+            try:
+                response = requests.post(f"{self.base_url}/vendas", json=venda_test, headers=self.get_headers())
+                if response.status_code == 200:
+                    self.log_test(f"Venda with {payment}", True, f"Venda created with {payment}")
+                else:
+                    error_detail = response.json().get("detail", response.text) if response.headers.get("content-type", "").startswith("application/json") else response.text
+                    self.log_test(f"Venda with {payment}", False, f"Failed: {error_detail}")
+            except Exception as e:
+                self.log_test(f"Venda with {payment}", False, f"Error: {str(e)}")
+        
+        # Test 4: Verify movement logging for vendas
+        try:
+            response = requests.get(f"{self.base_url}/estoque/movimentacoes", headers=self.get_headers())
+            if response.status_code == 200:
+                movimentacoes = response.json()
+                venda_movements = [m for m in movimentacoes if m.get("referencia_tipo") == "venda"]
+                if len(venda_movements) > 0:
+                    self.log_test("Venda Movement Logging", True, f"Found {len(venda_movements)} venda movements logged")
+                else:
+                    self.log_test("Venda Movement Logging", False, "No venda movements found in logs")
+            else:
+                self.log_test("Venda Movement Logging", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Venda Movement Logging", False, f"Error: {str(e)}")
+
     def test_edge_cases(self):
         """Test edge cases and error scenarios"""
         print("\n=== TESTING EDGE CASES ===")
