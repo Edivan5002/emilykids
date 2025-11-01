@@ -1302,6 +1302,438 @@ async def toggle_usuario_status(user_id: str, current_user: dict = Depends(get_c
     
     return {"message": f"Usuário {'ativado' if novo_status else 'desativado'} com sucesso", "ativo": novo_status}
 
+
+# ========== RBAC ENDPOINTS ==========
+
+# --- ROLES (Papéis) ---
+
+@api_router.get("/roles", response_model=List[Role])
+async def get_roles(current_user: dict = Depends(get_current_user)):
+    """Lista todos os papéis"""
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores podem gerenciar papéis")
+    
+    roles = await db.roles.find({}, {"_id": 0}).sort("hierarquia_nivel", 1).to_list(1000)
+    return roles
+
+@api_router.get("/roles/{role_id}", response_model=Role)
+async def get_role(role_id: str, current_user: dict = Depends(get_current_user)):
+    """Busca um papel específico"""
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores")
+    
+    role = await db.roles.find_one({"id": role_id}, {"_id": 0})
+    if not role:
+        raise HTTPException(status_code=404, detail="Papel não encontrado")
+    return role
+
+@api_router.post("/roles")
+async def create_role(role_data: RoleCreate, current_user: dict = Depends(get_current_user)):
+    """Cria novo papel customizado"""
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores")
+    
+    # Verificar se nome já existe
+    existing = await db.roles.find_one({"nome": role_data.nome}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Já existe um papel com este nome")
+    
+    # Validar permissões existem
+    for perm_id in role_data.permissoes:
+        perm = await db.permissions.find_one({"id": perm_id}, {"_id": 0})
+        if not perm:
+            raise HTTPException(status_code=400, detail=f"Permissão {perm_id} não encontrada")
+    
+    role = Role(
+        nome=role_data.nome,
+        descricao=role_data.descricao,
+        cor=role_data.cor,
+        hierarquia_nivel=role_data.hierarquia_nivel,
+        permissoes=role_data.permissoes,
+        is_sistema=False
+    )
+    
+    await db.roles.insert_one(role.model_dump())
+    
+    # Log de auditoria
+    await log_permission_change(
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        acao="role_created",
+        detalhes={"role_id": role.id, "role_nome": role.nome},
+        target_role_id=role.id
+    )
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="papeis",
+        acao="criar",
+        detalhes={"role_id": role.id, "role_nome": role.nome}
+    )
+    
+    return {"message": "Papel criado com sucesso", "role_id": role.id}
+
+@api_router.put("/roles/{role_id}")
+async def update_role(role_id: str, role_data: RoleUpdate, current_user: dict = Depends(get_current_user)):
+    """Atualiza papel existente"""
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores")
+    
+    role = await db.roles.find_one({"id": role_id}, {"_id": 0})
+    if not role:
+        raise HTTPException(status_code=404, detail="Papel não encontrado")
+    
+    # Não permitir editar papéis do sistema
+    if role.get("is_sistema", False):
+        raise HTTPException(status_code=400, detail="Papéis do sistema não podem ser editados")
+    
+    # Validar permissões se fornecidas
+    if role_data.permissoes is not None:
+        for perm_id in role_data.permissoes:
+            perm = await db.permissions.find_one({"id": perm_id}, {"_id": 0})
+            if not perm:
+                raise HTTPException(status_code=400, detail=f"Permissão {perm_id} não encontrada")
+    
+    update_data = {k: v for k, v in role_data.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.roles.update_one({"id": role_id}, {"$set": update_data})
+    
+    # Log de auditoria
+    await log_permission_change(
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        acao="role_updated",
+        detalhes={"role_id": role_id, "changes": update_data},
+        target_role_id=role_id
+    )
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="papeis",
+        acao="editar",
+        detalhes={"role_id": role_id}
+    )
+    
+    return {"message": "Papel atualizado com sucesso"}
+
+@api_router.delete("/roles/{role_id}")
+async def delete_role(role_id: str, current_user: dict = Depends(get_current_user)):
+    """Deleta papel customizado"""
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores")
+    
+    role = await db.roles.find_one({"id": role_id}, {"_id": 0})
+    if not role:
+        raise HTTPException(status_code=404, detail="Papel não encontrado")
+    
+    # Não permitir deletar papéis do sistema
+    if role.get("is_sistema", False):
+        raise HTTPException(status_code=400, detail="Papéis do sistema não podem ser deletados")
+    
+    # Verificar se há usuários usando este papel
+    users_with_role = await db.users.count_documents({"role_id": role_id})
+    if users_with_role > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Existem {users_with_role} usuário(s) com este papel. Reatribua antes de deletar."
+        )
+    
+    await db.roles.delete_one({"id": role_id})
+    
+    # Log de auditoria
+    await log_permission_change(
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        acao="role_deleted",
+        detalhes={"role_id": role_id, "role_nome": role["nome"]},
+        target_role_id=role_id
+    )
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="papeis",
+        acao="deletar",
+        detalhes={"role_id": role_id}
+    )
+    
+    return {"message": "Papel deletado com sucesso"}
+
+@api_router.post("/roles/{role_id}/duplicate")
+async def duplicate_role(role_id: str, novo_nome: str, current_user: dict = Depends(get_current_user)):
+    """Duplica um papel existente"""
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores")
+    
+    role = await db.roles.find_one({"id": role_id}, {"_id": 0})
+    if not role:
+        raise HTTPException(status_code=404, detail="Papel não encontrado")
+    
+    # Verificar se novo nome já existe
+    existing = await db.roles.find_one({"nome": novo_nome}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Já existe um papel com este nome")
+    
+    new_role = Role(
+        nome=novo_nome,
+        descricao=f"Cópia de {role['nome']}",
+        cor=role["cor"],
+        hierarquia_nivel=role["hierarquia_nivel"],
+        permissoes=role["permissoes"],
+        is_sistema=False
+    )
+    
+    await db.roles.insert_one(new_role.model_dump())
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="papeis",
+        acao="duplicar",
+        detalhes={"role_original_id": role_id, "role_novo_id": new_role.id}
+    )
+    
+    return {"message": "Papel duplicado com sucesso", "role_id": new_role.id}
+
+# --- PERMISSIONS (Permissões) ---
+
+@api_router.get("/permissions", response_model=List[Permission])
+async def get_permissions(current_user: dict = Depends(get_current_user)):
+    """Lista todas as permissões do sistema"""
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores")
+    
+    permissions = await db.permissions.find({}, {"_id": 0}).sort([("modulo", 1), ("acao", 1)]).to_list(10000)
+    return permissions
+
+@api_router.get("/permissions/by-module")
+async def get_permissions_by_module(current_user: dict = Depends(get_current_user)):
+    """Lista permissões agrupadas por módulo"""
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores")
+    
+    permissions = await db.permissions.find({}, {"_id": 0}).to_list(10000)
+    
+    # Agrupar por módulo
+    by_module = {}
+    for perm in permissions:
+        modulo = perm["modulo"]
+        if modulo not in by_module:
+            by_module[modulo] = []
+        by_module[modulo].append(perm)
+    
+    return by_module
+
+@api_router.get("/users/{user_id}/permissions")
+async def get_user_all_permissions(user_id: str, current_user: dict = Depends(get_current_user)):
+    """Retorna todas as permissões efetivas de um usuário"""
+    if current_user.get("papel") != "admin" and current_user["id"] != user_id:
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    
+    permissions = await get_user_permissions(user_id)
+    
+    # Agrupar por módulo
+    by_module = {}
+    for perm in permissions:
+        modulo = perm["modulo"]
+        if modulo not in by_module:
+            by_module[modulo] = []
+        by_module[modulo].append(perm["acao"])
+    
+    return {
+        "user_id": user_id,
+        "total_permissions": len(permissions),
+        "permissions": permissions,
+        "by_module": by_module
+    }
+
+# --- USER GROUPS (Grupos) ---
+
+@api_router.get("/user-groups", response_model=List[UserGroup])
+async def get_user_groups(current_user: dict = Depends(get_current_user)):
+    """Lista todos os grupos"""
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores")
+    
+    groups = await db.user_groups.find({}, {"_id": 0}).to_list(1000)
+    return groups
+
+@api_router.post("/user-groups")
+async def create_user_group(group_data: UserGroupCreate, current_user: dict = Depends(get_current_user)):
+    """Cria novo grupo de usuários"""
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores")
+    
+    # Verificar se nome já existe
+    existing = await db.user_groups.find_one({"nome": group_data.nome}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Já existe um grupo com este nome")
+    
+    group = UserGroup(
+        nome=group_data.nome,
+        descricao=group_data.descricao,
+        user_ids=group_data.user_ids,
+        role_ids=group_data.role_ids
+    )
+    
+    await db.user_groups.insert_one(group.model_dump())
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="grupos",
+        acao="criar",
+        detalhes={"group_id": group.id, "group_nome": group.nome}
+    )
+    
+    return {"message": "Grupo criado com sucesso", "group_id": group.id}
+
+@api_router.put("/user-groups/{group_id}")
+async def update_user_group(group_id: str, group_data: UserGroupCreate, current_user: dict = Depends(get_current_user)):
+    """Atualiza grupo existente"""
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores")
+    
+    group = await db.user_groups.find_one({"id": group_id}, {"_id": 0})
+    if not group:
+        raise HTTPException(status_code=404, detail="Grupo não encontrado")
+    
+    await db.user_groups.update_one(
+        {"id": group_id},
+        {"$set": group_data.model_dump()}
+    )
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="grupos",
+        acao="editar",
+        detalhes={"group_id": group_id}
+    )
+    
+    return {"message": "Grupo atualizado com sucesso"}
+
+@api_router.delete("/user-groups/{group_id}")
+async def delete_user_group(group_id: str, current_user: dict = Depends(get_current_user)):
+    """Deleta grupo"""
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores")
+    
+    result = await db.user_groups.delete_one({"id": group_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Grupo não encontrado")
+    
+    # Remover grupo dos usuários
+    await db.users.update_many(
+        {"grupos": group_id},
+        {"$pull": {"grupos": group_id}}
+    )
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="grupos",
+        acao="deletar",
+        detalhes={"group_id": group_id}
+    )
+    
+    return {"message": "Grupo deletado com sucesso"}
+
+# --- PERMISSION HISTORY (Histórico) ---
+
+@api_router.get("/permission-history")
+async def get_permission_history(
+    limit: int = 100,
+    offset: int = 0,
+    current_user: dict = Depends(get_current_user)
+):
+    """Lista histórico de mudanças de permissões"""
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores")
+    
+    total = await db.permission_history.count_documents({})
+    history = await db.permission_history.find({}, {"_id": 0}).sort("timestamp", -1).skip(offset).limit(limit).to_list(limit)
+    
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "history": history
+    }
+
+# --- TEMPORARY PERMISSIONS (Permissões Temporárias) ---
+
+@api_router.post("/temporary-permissions")
+async def grant_temporary_permission(
+    user_id: str,
+    permission_ids: List[str],
+    valid_from: str,
+    valid_until: str,
+    motivo: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Concede permissão temporária a usuário"""
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores")
+    
+    temp_perm = TemporaryPermission(
+        user_id=user_id,
+        permission_ids=permission_ids,
+        granted_by=current_user["id"],
+        valid_from=valid_from,
+        valid_until=valid_until,
+        motivo=motivo
+    )
+    
+    await db.temporary_permissions.insert_one(temp_perm.model_dump())
+    
+    await log_permission_change(
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        acao="temporary_permission_granted",
+        detalhes={
+            "temp_perm_id": temp_perm.id,
+            "target_user_id": user_id,
+            "valid_from": valid_from,
+            "valid_until": valid_until
+        },
+        target_user_id=user_id
+    )
+    
+    return {"message": "Permissão temporária concedida", "id": temp_perm.id}
+
+@api_router.get("/users/{user_id}/temporary-permissions")
+async def get_user_temporary_permissions(user_id: str, current_user: dict = Depends(get_current_user)):
+    """Lista permissões temporárias de um usuário"""
+    if current_user.get("papel") != "admin" and current_user["id"] != user_id:
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    
+    temp_perms = await db.temporary_permissions.find({"user_id": user_id}, {"_id": 0}).to_list(100)
+    return temp_perms
+
+# --- INITIALIZATION ---
+
+@api_router.post("/rbac/initialize")
+async def initialize_rbac(current_user: dict = Depends(get_current_user)):
+    """Inicializa sistema RBAC com papéis e permissões padrão"""
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores")
+    
+    await initialize_default_roles_and_permissions()
+    
+    return {"message": "Sistema RBAC inicializado com sucesso"}
+
+
 # ========== AUTORIZAÇÃO ==========
 
 class AutorizacaoRequest(BaseModel):
