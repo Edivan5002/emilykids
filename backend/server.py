@@ -1266,6 +1266,10 @@ async def create_nota_fiscal(nota_data: NotaFiscalCreate, current_user: dict = D
     # VALIDAÇÃO 2: Data de emissão não pode ser futura
     try:
         data_emissao = datetime.fromisoformat(nota_data.data_emissao)
+        # Se data_emissao não tiver timezone, assumir UTC
+        if data_emissao.tzinfo is None:
+            data_emissao = data_emissao.replace(tzinfo=timezone.utc)
+        
         if data_emissao > datetime.now(timezone.utc):
             raise HTTPException(
                 status_code=400,
