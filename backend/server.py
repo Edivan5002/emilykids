@@ -2129,6 +2129,10 @@ async def converter_orcamento_venda(
     
     # Validar se não expirou
     data_validade = datetime.fromisoformat(orcamento["data_validade"])
+    # Se data_validade não tiver timezone, assumir UTC
+    if data_validade.tzinfo is None:
+        data_validade = data_validade.replace(tzinfo=timezone.utc)
+    
     if data_validade < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="Orçamento expirado. Não pode ser convertido.")
     
