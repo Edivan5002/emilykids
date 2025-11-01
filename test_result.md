@@ -162,6 +162,54 @@ backend:
         agent: "main"
         comment: "Criado endpoint para ajuste manual de estoque. Recebe produto_id, quantidade, tipo (entrada/saida) e motivo. Valida se estoque não ficará negativo, atualiza produto, registra movimentação e cria log. Admin/gerente podem ajustar direto, vendedor precisa autorização via frontend."
 
+  - task: "Conversão de Orçamento para Venda (POST /api/orcamentos/{orcamento_id}/converter-venda)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "CORREÇÃO APLICADA: Frontend enviava forma_pagamento como query parameter, backend esperava JSON. Corrigido para receber JSON {forma_pagamento, desconto, frete, observacoes}. Endpoint valida orçamento existe, não está expirado, não foi vendido, verifica estoque disponível, cria venda e atualiza status orçamento para 'vendido'."
+
+  - task: "Criação de Notas Fiscais com validação datetime (POST /api/notas-fiscais)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "CORREÇÃO APLICADA: TypeError ao comparar datetime naive vs aware na criação de nota fiscal. Corrigido adicionando timezone UTC automaticamente se datetime for naive. Validações: data não futura, não muito antiga (>90 dias), fornecedor existe, produtos existem e ativos."
+
+  - task: "Validação de expiração de Orçamentos com datetime"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "CORREÇÃO APLICADA: Mesma issue de datetime naive vs aware na validação de data_validade de orçamentos. Corrigido adicionando timezone UTC na validação. Orçamentos expirados não podem ser convertidos em venda."
+
+  - task: "Criação de Vendas com validação de estoque (POST /api/vendas)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Endpoint de criação de vendas com validação robusta de estoque. Verifica disponibilidade considerando estoque reservado por orçamentos abertos, deduz estoque, registra movimentação e cria logs. Suporte a diferentes formas de pagamento."
+
 frontend:
   - task: "Validação de estoque ao adicionar item em Orçamento"
     implemented: true
