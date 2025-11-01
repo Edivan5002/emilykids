@@ -1483,20 +1483,71 @@ async def relatorio_notas_fiscais(
 
 # ========== ORÇAMENTOS ==========
 
+# ========== ORÇAMENTOS ==========
+
+# Configurações
+DIAS_VALIDADE_PADRAO = 7
+PERCENTUAL_DESCONTO_APROVACAO = 10.0  # Acima de 10% precisa aprovação
+
+def calcular_data_validade(dias: int) -> str:
+    """Calcula data de validade a partir de hoje"""
+    return (datetime.now(timezone.utc) + timedelta(days=dias)).isoformat()
+
+def calcular_margem_lucro(itens: List[dict], produtos_db) -> float:
+    """Calcula margem de lucro do orçamento"""
+    custo_total = 0
+    receita_total = 0
+    
+    for item in itens:
+        produto = next((p for p in produtos_db if p["id"] == item["produto_id"]), None)
+        if produto:
+            custo_total += item["quantidade"] * produto.get("preco_custo", 0)
+            receita_total += item["quantidade"] * item["preco_unitario"]
+    
+    if receita_total == 0:
+        return 0
+    
+    return ((receita_total - custo_total) / receita_total) * 100
+
 @api_router.get("/orcamentos", response_model=List[Orcamento])
-async def get_orcamentos(current_user: dict = Depends(get_current_user)):
-    orcamentos = await db.orcamentos.find({}, {"_id": 0}).to_list(1000)
+async def get_orcamentos(
+    status: str = None,
+    cliente_id: str = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Lista orçamentos com filtros"""
+    filtro = {}
+    if status:
+        filtro["status"] = status
+    if cliente_id:
+        filtro["cliente_id"] = cliente_id
+    
+    orcamentos = await db.orcamentos.find(filtro, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return orcamentos
 
 @api_router.post("/orcamentos", response_model=Orcamento)
 async def create_orcamento(orcamento_data: OrcamentoCreate, current_user: dict = Depends(get_current_user)):
-    # Validar estoque antes de criar o orçamento
-    orcamentos_abertos = await db.orcamentos.find({"status": "aberto"}, {"_id": 0}).to_list(1000)
+    """
+    Cria orçamento com validações robustas
+    """
+    # Validar cliente
+    cliente = await db.clientes.find_one({"id": orcamento_data.cliente_id}, {"_id": 0})
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
     
+    # Validar estoque antes de criar o orçamento
+    orcamentos_abertos = await db.orcamentos.find({"status": {"$in": ["aberto", "aprovado"]}}, {"_id": 0}).to_list(1000)
+    
+    produtos_db = []
     for item in orcamento_data.itens:
         produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
         if not produto:
             raise HTTPException(status_code=404, detail=f"Produto {item['produto_id']} não encontrado")
+        
+        if produto.get("status") == "inativo":
+            raise HTTPException(status_code=400, detail=f"Produto '{produto['nome']}' está inativo")
+        
+        produtos_db.append(produto)
         
         estoque_atual = produto.get("estoque_atual", 0)
         
@@ -1512,26 +1563,214 @@ async def create_orcamento(orcamento_data: OrcamentoCreate, current_user: dict =
         if item["quantidade"] > estoque_disponivel:
             raise HTTPException(
                 status_code=400, 
-                detail=f"Estoque insuficiente para o produto '{produto['nome']}'. Disponível: {estoque_disponivel} unidades (Atual: {estoque_atual}, Reservado: {estoque_reservado})"
+                detail=f"Estoque insuficiente para '{produto['nome']}'. Disponível: {estoque_disponivel}"
             )
     
-    # Se passou pela validação, criar o orçamento
-    total = sum(item["quantidade"] * item["preco_unitario"] for item in orcamento_data.itens)
-    total = total - orcamento_data.desconto + orcamento_data.frete
+    # Calcular valores
+    subtotal = sum(item["quantidade"] * item["preco_unitario"] for item in orcamento_data.itens)
+    desconto_percentual = (orcamento_data.desconto / subtotal * 100) if subtotal > 0 else 0
+    total = subtotal - orcamento_data.desconto + orcamento_data.frete
+    margem_lucro = calcular_margem_lucro(orcamento_data.itens, produtos_db)
+    
+    # Verificar se precisa aprovação por desconto
+    requer_aprovacao = desconto_percentual > PERCENTUAL_DESCONTO_APROVACAO
+    status_inicial = "em_analise" if requer_aprovacao else "aberto"
+    
+    # Calcular data de validade
+    data_validade = calcular_data_validade(orcamento_data.dias_validade)
     
     orcamento = Orcamento(
         cliente_id=orcamento_data.cliente_id,
         itens=orcamento_data.itens,
         desconto=orcamento_data.desconto,
+        desconto_percentual=desconto_percentual,
         frete=orcamento_data.frete,
+        subtotal=subtotal,
         total=total,
-        user_id=current_user["id"]
+        margem_lucro=margem_lucro,
+        status=status_inicial,
+        data_validade=data_validade,
+        dias_validade=orcamento_data.dias_validade,
+        observacoes=orcamento_data.observacoes,
+        observacoes_vendedor=orcamento_data.observacoes_vendedor,
+        requer_aprovacao=requer_aprovacao,
+        user_id=current_user["id"],
+        criado_por_nome=current_user["nome"],
+        historico_alteracoes=[{
+            "data": datetime.now(timezone.utc).isoformat(),
+            "usuario": current_user["nome"],
+            "acao": "criacao",
+            "detalhes": f"Orçamento criado com status '{status_inicial}'"
+        }]
     )
     
     await db.orcamentos.insert_one(orcamento.model_dump())
     
-    # Reservar estoque
-    for item in orcamento.itens:
+    # Reservar estoque se aprovado ou aberto
+    if status_inicial in ["aberto", "aprovado"]:
+        for item in orcamento.itens:
+            produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
+            if produto:
+                novo_estoque = produto["estoque_atual"] - item["quantidade"]
+                await db.produtos.update_one(
+                    {"id": item["produto_id"]},
+                    {"$set": {"estoque_atual": novo_estoque}}
+                )
+    
+    # Log
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="orcamentos",
+        acao="criar",
+        detalhes={
+            "orcamento_id": orcamento.id,
+            "cliente": cliente["nome"],
+            "total": total,
+            "status": status_inicial,
+            "requer_aprovacao": requer_aprovacao
+        }
+    )
+    
+    return orcamento
+
+@api_router.put("/orcamentos/{orcamento_id}")
+async def update_orcamento(
+    orcamento_id: str,
+    orcamento_data: OrcamentoUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Edita orçamento (apenas rascunho, em_analise ou aberto)
+    """
+    orcamento = await db.orcamentos.find_one({"id": orcamento_id}, {"_id": 0})
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    # Validar status
+    if orcamento["status"] not in ["rascunho", "em_analise", "aberto"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível editar orçamento com status '{orcamento['status']}'"
+        )
+    
+    # Preparar dados
+    update_data = {k: v for k, v in orcamento_data.model_dump().items() if v is not None}
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Nenhum campo para atualizar")
+    
+    # Se alterou itens, recalcular tudo
+    if "itens" in update_data:
+        produtos_db = []
+        for item in update_data["itens"]:
+            produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
+            if produto:
+                produtos_db.append(produto)
+        
+        subtotal = sum(item["quantidade"] * item["preco_unitario"] for item in update_data["itens"])
+        desconto = update_data.get("desconto", orcamento.get("desconto", 0))
+        frete = update_data.get("frete", orcamento.get("frete", 0))
+        
+        update_data["subtotal"] = subtotal
+        update_data["total"] = subtotal - desconto + frete
+        update_data["margem_lucro"] = calcular_margem_lucro(update_data["itens"], produtos_db)
+        
+        if subtotal > 0:
+            update_data["desconto_percentual"] = (desconto / subtotal * 100)
+    
+    # Registrar alterações no histórico
+    alteracoes = []
+    for campo, novo_valor in update_data.items():
+        if campo not in ["historico_alteracoes", "updated_at"]:
+            valor_antigo = orcamento.get(campo)
+            if valor_antigo != novo_valor:
+                alteracoes.append(f"{campo}: {valor_antigo} → {novo_valor}")
+    
+    if alteracoes:
+        historico_entry = {
+            "data": datetime.now(timezone.utc).isoformat(),
+            "usuario": current_user["nome"],
+            "acao": "edicao",
+            "detalhes": "; ".join(alteracoes)
+        }
+        
+        if "historico_alteracoes" not in orcamento:
+            orcamento["historico_alteracoes"] = []
+        orcamento["historico_alteracoes"].append(historico_entry)
+        update_data["historico_alteracoes"] = orcamento["historico_alteracoes"]
+        
+        # Incrementar versão
+        update_data["versao"] = orcamento.get("versao", 1) + 1
+    
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.orcamentos.update_one(
+        {"id": orcamento_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Orçamento atualizado com sucesso", "alteracoes": alteracoes}
+
+@api_router.post("/orcamentos/{orcamento_id}/solicitar-aprovacao")
+async def solicitar_aprovacao_orcamento(orcamento_id: str, current_user: dict = Depends(get_current_user)):
+    """Solicita aprovação para orçamento em rascunho"""
+    orcamento = await db.orcamentos.find_one({"id": orcamento_id}, {"_id": 0})
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    if orcamento["status"] != "rascunho":
+        raise HTTPException(status_code=400, detail="Apenas orçamentos em rascunho podem solicitar aprovação")
+    
+    historico_entry = {
+        "data": datetime.now(timezone.utc).isoformat(),
+        "usuario": current_user["nome"],
+        "acao": "solicitacao_aprovacao",
+        "detalhes": "Orçamento enviado para aprovação"
+    }
+    
+    if "historico_alteracoes" not in orcamento:
+        orcamento["historico_alteracoes"] = []
+    orcamento["historico_alteracoes"].append(historico_entry)
+    
+    await db.orcamentos.update_one(
+        {"id": orcamento_id},
+        {"$set": {
+            "status": "em_analise",
+            "historico_alteracoes": orcamento["historico_alteracoes"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Orçamento enviado para aprovação"}
+
+@api_router.post("/orcamentos/{orcamento_id}/aprovar")
+async def aprovar_orcamento(orcamento_id: str, current_user: dict = Depends(get_current_user)):
+    """Aprova orçamento (apenas admin/gerente)"""
+    if current_user["papel"] not in ["admin", "gerente"]:
+        raise HTTPException(status_code=403, detail="Apenas administradores e gerentes podem aprovar orçamentos")
+    
+    orcamento = await db.orcamentos.find_one({"id": orcamento_id}, {"_id": 0})
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    if orcamento["status"] != "em_analise":
+        raise HTTPException(status_code=400, detail="Apenas orçamentos em análise podem ser aprovados")
+    
+    historico_entry = {
+        "data": datetime.now(timezone.utc).isoformat(),
+        "usuario": current_user["nome"],
+        "acao": "aprovacao",
+        "detalhes": f"Orçamento aprovado por {current_user['nome']}"
+    }
+    
+    if "historico_alteracoes" not in orcamento:
+        orcamento["historico_alteracoes"] = []
+    orcamento["historico_alteracoes"].append(historico_entry)
+    
+    # Reservar estoque ao aprovar
+    for item in orcamento["itens"]:
         produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
         if produto:
             novo_estoque = produto["estoque_atual"] - item["quantidade"]
@@ -1540,32 +1779,98 @@ async def create_orcamento(orcamento_data: OrcamentoCreate, current_user: dict =
                 {"$set": {"estoque_atual": novo_estoque}}
             )
     
-    return orcamento
+    await db.orcamentos.update_one(
+        {"id": orcamento_id},
+        {"$set": {
+            "status": "aberto",
+            "aprovado": True,
+            "aprovado_por": current_user["id"],
+            "data_aprovacao": datetime.now(timezone.utc).isoformat(),
+            "historico_alteracoes": orcamento["historico_alteracoes"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Orçamento aprovado com sucesso"}
 
 @api_router.post("/orcamentos/{orcamento_id}/converter-venda")
-async def converter_orcamento_venda(orcamento_id: str, forma_pagamento: str, current_user: dict = Depends(get_current_user)):
+async def converter_orcamento_venda(
+    orcamento_id: str,
+    conversao: ConversaoVendaRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Converte orçamento em venda com possibilidade de editar desconto/frete
+    """
     orcamento = await db.orcamentos.find_one({"id": orcamento_id}, {"_id": 0})
     if not orcamento:
         raise HTTPException(status_code=404, detail="Orçamento não encontrado")
     
-    if orcamento["status"] != "aberto":
-        raise HTTPException(status_code=400, detail="Orçamento não está aberto")
+    # Validar status
+    if orcamento["status"] not in ["aberto", "aprovado"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Apenas orçamentos abertos ou aprovados podem ser convertidos. Status atual: {orcamento['status']}"
+        )
+    
+    # Validar se não expirou
+    data_validade = datetime.fromisoformat(orcamento["data_validade"])
+    if data_validade < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Orçamento expirado. Não pode ser convertido.")
+    
+    # REVALIDAR ESTOQUE (pode ter vendido para outro)
+    orcamentos_abertos = await db.orcamentos.find(
+        {"status": {"$in": ["aberto", "aprovado"]}, "id": {"$ne": orcamento_id}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    for item in orcamento["itens"]:
+        produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
+        if not produto:
+            raise HTTPException(status_code=404, detail=f"Produto {item['produto_id']} não encontrado")
+        
+        estoque_atual = produto.get("estoque_atual", 0)
+        
+        # Calcular estoque reservado (SEM contar este orçamento)
+        estoque_reservado = 0
+        for orc in orcamentos_abertos:
+            for orc_item in orc.get("itens", []):
+                if orc_item.get("produto_id") == item["produto_id"]:
+                    estoque_reservado += orc_item.get("quantidade", 0)
+        
+        # Este orçamento já tem estoque reservado, então precisa ter pelo menos a quantidade dele
+        estoque_necessario = item["quantidade"]
+        estoque_disponivel_total = estoque_atual + estoque_necessario  # Somar o que já está reservado por este
+        
+        if estoque_disponivel_total - estoque_reservado < estoque_necessario:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Estoque insuficiente para '{produto['nome']}'. Estoque foi vendido para outro cliente."
+            )
+    
+    # Usar novo desconto/frete se fornecido, senão usar do orçamento
+    desconto_final = conversao.desconto if conversao.desconto is not None else orcamento["desconto"]
+    frete_final = conversao.frete if conversao.frete is not None else orcamento["frete"]
+    
+    # Recalcular total
+    subtotal = sum(item["quantidade"] * item["preco_unitario"] for item in orcamento["itens"])
+    total_final = subtotal - desconto_final + frete_final
     
     # Criar venda
     venda = Venda(
         cliente_id=orcamento["cliente_id"],
         itens=orcamento["itens"],
-        desconto=orcamento["desconto"],
-        frete=orcamento["frete"],
-        total=orcamento["total"],
-        forma_pagamento=forma_pagamento,
+        desconto=desconto_final,
+        frete=frete_final,
+        total=total_final,
+        forma_pagamento=conversao.forma_pagamento,
         orcamento_id=orcamento_id,
         user_id=current_user["id"]
     )
     
     await db.vendas.insert_one(venda.model_dump())
     
-    # Registrar movimentações
+    # Registrar movimentações (já está reservado, então não precisa descontar novamente do estoque)
     for item in venda.itens:
         movimentacao = MovimentacaoEstoque(
             produto_id=item["produto_id"],
@@ -1577,13 +1882,243 @@ async def converter_orcamento_venda(orcamento_id: str, forma_pagamento: str, cur
         )
         await db.movimentacoes_estoque.insert_one(movimentacao.model_dump())
     
+    # Adicionar ao histórico do orçamento
+    historico_entry = {
+        "data": datetime.now(timezone.utc).isoformat(),
+        "usuario": current_user["nome"],
+        "acao": "conversao_venda",
+        "detalhes": f"Convertido em venda {venda.id}. Desconto: R$ {desconto_final:.2f}, Frete: R$ {frete_final:.2f}"
+    }
+    
+    if "historico_alteracoes" not in orcamento:
+        orcamento["historico_alteracoes"] = []
+    orcamento["historico_alteracoes"].append(historico_entry)
+    
     # Atualizar status do orçamento
     await db.orcamentos.update_one(
         {"id": orcamento_id},
-        {"$set": {"status": "vendido"}}
+        {"$set": {
+            "status": "vendido",
+            "historico_alteracoes": orcamento["historico_alteracoes"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
     )
     
-    return {"message": "Orçamento convertido em venda", "venda_id": venda.id}
+    # Log
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="orcamentos",
+        acao="converter_venda",
+        detalhes={
+            "orcamento_id": orcamento_id,
+            "venda_id": venda.id,
+            "desconto_alterado": desconto_final != orcamento["desconto"],
+            "frete_alterado": frete_final != orcamento["frete"]
+        }
+    )
+    
+    return {
+        "message": "Orçamento convertido em venda com sucesso",
+        "venda_id": venda.id,
+        "total_venda": total_final,
+        "alteracoes": {
+            "desconto_original": orcamento["desconto"],
+            "desconto_final": desconto_final,
+            "frete_original": orcamento["frete"],
+            "frete_final": frete_final
+        }
+    }
+
+@api_router.post("/orcamentos/{orcamento_id}/duplicar")
+async def duplicar_orcamento(
+    orcamento_id: str,
+    duplicacao: DuplicarOrcamentoRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Duplica orçamento (cria cópia)"""
+    orcamento_original = await db.orcamentos.find_one({"id": orcamento_id}, {"_id": 0})
+    if not orcamento_original:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    # Cliente para o novo orçamento
+    novo_cliente_id = duplicacao.novo_cliente_id if duplicacao.novo_cliente_id else orcamento_original["cliente_id"]
+    
+    # Validar cliente
+    cliente = await db.clientes.find_one({"id": novo_cliente_id}, {"_id": 0})
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    # Criar novo orçamento
+    novo_id = str(uuid.uuid4())
+    data_validade = calcular_data_validade(orcamento_original.get("dias_validade", DIAS_VALIDADE_PADRAO))
+    
+    novo_orcamento = {
+        **orcamento_original,
+        "id": novo_id,
+        "cliente_id": novo_cliente_id,
+        "status": "rascunho",
+        "orcamento_original_id": orcamento_id,
+        "versao": 1,
+        "data_validade": data_validade,
+        "aprovado": False,
+        "aprovado_por": None,
+        "data_aprovacao": None,
+        "perdido": False,
+        "motivo_perda": None,
+        "user_id": current_user["id"],
+        "criado_por_nome": current_user["nome"],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": None,
+        "historico_alteracoes": [{
+            "data": datetime.now(timezone.utc).isoformat(),
+            "usuario": current_user["nome"],
+            "acao": "duplicacao",
+            "detalhes": f"Duplicado do orçamento {orcamento_id}"
+        }]
+    }
+    
+    # Remover _id se existir
+    novo_orcamento.pop("_id", None)
+    
+    await db.orcamentos.insert_one(novo_orcamento)
+    
+    return {
+        "message": "Orçamento duplicado com sucesso",
+        "novo_orcamento_id": novo_id,
+        "cliente": cliente["nome"]
+    }
+
+@api_router.post("/orcamentos/{orcamento_id}/marcar-perdido")
+async def marcar_orcamento_perdido(
+    orcamento_id: str,
+    perda: MarcarPerdidoRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Marca orçamento como perdido com motivo"""
+    orcamento = await db.orcamentos.find_one({"id": orcamento_id}, {"_id": 0})
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    if orcamento["status"] not in ["aberto", "aprovado", "em_analise"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível marcar como perdido orçamento com status '{orcamento['status']}'"
+        )
+    
+    # Devolver estoque se estava reservado
+    if orcamento["status"] in ["aberto", "aprovado"]:
+        for item in orcamento["itens"]:
+            produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
+            if produto:
+                novo_estoque = produto["estoque_atual"] + item["quantidade"]
+                await db.produtos.update_one(
+                    {"id": item["produto_id"]},
+                    {"$set": {"estoque_atual": novo_estoque}}
+                )
+    
+    # Adicionar ao histórico
+    historico_entry = {
+        "data": datetime.now(timezone.utc).isoformat(),
+        "usuario": current_user["nome"],
+        "acao": "marcado_perdido",
+        "detalhes": f"Motivo: {perda.motivo}"
+    }
+    
+    if "historico_alteracoes" not in orcamento:
+        orcamento["historico_alteracoes"] = []
+    orcamento["historico_alteracoes"].append(historico_entry)
+    
+    await db.orcamentos.update_one(
+        {"id": orcamento_id},
+        {"$set": {
+            "status": "perdido",
+            "perdido": True,
+            "motivo_perda": perda.motivo,
+            "data_perda": datetime.now(timezone.utc).isoformat(),
+            "historico_alteracoes": orcamento["historico_alteracoes"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Orçamento marcado como perdido"}
+
+@api_router.post("/orcamentos/verificar-expirados")
+async def verificar_orcamentos_expirados(current_user: dict = Depends(get_current_user)):
+    """
+    Job para verificar e marcar orçamentos expirados
+    (Apenas admin pode executar manualmente, mas pode ser agendado)
+    """
+    if current_user["papel"] != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores podem executar esta ação")
+    
+    # Buscar orçamentos abertos ou aprovados
+    orcamentos = await db.orcamentos.find(
+        {"status": {"$in": ["aberto", "aprovado", "em_analise"]}},
+        {"_id": 0}
+    ).to_list(5000)
+    
+    expirados = 0
+    agora = datetime.now(timezone.utc)
+    
+    for orcamento in orcamentos:
+        data_validade = datetime.fromisoformat(orcamento["data_validade"])
+        
+        if data_validade < agora:
+            # Devolver estoque
+            for item in orcamento["itens"]:
+                produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
+                if produto:
+                    novo_estoque = produto["estoque_atual"] + item["quantidade"]
+                    await db.produtos.update_one(
+                        {"id": item["produto_id"]},
+                        {"$set": {"estoque_atual": novo_estoque}}
+                    )
+            
+            # Marcar como expirado
+            historico_entry = {
+                "data": agora.isoformat(),
+                "usuario": "Sistema",
+                "acao": "expiracao_automatica",
+                "detalhes": "Orçamento expirado automaticamente"
+            }
+            
+            if "historico_alteracoes" not in orcamento:
+                orcamento["historico_alteracoes"] = []
+            orcamento["historico_alteracoes"].append(historico_entry)
+            
+            await db.orcamentos.update_one(
+                {"id": orcamento["id"]},
+                {"$set": {
+                    "status": "expirado",
+                    "historico_alteracoes": orcamento["historico_alteracoes"],
+                    "updated_at": agora.isoformat()
+                }}
+            )
+            
+            expirados += 1
+    
+    return {
+        "message": f"Verificação concluída. {expirados} orçamentos expirados.",
+        "expirados": expirados,
+        "total_verificados": len(orcamentos)
+    }
+
+@api_router.get("/orcamentos/{orcamento_id}/historico")
+async def get_historico_orcamento(orcamento_id: str, current_user: dict = Depends(get_current_user)):
+    """Retorna histórico completo do orçamento"""
+    orcamento = await db.orcamentos.find_one({"id": orcamento_id}, {"_id": 0})
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    return {
+        "orcamento_id": orcamento_id,
+        "cliente_id": orcamento.get("cliente_id"),
+        "status": orcamento.get("status"),
+        "versao": orcamento.get("versao", 1),
+        "historico": orcamento.get("historico_alteracoes", [])
+    }
 
 @api_router.post("/orcamentos/{orcamento_id}/devolver")
 async def devolver_orcamento(orcamento_id: str, current_user: dict = Depends(get_current_user)):
