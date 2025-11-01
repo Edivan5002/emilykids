@@ -743,6 +743,246 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     except Exception:
         raise HTTPException(status_code=401, detail="Token inválido")
 
+
+# ========== RBAC FUNCTIONS ==========
+
+async def get_user_permissions(user_id: str) -> List[dict]:
+    """Retorna todas as permissões do usuário (diretas + por papel + por grupo + temporárias)"""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        return []
+    
+    all_permissions = []
+    
+    # 1. Permissões por papel
+    if user.get("role_id"):
+        role = await db.roles.find_one({"id": user["role_id"]}, {"_id": 0})
+        if role:
+            for perm_id in role.get("permissoes", []):
+                perm = await db.permissions.find_one({"id": perm_id}, {"_id": 0})
+                if perm:
+                    all_permissions.append(perm)
+    
+    # 2. Permissões por grupos
+    for grupo_id in user.get("grupos", []):
+        grupo = await db.user_groups.find_one({"id": grupo_id}, {"_id": 0})
+        if grupo:
+            for role_id in grupo.get("role_ids", []):
+                role = await db.roles.find_one({"id": role_id}, {"_id": 0})
+                if role:
+                    for perm_id in role.get("permissoes", []):
+                        perm = await db.permissions.find_one({"id": perm_id}, {"_id": 0})
+                        if perm:
+                            all_permissions.append(perm)
+    
+    # 3. Permissões temporárias ativas
+    now = datetime.now(timezone.utc).isoformat()
+    temp_perms = await db.temporary_permissions.find({
+        "user_id": user_id,
+        "ativo": True,
+        "valid_from": {"$lte": now},
+        "valid_until": {"$gte": now}
+    }, {"_id": 0}).to_list(100)
+    
+    for temp in temp_perms:
+        for perm_id in temp.get("permission_ids", []):
+            perm = await db.permissions.find_one({"id": perm_id}, {"_id": 0})
+            if perm:
+                all_permissions.append(perm)
+    
+    # 4. Permissões delegadas ativas
+    delegations = await db.permission_delegations.find({
+        "to_user_id": user_id,
+        "ativo": True,
+        "valid_from": {"$lte": now},
+        "valid_until": {"$gte": now}
+    }, {"_id": 0}).to_list(100)
+    
+    for deleg in delegations:
+        for perm_id in deleg.get("permission_ids", []):
+            perm = await db.permissions.find_one({"id": perm_id}, {"_id": 0})
+            if perm:
+                all_permissions.append(perm)
+    
+    # Remover duplicatas
+    unique_perms = []
+    seen_ids = set()
+    for perm in all_permissions:
+        if perm["id"] not in seen_ids:
+            unique_perms.append(perm)
+            seen_ids.add(perm["id"])
+    
+    return unique_perms
+
+async def check_permission(user_id: str, modulo: str, acao: str) -> bool:
+    """Verifica se usuário tem permissão específica"""
+    # Admin sempre tem tudo
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if user and user.get("papel") == "admin":
+        return True
+    
+    permissions = await get_user_permissions(user_id)
+    
+    for perm in permissions:
+        if perm["modulo"] == modulo and perm["acao"] == acao:
+            return True
+        # Permissão wildcard (*)
+        if perm["modulo"] == modulo and perm["acao"] == "*":
+            return True
+        if perm["modulo"] == "*" and perm["acao"] == acao:
+            return True
+    
+    return False
+
+async def require_permission(modulo: str, acao: str):
+    """Dependency para verificar permissão"""
+    async def permission_checker(current_user: dict = Depends(get_current_user)):
+        has_permission = await check_permission(current_user["id"], modulo, acao)
+        if not has_permission:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Você não tem permissão para '{acao}' em '{modulo}'"
+            )
+        return current_user
+    return permission_checker
+
+async def log_permission_change(
+    user_id: str,
+    user_nome: str,
+    acao: str,
+    detalhes: dict,
+    target_user_id: str = None,
+    target_role_id: str = None
+):
+    """Registra mudanças de permissões para auditoria"""
+    history = PermissionHistory(
+        user_id=user_id,
+        user_nome=user_nome,
+        target_user_id=target_user_id,
+        target_role_id=target_role_id,
+        acao=acao,
+        detalhes=detalhes
+    )
+    await db.permission_history.insert_one(history.model_dump())
+
+async def validate_password_policy(password: str, policy: PasswordPolicy = None) -> tuple[bool, str]:
+    """Valida senha contra política"""
+    if not policy:
+        # Política padrão
+        policy = PasswordPolicy()
+    
+    if len(password) < policy.min_length:
+        return False, f"Senha deve ter pelo menos {policy.min_length} caracteres"
+    
+    if policy.require_uppercase and not any(c.isupper() for c in password):
+        return False, "Senha deve conter pelo menos uma letra maiúscula"
+    
+    if policy.require_lowercase and not any(c.islower() for c in password):
+        return False, "Senha deve conter pelo menos uma letra minúscula"
+    
+    if policy.require_numbers and not any(c.isdigit() for c in password):
+        return False, "Senha deve conter pelo menos um número"
+    
+    if policy.require_special_chars:
+        special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+        if not any(c in special_chars for c in password):
+            return False, "Senha deve conter pelo menos um caractere especial"
+    
+    return True, "Senha válida"
+
+async def initialize_default_roles_and_permissions():
+    """Inicializa papéis e permissões padrão do sistema"""
+    # Verificar se já existem
+    existing_roles = await db.roles.count_documents({})
+    if existing_roles > 0:
+        return
+    
+    # Criar permissões padrão
+    modulos = [
+        "dashboard", "produtos", "categorias", "subcategorias", "marcas",
+        "clientes", "fornecedores", "estoque", "notas_fiscais",
+        "orcamentos", "vendas", "relatorios", "usuarios", "logs", "configuracoes"
+    ]
+    
+    acoes = ["ler", "criar", "editar", "deletar", "exportar", "aprovar"]
+    
+    permission_map = {}
+    
+    for modulo in modulos:
+        for acao in acoes:
+            perm = Permission(
+                modulo=modulo,
+                acao=acao,
+                descricao=f"Permissão para {acao} em {modulo}"
+            )
+            await db.permissions.insert_one(perm.model_dump())
+            key = f"{modulo}:{acao}"
+            permission_map[key] = perm.id
+    
+    # Criar papéis padrão
+    # 1. Admin - Todas permissões
+    all_perm_ids = list(permission_map.values())
+    admin_role = Role(
+        nome="Administrador",
+        descricao="Acesso total ao sistema",
+        cor="#EF4444",
+        is_sistema=True,
+        hierarquia_nivel=1,
+        permissoes=all_perm_ids
+    )
+    await db.roles.insert_one(admin_role.model_dump())
+    
+    # 2. Gerente - Quase tudo, sem usuários e configurações
+    gerente_perms = [
+        perm_id for key, perm_id in permission_map.items()
+        if not key.startswith("usuarios:") and not key.startswith("configuracoes:")
+    ]
+    gerente_role = Role(
+        nome="Gerente",
+        descricao="Gerencia vendas, estoque e relatórios",
+        cor="#F59E0B",
+        is_sistema=True,
+        hierarquia_nivel=50,
+        permissoes=gerente_perms
+    )
+    await db.roles.insert_one(gerente_role.model_dump())
+    
+    # 3. Vendedor - Apenas vendas e orçamentos
+    vendedor_perms = [
+        perm_id for key, perm_id in permission_map.items()
+        if key.startswith("dashboard:ler") or
+           key.startswith("produtos:ler") or
+           key.startswith("clientes:") or
+           key.startswith("orcamentos:") or
+           key.startswith("vendas:") or
+           key.startswith("estoque:ler")
+    ]
+    vendedor_role = Role(
+        nome="Vendedor",
+        descricao="Cria orçamentos e vendas",
+        cor="#10B981",
+        is_sistema=True,
+        hierarquia_nivel=99,
+        permissoes=vendedor_perms
+    )
+    await db.roles.insert_one(vendedor_role.model_dump())
+    
+    # 4. Visualizador - Apenas leitura
+    visualizador_perms = [
+        perm_id for key, perm_id in permission_map.items()
+        if ":ler" in key
+    ]
+    visualizador_role = Role(
+        nome="Visualizador",
+        descricao="Apenas visualização de dados",
+        cor="#6B7280",
+        is_sistema=True,
+        hierarquia_nivel=100,
+        permissoes=visualizador_perms
+    )
+    await db.roles.insert_one(visualizador_role.model_dump())
+
+
 async def log_action(
     ip: str, 
     user_id: str, 
