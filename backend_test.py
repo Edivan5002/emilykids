@@ -911,20 +911,25 @@ class EmilyKidsBackendTester:
     
     def run_all_tests(self):
         """Run all tests in sequence"""
-        print("🧪 EMILY KIDS ERP - BACKEND STOCK VALIDATION TESTS")
+        print("🧪 EMILY KIDS ERP - BACKEND COMPLETE TESTING SUITE")
         print("=" * 60)
         
         if not self.authenticate():
             print("❌ Authentication failed. Cannot proceed with tests.")
             return False
         
-        if not self.setup_test_data():
-            print("❌ Test data setup failed. Some tests may not work properly.")
+        # Test the complete Logs module as requested
+        self.test_logs_module_complete()
         
-        self.test_stock_check_endpoint()
-        self.test_budget_stock_validation()
-        self.test_sales_stock_validation()
-        self.test_edge_cases()
+        # Also run stock tests if test data setup succeeds
+        if self.setup_test_data():
+            self.test_stock_check_endpoint()
+            self.test_budget_stock_validation()
+            self.test_sales_stock_validation()
+            self.test_manual_stock_adjustment()
+            self.test_edge_cases()
+        else:
+            print("⚠️ Test data setup failed. Skipping stock validation tests.")
         
         # Summary
         print("\n" + "=" * 60)
