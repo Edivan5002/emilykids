@@ -349,18 +349,82 @@ class DuplicarOrcamentoRequest(BaseModel):
 class MarcarPerdidoRequest(BaseModel):
     motivo: str
 
+class Parcela(BaseModel):
+    numero: int
+    valor: float
+    data_vencimento: str
+    data_pagamento: Optional[str] = None
+    status: str = "pendente"  # pendente, paga, atrasada
+    juros: float = 0
+    multa: float = 0
+
 class Venda(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    numero_venda: str  # Sequencial legível VEN-00001
     cliente_id: str
     itens: List[dict]
     desconto: float = 0
+    desconto_percentual: float = 0
     frete: float = 0
+    subtotal: float = 0
     total: float
+    
+    # Pagamento
     forma_pagamento: str  # cartao, pix, boleto, dinheiro
+    numero_parcelas: int = 1
+    valor_parcela: float = 0
+    parcelas: List[dict] = []  # Lista de parcelas
+    taxa_cartao: float = 0
+    taxa_cartao_percentual: float = 0
+    valor_pago: float = 0
+    saldo_pendente: float = 0
+    data_pagamento: Optional[str] = None
+    
+    # Status
+    status_venda: str = "rascunho"  # rascunho, aguardando_pagamento, paga, parcialmente_paga, cancelada
+    status_entrega: str = "aguardando_entrega"  # aguardando_entrega, em_transito, entregue, retirada_loja
+    
+    # Entrega
+    codigo_rastreio: Optional[str] = None
+    data_entrega: Optional[str] = None
+    
+    # Cancelamento
+    cancelada: bool = False
+    motivo_cancelamento: Optional[str] = None
+    cancelada_por: Optional[str] = None
+    data_cancelamento: Optional[str] = None
+    
+    # Devolução
+    devolvida: bool = False
+    itens_devolvidos: List[dict] = []
+    valor_devolvido: float = 0
+    
+    # Comissão
+    comissao_vendedor: float = 0
+    comissao_percentual: float = 0
+    
+    # Observações
+    observacoes: Optional[str] = None
+    observacoes_vendedor: Optional[str] = None
+    observacoes_entrega: Optional[str] = None
+    
+    # Autorização
+    requer_autorizacao: bool = False
+    autorizado: bool = False
+    autorizado_por: Optional[str] = None
+    data_autorizacao: Optional[str] = None
+    
+    # Origem
     orcamento_id: Optional[str] = None
+    
+    # Auditoria
     user_id: str
+    vendedor_nome: Optional[str] = None
+    historico_alteracoes: List[dict] = []
+    
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: Optional[str] = None
 
 class VendaCreate(BaseModel):
     cliente_id: str
@@ -368,7 +432,42 @@ class VendaCreate(BaseModel):
     desconto: float = 0
     frete: float = 0
     forma_pagamento: str
+    numero_parcelas: int = 1
+    observacoes: Optional[str] = None
+    observacoes_vendedor: Optional[str] = None
     orcamento_id: Optional[str] = None
+
+class VendaUpdate(BaseModel):
+    itens: Optional[List[dict]] = None
+    desconto: Optional[float] = None
+    frete: Optional[float] = None
+    observacoes: Optional[str] = None
+    observacoes_vendedor: Optional[str] = None
+
+class CancelarVendaRequest(BaseModel):
+    motivo: str
+
+class DevolucaoParcialRequest(BaseModel):
+    itens_devolver: List[dict]  # [{"produto_id": "", "quantidade": 0}]
+    motivo: str
+
+class RegistrarPagamentoRequest(BaseModel):
+    valor: float
+    parcela_numero: Optional[int] = None  # Se None, considera pagamento integral
+    data_pagamento: Optional[str] = None
+    comprovante: Optional[str] = None
+
+class TrocaProdutoRequest(BaseModel):
+    produto_saida_id: str
+    quantidade_saida: int
+    produto_entrada_id: str
+    quantidade_entrada: int
+    motivo: str
+
+class AtualizarEntregaRequest(BaseModel):
+    status_entrega: str  # em_transito, entregue, retirada_loja
+    codigo_rastreio: Optional[str] = None
+    observacoes_entrega: Optional[str] = None
 
 class CheckEstoqueRequest(BaseModel):
     produto_id: str
