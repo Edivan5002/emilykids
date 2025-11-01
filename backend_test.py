@@ -871,7 +871,10 @@ class EmilyKidsBackendTester:
         if custom_role_id:
             print("\n--- Testing POST /api/roles/{role_id}/duplicate ---")
             try:
-                params = {"novo_nome": "Supervisor Teste Duplicado"}
+                # Use a unique name to avoid conflicts
+                import time
+                unique_name = f"Supervisor Teste Duplicado {int(time.time())}"
+                params = {"novo_nome": unique_name}
                 response = requests.post(f"{self.base_url}/roles/{custom_role_id}/duplicate", 
                                        params=params, headers=self.get_headers())
                 if response.status_code == 200:
