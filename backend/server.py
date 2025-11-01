@@ -2121,10 +2121,10 @@ async def converter_orcamento_venda(
         raise HTTPException(status_code=404, detail="Orçamento não encontrado")
     
     # Validar status
-    if orcamento["status"] not in ["aberto", "aprovado"]:
+    if orcamento["status"] not in ["aberto", "aprovado", "em_analise"]:
         raise HTTPException(
             status_code=400,
-            detail=f"Apenas orçamentos abertos ou aprovados podem ser convertidos. Status atual: {orcamento['status']}"
+            detail=f"Apenas orçamentos abertos, aprovados ou em análise podem ser convertidos. Status atual: {orcamento['status']}"
         )
     
     # Validar se não expirou
