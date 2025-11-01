@@ -447,7 +447,7 @@ const Logs = () => {
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas</SelectItem>
+                      <SelectItem value="all">Todas</SelectItem>
                       <SelectItem value="INFO">INFO</SelectItem>
                       <SelectItem value="WARNING">WARNING</SelectItem>
                       <SelectItem value="ERROR">ERROR</SelectItem>
