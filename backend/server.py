@@ -1397,7 +1397,7 @@ async def logout(request: Request, current_user: dict = Depends(get_current_user
 
 @api_router.post("/auth/forgot-password")
 async def forgot_password(email: EmailStr, request: Request):
-    """Solicita redefinição de senha"""
+    """Solicita redefinição de senha por email"""
     
     user = await db.users.find_one({"email": email}, {"_id": 0})
     
@@ -1412,23 +1412,206 @@ async def forgot_password(email: EmailStr, request: Request):
             acao="solicitacao_email_inexistente",
             severidade="WARNING"
         )
+        # Aguardar um pouco para evitar timing attacks
+        import asyncio
+        await asyncio.sleep(0.5)
         return {"message": "Se o email estiver cadastrado, você receberá instruções para redefinir sua senha."}
     
-    # Log solicitação
+    # Verificar rate limiting (máximo 3 solicitações em 1 hora por usuário)
+    one_hour_ago = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+    recent_requests = await db.password_reset_tokens.count_documents({
+        "user_id": user["id"],
+        "created_at": {"$gte": one_hour_ago}
+    })
+    
+    if recent_requests >= 3:
+        await log_action(
+            ip=request.client.host if request.client else "0.0.0.0",
+            user_id=user["id"],
+            user_nome=user["nome"],
+            user_email=email,
+            tela="recuperacao_senha",
+            acao="rate_limit_excedido",
+            severidade="WARNING"
+        )
+        return {"message": "Se o email estiver cadastrado, você receberá instruções para redefinir sua senha."}
+    
+    # Gerar token único
+    token = generate_reset_token()
+    expires_at = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
+    
+    # Salvar token no banco
+    reset_token = PasswordResetToken(
+        user_id=user["id"],
+        token=token,
+        expires_at=expires_at,
+        ip=request.client.host if request.client else "0.0.0.0"
+    )
+    await db.password_reset_tokens.insert_one(reset_token.model_dump())
+    
+    # Enviar email
+    try:
+        await send_password_reset_email(email, token, user["nome"])
+        
+        # Log sucesso
+        await log_action(
+            ip=request.client.host if request.client else "0.0.0.0",
+            user_id=user["id"],
+            user_nome=user["nome"],
+            user_email=email,
+            tela="recuperacao_senha",
+            acao="solicitacao_enviada",
+            severidade="INFO",
+            detalhes={"expires_in_minutes": 30}
+        )
+    except Exception as e:
+        # Log erro mas não revelar ao usuário
+        await log_action(
+            ip=request.client.host if request.client else "0.0.0.0",
+            user_id=user["id"],
+            user_nome=user["nome"],
+            user_email=email,
+            tela="recuperacao_senha",
+            acao="erro_envio_email",
+            severidade="ERROR",
+            erro=str(e)
+        )
+    
+    return {"message": "Se o email estiver cadastrado, você receberá instruções para redefinir sua senha."}
+
+@api_router.post("/auth/reset-password")
+async def reset_password(token: str, new_password: str, request: Request):
+    """Redefine senha usando token de recuperação"""
+    
+    # Buscar token
+    reset_token = await db.password_reset_tokens.find_one({"token": token}, {"_id": 0})
+    
+    if not reset_token:
+        raise HTTPException(status_code=400, detail="Token inválido ou expirado")
+    
+    # Verificar se já foi usado
+    if reset_token.get("used", False):
+        await log_action(
+            ip=request.client.host if request.client else "0.0.0.0",
+            user_id=reset_token["user_id"],
+            tela="recuperacao_senha",
+            acao="token_ja_usado",
+            severidade="WARNING"
+        )
+        raise HTTPException(status_code=400, detail="Token inválido ou expirado")
+    
+    # Verificar expiração
+    expires_at = datetime.fromisoformat(reset_token["expires_at"])
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    
+    if expires_at < datetime.now(timezone.utc):
+        await log_action(
+            ip=request.client.host if request.client else "0.0.0.0",
+            user_id=reset_token["user_id"],
+            tela="recuperacao_senha",
+            acao="token_expirado",
+            severidade="WARNING"
+        )
+        raise HTTPException(status_code=400, detail="Token inválido ou expirado")
+    
+    # Validar nova senha
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="Senha deve ter pelo menos 6 caracteres")
+    
+    # Buscar usuário
+    user = await db.users.find_one({"id": reset_token["user_id"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
+    # Verificar se nova senha é diferente das últimas (se histórico existir)
+    senha_hash_nova = hash_password(new_password)
+    senha_historia = user.get("senha_historia", [])
+    
+    for old_hash in senha_historia[-5:]:  # Últimas 5 senhas
+        if verify_password(new_password, old_hash):
+            raise HTTPException(
+                status_code=400,
+                detail="Não use uma das suas últimas 5 senhas. Escolha uma senha diferente."
+            )
+    
+    # Atualizar senha
+    senha_historia.append(user["senha_hash"])
+    if len(senha_historia) > 5:
+        senha_historia = senha_historia[-5:]  # Manter apenas últimas 5
+    
+    await db.users.update_one(
+        {"id": user["id"]},
+        {
+            "$set": {
+                "senha_hash": senha_hash_nova,
+                "senha_historia": senha_historia,
+                "senha_ultimo_change": datetime.now(timezone.utc).isoformat(),
+                "login_attempts": 0,
+                "locked_until": None
+            }
+        }
+    )
+    
+    # Marcar token como usado
+    await db.password_reset_tokens.update_one(
+        {"token": token},
+        {"$set": {"used": True}}
+    )
+    
+    # Invalidar todas sessões ativas do usuário
+    await db.user_sessions.update_many(
+        {"user_id": user["id"]},
+        {"$set": {"ativo": False}}
+    )
+    
+    # Log sucesso
     await log_action(
         ip=request.client.host if request.client else "0.0.0.0",
         user_id=user["id"],
         user_nome=user["nome"],
-        user_email=email,
+        user_email=user["email"],
         tela="recuperacao_senha",
-        acao="solicitacao",
+        acao="senha_redefinida",
         severidade="INFO"
     )
     
-    # TODO: Implementar envio de email com token de redefinição
-    # Por enquanto, admin deve resetar manualmente
+    return {"message": "Senha redefinida com sucesso! Faça login com sua nova senha."}
+
+@api_router.get("/auth/validate-reset-token/{token}")
+async def validate_reset_token(token: str):
+    """Valida se token de recuperação é válido"""
     
-    return {"message": "Se o email estiver cadastrado, você receberá instruções para redefinir sua senha."}
+    reset_token = await db.password_reset_tokens.find_one({"token": token}, {"_id": 0})
+    
+    if not reset_token or reset_token.get("used", False):
+        return {"valid": False, "message": "Token inválido ou já utilizado"}
+    
+    expires_at = datetime.fromisoformat(reset_token["expires_at"])
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    
+    if expires_at < datetime.now(timezone.utc):
+        return {"valid": False, "message": "Token expirado"}
+    
+    # Buscar usuário para retornar email (parcialmente oculto)
+    user = await db.users.find_one({"id": reset_token["user_id"]}, {"_id": 0})
+    if not user:
+        return {"valid": False, "message": "Usuário não encontrado"}
+    
+    # Ocultar parte do email por segurança
+    email = user["email"]
+    parts = email.split("@")
+    if len(parts[0]) > 2:
+        hidden_email = parts[0][0] + "*" * (len(parts[0]) - 2) + parts[0][-1] + "@" + parts[1]
+    else:
+        hidden_email = parts[0][0] + "*@" + parts[1]
+    
+    return {
+        "valid": True,
+        "email": hidden_email,
+        "expires_in_minutes": int((expires_at - datetime.now(timezone.utc)).seconds / 60)
+    }
 
 @api_router.get("/auth/me")
 async def get_me(current_user: dict = Depends(get_current_user)):
