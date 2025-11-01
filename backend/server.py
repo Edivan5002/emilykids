@@ -1505,6 +1505,513 @@ async def get_logs(current_user: dict = Depends(get_current_user)):
     logs = await db.logs.find({}, {"_id": 0}).sort("timestamp", -1).to_list(200)
     return logs
 
+# ========== RELATÓRIOS AVANÇADOS ==========
+
+@api_router.get("/relatorios/dashboard/kpis")
+async def get_kpis_dashboard(data_inicio: str = None, data_fim: str = None, current_user: dict = Depends(get_current_user)):
+    """
+    Retorna KPIs principais do dashboard executivo
+    """
+    # Buscar todos os dados necessários
+    vendas = await db.vendas.find({}, {"_id": 0}).to_list(10000)
+    produtos = await db.produtos.find({}, {"_id": 0}).to_list(10000)
+    clientes = await db.clientes.find({}, {"_id": 0}).to_list(10000)
+    orcamentos = await db.orcamentos.find({}, {"_id": 0}).to_list(10000)
+    
+    # Filtrar por data se fornecido
+    if data_inicio and data_fim:
+        vendas = [v for v in vendas if data_inicio <= v["created_at"][:10] <= data_fim]
+        orcamentos = [o for o in orcamentos if data_inicio <= o["created_at"][:10] <= data_fim]
+    
+    # Cálculos de KPIs
+    total_vendas = len(vendas)
+    faturamento_total = sum(v["total"] for v in vendas)
+    ticket_medio = faturamento_total / total_vendas if total_vendas > 0 else 0
+    
+    total_descontos = sum(v.get("desconto", 0) for v in vendas)
+    total_frete = sum(v.get("frete", 0) for v in vendas)
+    
+    # Estoque
+    valor_estoque = sum(p["estoque_atual"] * p["preco_custo"] for p in produtos)
+    produtos_alerta_minimo = len([p for p in produtos if p["estoque_atual"] <= p["estoque_minimo"]])
+    
+    # Orçamentos
+    orcamentos_abertos = len([o for o in orcamentos if o["status"] == "aberto"])
+    orcamentos_convertidos = len([o for o in orcamentos if o["status"] == "vendido"])
+    taxa_conversao = (orcamentos_convertidos / len(orcamentos) * 100) if len(orcamentos) > 0 else 0
+    
+    # Clientes ativos (compraram no período)
+    clientes_ativos = len(set(v["cliente_id"] for v in vendas))
+    
+    # Top produtos
+    produtos_vendidos = {}
+    for venda in vendas:
+        for item in venda.get("itens", []):
+            pid = item["produto_id"]
+            if pid not in produtos_vendidos:
+                produtos_vendidos[pid] = {"quantidade": 0, "faturamento": 0}
+            produtos_vendidos[pid]["quantidade"] += item["quantidade"]
+            produtos_vendidos[pid]["faturamento"] += item["quantidade"] * item["preco_unitario"]
+    
+    top_produtos = sorted(produtos_vendidos.items(), key=lambda x: x[1]["faturamento"], reverse=True)[:5]
+    
+    return {
+        "periodo": {
+            "data_inicio": data_inicio,
+            "data_fim": data_fim
+        },
+        "vendas": {
+            "total": total_vendas,
+            "faturamento": faturamento_total,
+            "ticket_medio": ticket_medio,
+            "total_descontos": total_descontos,
+            "total_frete": total_frete,
+            "faturamento_liquido": faturamento_total
+        },
+        "estoque": {
+            "valor_total": valor_estoque,
+            "produtos_total": len(produtos),
+            "alertas_minimo": produtos_alerta_minimo
+        },
+        "orcamentos": {
+            "total": len(orcamentos),
+            "abertos": orcamentos_abertos,
+            "convertidos": orcamentos_convertidos,
+            "taxa_conversao": taxa_conversao
+        },
+        "clientes": {
+            "total": len(clientes),
+            "ativos": clientes_ativos
+        },
+        "top_produtos": [
+            {
+                "produto_id": pid,
+                "quantidade": data["quantidade"],
+                "faturamento": data["faturamento"]
+            } for pid, data in top_produtos
+        ]
+    }
+
+@api_router.get("/relatorios/vendas/por-periodo")
+async def relatorio_vendas_periodo(
+    data_inicio: str, 
+    data_fim: str,
+    agrupamento: str = "dia",  # dia, semana, mes
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Relatório de vendas agrupadas por período com comparação
+    """
+    vendas = await db.vendas.find({}, {"_id": 0}).to_list(10000)
+    
+    # Filtrar por período
+    vendas_periodo = [v for v in vendas if data_inicio <= v["created_at"][:10] <= data_fim]
+    
+    # Agrupar vendas
+    vendas_agrupadas = {}
+    for venda in vendas_periodo:
+        if agrupamento == "dia":
+            chave = venda["created_at"][:10]
+        elif agrupamento == "mes":
+            chave = venda["created_at"][:7]
+        else:  # semana
+            data = datetime.fromisoformat(venda["created_at"])
+            chave = f"{data.year}-W{data.isocalendar()[1]:02d}"
+        
+        if chave not in vendas_agrupadas:
+            vendas_agrupadas[chave] = {
+                "quantidade": 0,
+                "faturamento": 0,
+                "ticket_medio": 0
+            }
+        
+        vendas_agrupadas[chave]["quantidade"] += 1
+        vendas_agrupadas[chave]["faturamento"] += venda["total"]
+    
+    # Calcular ticket médio
+    for chave in vendas_agrupadas:
+        if vendas_agrupadas[chave]["quantidade"] > 0:
+            vendas_agrupadas[chave]["ticket_medio"] = vendas_agrupadas[chave]["faturamento"] / vendas_agrupadas[chave]["quantidade"]
+    
+    return {
+        "periodo": {"data_inicio": data_inicio, "data_fim": data_fim},
+        "agrupamento": agrupamento,
+        "total_vendas": len(vendas_periodo),
+        "faturamento_total": sum(v["total"] for v in vendas_periodo),
+        "dados": vendas_agrupadas
+    }
+
+@api_router.get("/relatorios/vendas/por-vendedor")
+async def relatorio_vendas_vendedor(
+    data_inicio: str = None,
+    data_fim: str = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Relatório de vendas por vendedor/usuário
+    """
+    vendas = await db.vendas.find({}, {"_id": 0}).to_list(10000)
+    usuarios = await db.users.find({}, {"_id": 0}).to_list(1000)
+    
+    if data_inicio and data_fim:
+        vendas = [v for v in vendas if data_inicio <= v["created_at"][:10] <= data_fim]
+    
+    # Agrupar por vendedor
+    vendas_por_vendedor = {}
+    for venda in vendas:
+        user_id = venda.get("user_id")
+        if user_id not in vendas_por_vendedor:
+            vendas_por_vendedor[user_id] = {
+                "quantidade": 0,
+                "faturamento": 0,
+                "ticket_medio": 0
+            }
+        vendas_por_vendedor[user_id]["quantidade"] += 1
+        vendas_por_vendedor[user_id]["faturamento"] += venda["total"]
+    
+    # Calcular ticket médio e adicionar nome do usuário
+    resultado = []
+    for user_id, data in vendas_por_vendedor.items():
+        usuario = next((u for u in usuarios if u["id"] == user_id), None)
+        data["ticket_medio"] = data["faturamento"] / data["quantidade"]
+        data["user_id"] = user_id
+        data["user_nome"] = usuario["nome"] if usuario else "Usuário Desconhecido"
+        resultado.append(data)
+    
+    resultado.sort(key=lambda x: x["faturamento"], reverse=True)
+    
+    return {
+        "periodo": {"data_inicio": data_inicio, "data_fim": data_fim},
+        "vendedores": resultado
+    }
+
+@api_router.get("/relatorios/financeiro/dre")
+async def relatorio_dre(
+    data_inicio: str,
+    data_fim: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    DRE Simplificado - Demonstrativo de Resultado
+    """
+    vendas = await db.vendas.find({}, {"_id": 0}).to_list(10000)
+    produtos = await db.produtos.find({}, {"_id": 0}).to_list(10000)
+    
+    vendas_periodo = [v for v in vendas if data_inicio <= v["created_at"][:10] <= data_fim]
+    
+    # Receita Bruta
+    receita_bruta = sum(v["total"] for v in vendas_periodo)
+    
+    # Descontos
+    total_descontos = sum(v.get("desconto", 0) for v in vendas_periodo)
+    
+    # Receita Líquida
+    receita_liquida = receita_bruta - total_descontos
+    
+    # Custo dos Produtos Vendidos (CMV)
+    cmv = 0
+    for venda in vendas_periodo:
+        for item in venda.get("itens", []):
+            produto = next((p for p in produtos if p["id"] == item["produto_id"]), None)
+            if produto:
+                cmv += item["quantidade"] * produto["preco_custo"]
+    
+    # Lucro Bruto
+    lucro_bruto = receita_liquida - cmv
+    margem_bruta = (lucro_bruto / receita_liquida * 100) if receita_liquida > 0 else 0
+    
+    # Lucro Líquido (simplificado, sem despesas operacionais)
+    lucro_liquido = lucro_bruto
+    margem_liquida = (lucro_liquido / receita_liquida * 100) if receita_liquida > 0 else 0
+    
+    return {
+        "periodo": {"data_inicio": data_inicio, "data_fim": data_fim},
+        "receita_bruta": receita_bruta,
+        "descontos": total_descontos,
+        "receita_liquida": receita_liquida,
+        "cmv": cmv,
+        "lucro_bruto": lucro_bruto,
+        "margem_bruta_percentual": margem_bruta,
+        "lucro_liquido": lucro_liquido,
+        "margem_liquida_percentual": margem_liquida
+    }
+
+@api_router.get("/relatorios/estoque/curva-abc")
+async def relatorio_curva_abc(current_user: dict = Depends(get_current_user)):
+    """
+    Curva ABC de produtos baseada em faturamento
+    """
+    vendas = await db.vendas.find({}, {"_id": 0}).to_list(10000)
+    produtos = await db.produtos.find({}, {"_id": 0}).to_list(10000)
+    
+    # Calcular faturamento por produto
+    faturamento_por_produto = {}
+    for venda in vendas:
+        for item in venda.get("itens", []):
+            pid = item["produto_id"]
+            if pid not in faturamento_por_produto:
+                faturamento_por_produto[pid] = 0
+            faturamento_por_produto[pid] += item["quantidade"] * item["preco_unitario"]
+    
+    # Ordenar por faturamento
+    produtos_ordenados = sorted(faturamento_por_produto.items(), key=lambda x: x[1], reverse=True)
+    
+    # Calcular percentuais acumulados
+    faturamento_total = sum(faturamento_por_produto.values())
+    percentual_acumulado = 0
+    curva_abc = []
+    
+    for pid, faturamento in produtos_ordenados:
+        produto = next((p for p in produtos if p["id"] == pid), None)
+        percentual = (faturamento / faturamento_total * 100) if faturamento_total > 0 else 0
+        percentual_acumulado += percentual
+        
+        # Classificação ABC
+        if percentual_acumulado <= 80:
+            classe = "A"
+        elif percentual_acumulado <= 95:
+            classe = "B"
+        else:
+            classe = "C"
+        
+        curva_abc.append({
+            "produto_id": pid,
+            "produto_nome": produto["nome"] if produto else "Desconhecido",
+            "faturamento": faturamento,
+            "percentual": percentual,
+            "percentual_acumulado": percentual_acumulado,
+            "classe": classe
+        })
+    
+    # Contagem por classe
+    classe_a = len([p for p in curva_abc if p["classe"] == "A"])
+    classe_b = len([p for p in curva_abc if p["classe"] == "B"])
+    classe_c = len([p for p in curva_abc if p["classe"] == "C"])
+    
+    return {
+        "total_produtos": len(curva_abc),
+        "faturamento_total": faturamento_total,
+        "distribuicao": {
+            "classe_a": classe_a,
+            "classe_b": classe_b,
+            "classe_c": classe_c
+        },
+        "produtos": curva_abc
+    }
+
+@api_router.get("/relatorios/clientes/rfm")
+async def relatorio_rfm(current_user: dict = Depends(get_current_user)):
+    """
+    Análise RFM (Recência, Frequência, Valor Monetário) dos clientes
+    """
+    vendas = await db.vendas.find({}, {"_id": 0}).to_list(10000)
+    clientes = await db.clientes.find({}, {"_id": 0}).to_list(10000)
+    
+    data_referencia = datetime.now(timezone.utc)
+    
+    # Calcular RFM por cliente
+    rfm_por_cliente = {}
+    for venda in vendas:
+        cliente_id = venda["cliente_id"]
+        if cliente_id not in rfm_por_cliente:
+            rfm_por_cliente[cliente_id] = {
+                "recencia": 9999,  # dias desde última compra
+                "frequencia": 0,
+                "valor_monetario": 0,
+                "ultima_compra": None
+            }
+        
+        data_venda = datetime.fromisoformat(venda["created_at"])
+        dias_desde_compra = (data_referencia - data_venda).days
+        
+        # Recência (menor é melhor)
+        if dias_desde_compra < rfm_por_cliente[cliente_id]["recencia"]:
+            rfm_por_cliente[cliente_id]["recencia"] = dias_desde_compra
+            rfm_por_cliente[cliente_id]["ultima_compra"] = venda["created_at"]
+        
+        # Frequência
+        rfm_por_cliente[cliente_id]["frequencia"] += 1
+        
+        # Valor Monetário
+        rfm_por_cliente[cliente_id]["valor_monetario"] += venda["total"]
+    
+    # Calcular scores RFM (1-5)
+    resultado = []
+    for cliente_id, rfm in rfm_por_cliente.items():
+        cliente = next((c for c in clientes if c["id"] == cliente_id), None)
+        
+        # Score de Recência (inverso - quanto menor, melhor)
+        if rfm["recencia"] <= 30:
+            score_r = 5
+        elif rfm["recencia"] <= 60:
+            score_r = 4
+        elif rfm["recencia"] <= 90:
+            score_r = 3
+        elif rfm["recencia"] <= 180:
+            score_r = 2
+        else:
+            score_r = 1
+        
+        # Score de Frequência
+        if rfm["frequencia"] >= 10:
+            score_f = 5
+        elif rfm["frequencia"] >= 7:
+            score_f = 4
+        elif rfm["frequencia"] >= 4:
+            score_f = 3
+        elif rfm["frequencia"] >= 2:
+            score_f = 2
+        else:
+            score_f = 1
+        
+        # Score de Valor Monetário
+        if rfm["valor_monetario"] >= 5000:
+            score_m = 5
+        elif rfm["valor_monetario"] >= 3000:
+            score_m = 4
+        elif rfm["valor_monetario"] >= 1000:
+            score_m = 3
+        elif rfm["valor_monetario"] >= 500:
+            score_m = 2
+        else:
+            score_m = 1
+        
+        # Score RFM total
+        score_total = score_r + score_f + score_m
+        
+        # Segmentação
+        if score_r >= 4 and score_f >= 4 and score_m >= 4:
+            segmento = "Champions"
+        elif score_r >= 3 and score_f >= 3:
+            segmento = "Loyal Customers"
+        elif score_r >= 4:
+            segmento = "Promising"
+        elif score_f >= 4:
+            segmento = "At Risk"
+        else:
+            segmento = "Need Attention"
+        
+        resultado.append({
+            "cliente_id": cliente_id,
+            "cliente_nome": cliente["nome"] if cliente else "Desconhecido",
+            "recencia_dias": rfm["recencia"],
+            "frequencia": rfm["frequencia"],
+            "valor_monetario": rfm["valor_monetario"],
+            "score_r": score_r,
+            "score_f": score_f,
+            "score_m": score_m,
+            "score_total": score_total,
+            "segmento": segmento,
+            "ultima_compra": rfm["ultima_compra"]
+        })
+    
+    resultado.sort(key=lambda x: x["score_total"], reverse=True)
+    
+    return {
+        "total_clientes": len(resultado),
+        "clientes": resultado
+    }
+
+@api_router.get("/relatorios/orcamentos/conversao")
+async def relatorio_conversao_orcamentos(
+    data_inicio: str = None,
+    data_fim: str = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Análise de conversão de orçamentos em vendas
+    """
+    orcamentos = await db.orcamentos.find({}, {"_id": 0}).to_list(10000)
+    
+    if data_inicio and data_fim:
+        orcamentos = [o for o in orcamentos if data_inicio <= o["created_at"][:10] <= data_fim]
+    
+    # Estatísticas por status
+    total = len(orcamentos)
+    abertos = len([o for o in orcamentos if o["status"] == "aberto"])
+    vendidos = len([o for o in orcamentos if o["status"] == "vendido"])
+    devolvidos = len([o for o in orcamentos if o["status"] == "devolvido"])
+    cancelados = len([o for o in orcamentos if o.get("status") == "cancelado"])
+    
+    # Taxa de conversão
+    taxa_conversao = (vendidos / total * 100) if total > 0 else 0
+    
+    # Valor médio
+    valor_medio_orcamento = sum(o["total"] for o in orcamentos) / total if total > 0 else 0
+    valor_medio_vendido = sum(o["total"] for o in orcamentos if o["status"] == "vendido") / vendidos if vendidos > 0 else 0
+    
+    return {
+        "periodo": {"data_inicio": data_inicio, "data_fim": data_fim},
+        "total_orcamentos": total,
+        "status": {
+            "abertos": abertos,
+            "vendidos": vendidos,
+            "devolvidos": devolvidos,
+            "cancelados": cancelados
+        },
+        "taxa_conversao_percentual": taxa_conversao,
+        "valores": {
+            "valor_medio_orcamento": valor_medio_orcamento,
+            "valor_medio_vendido": valor_medio_vendido
+        }
+    }
+
+@api_router.get("/relatorios/operacional/auditoria")
+async def relatorio_auditoria(
+    data_inicio: str = None,
+    data_fim: str = None,
+    user_id: str = None,
+    acao: str = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Relatório de auditoria - logs de ações do sistema
+    """
+    logs = await db.logs.find({}, {"_id": 0}).sort("timestamp", -1).to_list(5000)
+    
+    # Filtros
+    if data_inicio and data_fim:
+        logs = [l for l in logs if data_inicio <= l["timestamp"][:10] <= data_fim]
+    
+    if user_id:
+        logs = [l for l in logs if l["user_id"] == user_id]
+    
+    if acao:
+        logs = [l for l in logs if l["acao"] == acao]
+    
+    # Estatísticas
+    acoes_por_tipo = {}
+    acoes_por_usuario = {}
+    acoes_por_tela = {}
+    
+    for log in logs:
+        # Por tipo de ação
+        acao_tipo = log["acao"]
+        if acao_tipo not in acoes_por_tipo:
+            acoes_por_tipo[acao_tipo] = 0
+        acoes_por_tipo[acao_tipo] += 1
+        
+        # Por usuário
+        usuario = log["user_nome"]
+        if usuario not in acoes_por_usuario:
+            acoes_por_usuario[usuario] = 0
+        acoes_por_usuario[usuario] += 1
+        
+        # Por tela
+        tela = log["tela"]
+        if tela not in acoes_por_tela:
+            acoes_por_tela[tela] = 0
+        acoes_por_tela[tela] += 1
+    
+    return {
+        "periodo": {"data_inicio": data_inicio, "data_fim": data_fim},
+        "total_acoes": len(logs),
+        "acoes_por_tipo": acoes_por_tipo,
+        "acoes_por_usuario": acoes_por_usuario,
+        "acoes_por_tela": acoes_por_tela,
+        "logs_recentes": logs[:50]  # Últimos 50 logs
+    }
+
 app.include_router(api_router)
 
 app.add_middleware(
