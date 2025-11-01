@@ -711,6 +711,18 @@ class UserUpdate(BaseModel):
     ativo: Optional[bool] = None
     require_2fa: Optional[bool] = None
 
+
+class PasswordResetToken(BaseModel):
+    """Token para recuperação de senha"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    token: str  # Token único e aleatório
+    expires_at: str
+    used: bool = False
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    ip: str = ""
+
 # ========== AUTH UTILS ==========
 
 def hash_password(password: str) -> str:
