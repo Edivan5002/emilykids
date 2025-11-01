@@ -586,9 +586,152 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     except Exception:
         raise HTTPException(status_code=401, detail="Token inválido")
 
-async def log_action(ip: str, user_id: str, user_nome: str, tela: str, acao: str, detalhes: dict = None):
-    log = Log(ip=ip, user_id=user_id, user_nome=user_nome, tela=tela, acao=acao, detalhes=detalhes)
+async def log_action(
+    ip: str, 
+    user_id: str, 
+    user_nome: str, 
+    tela: str, 
+    acao: str, 
+    detalhes: dict = None,
+    severidade: str = "INFO",
+    metodo_http: str = None,
+    url: str = None,
+    status_code: int = None,
+    user_agent: str = None,
+    session_id: str = None,
+    tempo_execucao_ms: float = None,
+    erro: str = None,
+    stack_trace: str = None
+):
+    """
+    Função melhorada de logging com contexto completo
+    """
+    # Parsear User-Agent se fornecido
+    navegador = None
+    so = None
+    dispositivo = None
+    if user_agent:
+        ua_lower = user_agent.lower()
+        # Navegador
+        if "chrome" in ua_lower:
+            navegador = "Chrome"
+        elif "firefox" in ua_lower:
+            navegador = "Firefox"
+        elif "safari" in ua_lower and "chrome" not in ua_lower:
+            navegador = "Safari"
+        elif "edge" in ua_lower:
+            navegador = "Edge"
+        
+        # SO
+        if "windows" in ua_lower:
+            so = "Windows"
+        elif "mac" in ua_lower:
+            so = "MacOS"
+        elif "linux" in ua_lower:
+            so = "Linux"
+        elif "android" in ua_lower:
+            so = "Android"
+        elif "ios" in ua_lower or "iphone" in ua_lower:
+            so = "iOS"
+        
+        # Dispositivo
+        if "mobile" in ua_lower or "android" in ua_lower or "iphone" in ua_lower:
+            dispositivo = "Mobile"
+        elif "tablet" in ua_lower or "ipad" in ua_lower:
+            dispositivo = "Tablet"
+        else:
+            dispositivo = "Desktop"
+    
+    log = Log(
+        ip=ip,
+        user_id=user_id,
+        user_nome=user_nome,
+        tela=tela,
+        acao=acao,
+        severidade=severidade,
+        detalhes=detalhes,
+        metodo_http=metodo_http,
+        url=url,
+        status_code=status_code,
+        user_agent=user_agent,
+        navegador=navegador,
+        sistema_operacional=so,
+        dispositivo=dispositivo,
+        session_id=session_id,
+        tempo_execucao_ms=tempo_execucao_ms,
+        erro=erro,
+        stack_trace=stack_trace
+    )
+    
     await db.logs.insert_one(log.model_dump())
+    
+    # Alertas automáticos para eventos críticos
+    if severidade in ["CRITICAL", "SECURITY"]:
+        await enviar_alerta_critico(log)
+
+async def log_seguranca(tipo: str, ip: str, detalhes: dict, user_id: str = None, user_email: str = None, user_agent: str = None):
+    """
+    Log específico para eventos de segurança
+    """
+    log_seg = LogSeguranca(
+        tipo=tipo,
+        user_id=user_id,
+        user_email=user_email,
+        ip=ip,
+        user_agent=user_agent,
+        detalhes=detalhes
+    )
+    
+    await db.logs_seguranca.insert_one(log_seg.model_dump())
+    
+    # Alerta imediato
+    await enviar_alerta_seguranca(log_seg)
+
+async def enviar_alerta_critico(log: Log):
+    """
+    Envia alerta para eventos críticos (pode ser email, SMS, etc)
+    """
+    # TODO: Implementar envio de email/notificação
+    # Por enquanto, apenas registra no console
+    print(f"🚨 ALERTA CRÍTICO: {log.acao} por {log.user_nome} - {log.detalhes}")
+
+async def enviar_alerta_seguranca(log: LogSeguranca):
+    """
+    Envia alerta para eventos de segurança
+    """
+    print(f"🔒 ALERTA SEGURANÇA: {log.tipo} - IP: {log.ip} - {log.detalhes}")
+
+async def detectar_atividade_suspeita(user_id: str = None, ip: str = None) -> dict:
+    """
+    Detecta padrões suspeitos de atividade
+    """
+    suspeito = False
+    motivos = []
+    
+    # Verificar múltiplos logins falhos
+    if user_id or ip:
+        filtro = {}
+        if user_id:
+            filtro["user_id"] = user_id
+        if ip:
+            filtro["ip"] = ip
+        
+        # Últimos 30 minutos
+        tempo_limite = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
+        filtro["timestamp"] = {"$gte": tempo_limite}
+        filtro["tipo"] = "login_falho"
+        
+        tentativas_falhas = await db.logs_seguranca.count_documents(filtro)
+        
+        if tentativas_falhas >= 5:
+            suspeito = True
+            motivos.append(f"{tentativas_falhas} tentativas de login falhadas em 30 minutos")
+    
+    return {
+        "suspeito": suspeito,
+        "motivos": motivos,
+        "tentativas_falhas": tentativas_falhas if user_id or ip else 0
+    }
 
 # ========== AUTH ROUTES ==========
 
