@@ -726,6 +726,47 @@ class PasswordResetToken(BaseModel):
 # ========== AUTH UTILS ==========
 
 def hash_password(password: str) -> str:
+
+
+def generate_reset_token() -> str:
+    """Gera token seguro e aleatório para recuperação de senha"""
+    import secrets
+    return secrets.token_urlsafe(32)
+
+async def send_password_reset_email(email: str, token: str, user_name: str):
+    """Envia email de recuperação de senha"""
+    # Para ambiente de produção, implemente com serviço SMTP real
+    # Por enquanto, vamos apenas logar o token (NUNCA fazer isso em produção)
+    
+    reset_link = f"http://localhost:3000/reset-password?token={token}"
+    
+    # TODO: Implementar envio real de email
+    # Exemplo com smtplib ou serviço como SendGrid, AWS SES, etc.
+    
+    # Por enquanto, apenas log para desenvolvimento
+    print(f"\n{'='*60}")
+    print(f"PASSWORD RESET REQUEST")
+    print(f"{'='*60}")
+    print(f"User: {user_name}")
+    print(f"Email: {email}")
+    print(f"Reset Link: {reset_link}")
+    print(f"Token: {token}")
+    print(f"{'='*60}\n")
+    
+    # Log no sistema
+    await log_action(
+        ip="0.0.0.0",
+        user_id="",
+        user_nome=user_name,
+        user_email=email,
+        tela="recuperacao_senha",
+        acao="email_enviado",
+        severidade="INFO",
+        detalhes={"email": email}
+    )
+    
+    return True
+
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
