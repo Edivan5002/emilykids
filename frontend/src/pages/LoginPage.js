@@ -6,165 +6,210 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Brain } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Brain, Eye, EyeOff, Shield, Lock, AlertCircle } from 'lucide-react';
 
 const LoginPage = () => {
   const [loginData, setLoginData] = useState({ email: '', senha: '' });
-  const [registerData, setRegisterData] = useState({ nome: '', email: '', senha: '', papel: 'vendedor' });
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login, register } = useAuth();
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    
+    // Validação frontend
+    if (!loginData.email || !loginData.senha) {
+      toast.error('Preencha todos os campos');
+      return;
+    }
+
+    if (loginData.senha.length < 6) {
+      toast.error('Senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
     setLoading(true);
     try {
       await login(loginData.email, loginData.senha);
       toast.success('Login realizado com sucesso!');
+      setLoginAttempts(0);
       navigate('/dashboard');
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao fazer login');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await register(registerData.nome, registerData.email, registerData.senha, registerData.papel);
-      toast.success('Cadastro realizado! Faça login para continuar.');
-      setRegisterData({ nome: '', email: '', senha: '', papel: 'vendedor' });
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao cadastrar');
+      const detail = error.response?.data?.detail || 'Erro ao fazer login';
+      
+      setLoginAttempts(prev => prev + 1);
+      
+      // Mensagens específicas de erro
+      if (detail.includes('bloqueada')) {
+        toast.error(detail, { duration: 5000 });
+      } else if (detail.includes('inativo')) {
+        toast.error('Sua conta está inativa. Entre em contato com o administrador.');
+      } else if (detail.includes('expirada')) {
+        toast.error('Sua senha expirou. Entre em contato com o administrador.');
+      } else if (detail.includes('Credenciais inválidas')) {
+        const tentativasRestantes = 5 - loginAttempts;
+        if (tentativasRestantes > 0) {
+          toast.error(`Credenciais inválidas. ${tentativasRestantes} tentativa(s) restante(s).`);
+        } else {
+          toast.error('Muitas tentativas falhadas. Sua conta será bloqueada.');
+        }
+      } else {
+        toast.error(detail);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-white to-purple-50 p-4">
       <div className="w-full max-w-md">
+        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl mb-4"
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-4 shadow-lg"
                style={{backgroundColor: '#267698'}}>
-            <Brain size={32} className="text-white" />
+            <Brain size={40} className="text-white" />
           </div>
-          <div className="mb-2">
+          <div className="mb-3">
             <div className="flex items-center justify-center gap-1">
-              <span className="text-5xl font-bold" style={{color: '#F26C4F'}}>E</span>
-              <span className="text-5xl font-bold" style={{color: '#F4A261'}}>M</span>
-              <span className="text-5xl font-bold" style={{color: '#267698'}}>I</span>
-              <span className="text-5xl font-bold" style={{color: '#2C9AA1'}}>L</span>
-              <span className="text-5xl font-bold" style={{color: '#E76F51'}}>Y</span>
+              <span className="text-6xl font-bold" style={{color: '#F26C4F'}}>E</span>
+              <span className="text-6xl font-bold" style={{color: '#F4A261'}}>M</span>
+              <span className="text-6xl font-bold" style={{color: '#267698'}}>I</span>
+              <span className="text-6xl font-bold" style={{color: '#2C9AA1'}}>L</span>
+              <span className="text-6xl font-bold" style={{color: '#E76F51'}}>Y</span>
             </div>
-            <div className="text-2xl font-bold" style={{color: '#3A3A3A'}}>KIDS</div>
+            <div className="text-3xl font-bold mt-1" style={{color: '#3A3A3A'}}>KIDS</div>
           </div>
-          <p className="text-gray-600">Sistema Inteligente de Vendas e Estoque</p>
+          <p className="text-gray-600 font-medium">Sistema Inteligente de Gestão</p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Bem-vindo</CardTitle>
-            <CardDescription>Acesse sua conta ou crie uma nova</CardDescription>
+        {/* Card de Login */}
+        <Card className="shadow-xl">
+          <CardHeader className="text-center pb-4">
+            <div className="flex justify-center mb-3">
+              <div className="bg-purple-100 p-3 rounded-full">
+                <Shield className="text-purple-600" size={28} />
+              </div>
+            </div>
+            <CardTitle className="text-2xl">Área Segura</CardTitle>
+            <CardDescription>Entre com suas credenciais para acessar o sistema</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login" data-testid="login-tab">Login</TabsTrigger>
-                <TabsTrigger value="register" data-testid="register-tab">Cadastro</TabsTrigger>
-              </TabsList>
+            {/* Alertas de segurança */}
+            {loginAttempts >= 3 && loginAttempts < 5 && (
+              <Alert className="mb-4 border-orange-500 bg-orange-50">
+                <AlertCircle className="h-4 w-4 text-orange-600" />
+                <AlertDescription className="text-orange-800">
+                  Atenção: {5 - loginAttempts} tentativa(s) restante(s) antes do bloqueio
+                </AlertDescription>
+              </Alert>
+            )}
 
-              <TabsContent value="login" data-testid="login-form">
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div>
-                    <Label htmlFor="login-email">Email</Label>
-                    <Input
-                      id="login-email"
-                      data-testid="login-email-input"
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={loginData.email}
-                      onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="login-senha">Senha</Label>
-                    <Input
-                      id="login-senha"
-                      data-testid="login-senha-input"
-                      type="password"
-                      placeholder="••••••••"
-                      value={loginData.senha}
-                      onChange={(e) => setLoginData({ ...loginData, senha: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    data-testid="login-submit-btn"
-                    className="w-full"
-                    disabled={loading}
-                  >
-                    {loading ? 'Entrando...' : 'Entrar'}
-                  </Button>
-                </form>
-              </TabsContent>
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="login-email" className="text-sm font-semibold">
+                  Email
+                </Label>
+                <Input
+                  id="login-email"
+                  data-testid="login-email-input"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={loginData.email}
+                  onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                  required
+                  disabled={loading}
+                  className="h-11"
+                  autoComplete="email"
+                />
+              </div>
 
-              <TabsContent value="register" data-testid="register-form">
-                <form onSubmit={handleRegister} className="space-y-4">
-                  <div>
-                    <Label htmlFor="register-nome">Nome Completo</Label>
-                    <Input
-                      id="register-nome"
-                      data-testid="register-nome-input"
-                      type="text"
-                      placeholder="Seu nome"
-                      value={registerData.nome}
-                      onChange={(e) => setRegisterData({ ...registerData, nome: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="register-email">Email</Label>
-                    <Input
-                      id="register-email"
-                      data-testid="register-email-input"
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={registerData.email}
-                      onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="register-senha">Senha</Label>
-                    <Input
-                      id="register-senha"
-                      data-testid="register-senha-input"
-                      type="password"
-                      placeholder="••••••••"
-                      value={registerData.senha}
-                      onChange={(e) => setRegisterData({ ...registerData, senha: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    data-testid="register-submit-btn"
-                    className="w-full"
+              <div className="space-y-2">
+                <Label htmlFor="login-senha" className="text-sm font-semibold">
+                  Senha
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="login-senha"
+                    data-testid="login-senha-input"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={loginData.senha}
+                    onChange={(e) => setLoginData({ ...loginData, senha: e.target.value })}
+                    required
                     disabled={loading}
+                    className="h-11 pr-10"
+                    autoComplete="current-password"
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    tabIndex={-1}
                   >
-                    {loading ? 'Cadastrando...' : 'Cadastrar'}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                data-testid="login-submit-btn"
+                className="w-full h-11 text-base font-semibold"
+                disabled={loading}
+                style={{backgroundColor: '#267698'}}
+              >
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Entrando...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Lock size={18} />
+                    Entrar com Segurança
+                  </div>
+                )}
+              </Button>
+            </form>
+
+            {/* Informações de segurança */}
+            <div className="mt-6 pt-6 border-t">
+              <div className="space-y-2 text-xs text-gray-600">
+                <div className="flex items-start gap-2">
+                  <Shield size={14} className="mt-0.5 text-purple-600 flex-shrink-0" />
+                  <span>Conexão segura com criptografia de ponta a ponta</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Lock size={14} className="mt-0.5 text-purple-600 flex-shrink-0" />
+                  <span>Proteção contra tentativas de acesso não autorizado</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <AlertCircle size={14} className="mt-0.5 text-purple-600 flex-shrink-0" />
+                  <span>Bloqueio automático após 5 tentativas incorretas (30 min)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Rodapé */}
+            <div className="mt-6 text-center">
+              <p className="text-xs text-gray-500">
+                Apenas usuários autorizados podem acessar o sistema.
+                <br />
+                Para solicitar acesso, entre em contato com o administrador.
+              </p>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Informação adicional */}
+        <div className="mt-6 text-center text-xs text-gray-500">
+          © 2025 Emily Kids. Todos os direitos reservados.
+        </div>
       </div>
     </div>
   );
