@@ -173,14 +173,19 @@ const ResetPasswordPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-white to-purple-50 p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#F5F2E9' }}>
       <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-4 shadow-lg"
-               style={{backgroundColor: '#267698'}}>
-            <Brain size={40} className="text-white" />
-          </div>
+        {/* Logo Emily Kids */}
+        <EmilyKidsLogo />
+
+        {/* Card */}
+        <Card className="shadow-xl">
+          <CardHeader className="text-center pb-4">
+            <div className="flex justify-center mb-3">
+              <div className="bg-blue-100 p-3 rounded-full">
+                <Lock className="text-blue-600" size={28} />
+              </div>
+            </div>
           <div className="mb-3">
             <div className="flex items-center justify-center gap-1">
               <span className="text-6xl font-bold" style={{color: '#F26C4F'}}>E</span>
