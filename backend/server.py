@@ -2444,6 +2444,7 @@ async def update_cliente(cliente_id: str, cliente_data: ClienteCreate, current_u
     updated_data = cliente_data.model_dump()
     updated_data["id"] = cliente_id
     updated_data["created_at"] = existing["created_at"]
+    updated_data["ativo"] = existing.get("ativo", True)  # Preservar status ativo
     
     await db.clientes.replace_one({"id": cliente_id}, updated_data)
     
