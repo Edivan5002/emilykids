@@ -345,27 +345,33 @@ frontend:
 
   - task: "Hierarquia Marcas → Categorias (Backend validação)"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Adicionado campo marca_id aos modelos Categoria e CategoriaCreate. Endpoint POST /api/categorias atualizado para validar que: (1) marca_id existe no banco de dados; (2) marca está ativa; (3) retorna erro 400 com mensagem detalhada se marca não existir ou estiver inativa. Log de ação adicionado."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO COM 100% DE SUCESSO! Executei 19 testes abrangentes cobrindo todos os cenários da hierarquia Marcas → Categorias → Subcategorias. RESULTADOS: ✅ POST /api/marcas - criação de marcas funcionando (Nike, Adidas, Puma criadas com sucesso); ✅ GET /api/marcas - listagem funcionando (12 marcas encontradas); ✅ POST /api/categorias - validação marca_id funcionando perfeitamente: (1) POSITIVO: categoria criada com marca_id válido; (2) NEGATIVO: corretamente rejeitada sem marca_id (422); (3) NEGATIVO: corretamente rejeitada com marca_id inválido (erro 400 'Marca com ID ... não encontrada'); (4) NEGATIVO: corretamente rejeitada com marca inativa (erro 400 'marca selecionada está inativa'); ✅ GET /api/categorias - todas categorias têm campo marca_id; ✅ Hierarquia completa E2E testada: Disney (Marca) → Princesas (Categoria) → Frozen (Subcategoria) criada com sucesso. CORREÇÃO APLICADA: Corrigidos log_action calls nos endpoints de marcas, categorias e subcategorias. Taxa de sucesso: 100% (19/19 testes). Sistema hierárquico COMPLETO e FUNCIONANDO PERFEITAMENTE."
 
   - task: "Hierarquia Categorias → Subcategorias (Backend validação)"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Endpoint POST /api/subcategorias atualizado para validar que: (1) categoria_id existe no banco de dados; (2) categoria está ativa; (3) retorna erro 400 com mensagem detalhada se categoria não existir ou estiver inativa. Log de ação adicionado."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO COM 100% DE SUCESSO! Validação de hierarquia Categorias → Subcategorias funcionando perfeitamente. TESTES REALIZADOS: ✅ POST /api/subcategorias - validação categoria_id funcionando: (1) POSITIVO: subcategoria criada com categoria_id válido (Tênis Running criada com sucesso); (2) NEGATIVO: corretamente rejeitada sem categoria_id (422); (3) NEGATIVO: corretamente rejeitada com categoria_id inválido (erro 400 'Categoria com ID ... não encontrada'); (4) NEGATIVO: corretamente rejeitada com categoria inativa (erro 400 'categoria selecionada está inativa'); ✅ GET /api/subcategorias - todas subcategorias têm campo categoria_id; ✅ E2E: Frozen (Subcategoria) vinculada à Princesas (Categoria) criada com sucesso. Sistema de validação hierárquica ROBUSTO e FUNCIONANDO 100%."
 
   - task: "Frontend Categorias.js com dropdown Marcas"
     implemented: true
