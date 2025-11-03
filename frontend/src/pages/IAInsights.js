@@ -4,8 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Brain, TrendingUp, ShoppingCart, BarChart3, Loader2 } from 'lucide-react';
+import { TrendingUp, ShoppingCart, BarChart3, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+
+// Componente para ícone Emily Kids (boneca com balão)
+const EmilyIcon = ({ size = 20, className = "" }) => (
+  <img 
+    src="https://customer-assets.emergentagent.com/job_retail-kids-mgmt/artifacts/gnn10sag_WhatsApp%20Image%202025-11-01%20at%2021.07.08.jpeg" 
+    alt="Emily Kids" 
+    style={{ width: size, height: size }}
+    className={`inline-block ${className}`}
+  />
+);
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
