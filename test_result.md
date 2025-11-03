@@ -379,6 +379,18 @@ frontend:
         agent: "main"
         comment: "Categorias.js completamente atualizado para incluir: (1) Fetch de marcas ativas; (2) Dropdown Select para escolher marca antes de criar categoria; (3) Mensagem de alerta quando não há marcas cadastradas; (4) Botão 'Salvar' desabilitado se não há marcas; (5) Validação frontend que requer marca_id; (6) Coluna 'Marca' adicionada na tabela; (7) Tratamento de erros do backend com mensagens detalhadas."
 
+  - task: "Frontend Subcategorias.js melhorado com hierarquia"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Subcategorias.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Subcategorias.js melhorado para mostrar hierarquia completa: (1) Fetch de marcas, categorias e subcategorias; (2) Dropdown de categorias mostra marca vinculada entre parênteses; (3) Mensagem de alerta quando não há categorias cadastradas; (4) Botão 'Salvar' desabilitado se não há categorias; (5) Validação frontend que requer categoria_id; (6) Coluna 'Marca' adicionada na tabela mostrando marca da categoria pai; (7) Filtro de categorias ativas apenas; (8) Tratamento de erros do backend com mensagens detalhadas."
+
 metadata:
   created_by: "main_agent"
   version: "3.0"
