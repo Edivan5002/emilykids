@@ -2548,6 +2548,124 @@ async def create_categoria(categoria_data: CategoriaCreate, current_user: dict =
     )
     return categoria
 
+@api_router.put("/categorias/{categoria_id}", response_model=Categoria)
+async def update_categoria(categoria_id: str, categoria_data: CategoriaCreate, current_user: dict = Depends(get_current_user)):
+    # Verificar se a categoria existe
+    existing = await db.categorias.find_one({"id": categoria_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    
+    # Validar que a marca existe e está ativa
+    marca = await db.marcas.find_one({"id": categoria_data.marca_id}, {"_id": 0})
+    if not marca:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Marca com ID {categoria_data.marca_id} não encontrada."
+        )
+    if not marca.get("ativo", False):
+        raise HTTPException(
+            status_code=400,
+            detail="A marca selecionada está inativa. Por favor, selecione uma marca ativa."
+        )
+    
+    # Atualizar dados
+    updated_data = categoria_data.model_dump()
+    updated_data["id"] = categoria_id
+    updated_data["created_at"] = existing["created_at"]
+    
+    await db.categorias.replace_one({"id": categoria_id}, updated_data)
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="categorias",
+        acao="editar",
+        detalhes={"categoria_id": categoria_id, "nome": categoria_data.nome, "marca_id": categoria_data.marca_id}
+    )
+    return Categoria(**updated_data)
+
+@api_router.delete("/categorias/{categoria_id}")
+async def delete_categoria(categoria_id: str, current_user: dict = Depends(get_current_user)):
+    # Verificar se a categoria existe
+    categoria = await db.categorias.find_one({"id": categoria_id}, {"_id": 0})
+    if not categoria:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    
+    # Verificar dependências - Subcategorias vinculadas
+    subcategorias_count = await db.subcategorias.count_documents({"categoria_id": categoria_id})
+    if subcategorias_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível excluir a categoria '{categoria['nome']}' pois existem {subcategorias_count} subcategoria(s) vinculada(s). Exclua ou reatribua as subcategorias primeiro."
+        )
+    
+    # Verificar dependências - Produtos vinculados
+    produtos_count = await db.produtos.count_documents({"categoria_id": categoria_id})
+    if produtos_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível excluir a categoria '{categoria['nome']}' pois existem {produtos_count} produto(s) vinculado(s). Exclua ou reatribua os produtos primeiro."
+        )
+    
+    # Excluir categoria
+    await db.categorias.delete_one({"id": categoria_id})
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="categorias",
+        acao="excluir",
+        detalhes={"categoria_id": categoria_id, "nome": categoria["nome"]}
+    )
+    return {"message": "Categoria excluída com sucesso"}
+
+@api_router.put("/categorias/{categoria_id}/toggle-status")
+async def toggle_categoria_status(categoria_id: str, current_user: dict = Depends(get_current_user)):
+    # Verificar se a categoria existe
+    categoria = await db.categorias.find_one({"id": categoria_id}, {"_id": 0})
+    if not categoria:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    
+    novo_status = not categoria.get("ativo", True)
+    
+    # Se estiver inativando, verificar dependências ativas
+    if not novo_status:
+        subcategorias_ativas = await db.subcategorias.count_documents({
+            "categoria_id": categoria_id,
+            "ativo": True
+        })
+        if subcategorias_ativas > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Não é possível inativar a categoria '{categoria['nome']}' pois existem {subcategorias_ativas} subcategoria(s) ativa(s) vinculada(s). Inative as subcategorias primeiro."
+            )
+        
+        produtos_ativos = await db.produtos.count_documents({
+            "categoria_id": categoria_id,
+            "ativo": True
+        })
+        if produtos_ativos > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Não é possível inativar a categoria '{categoria['nome']}' pois existem {produtos_ativos} produto(s) ativo(s) vinculado(s). Inative os produtos primeiro."
+            )
+    
+    # Atualizar status
+    await db.categorias.update_one(
+        {"id": categoria_id},
+        {"$set": {"ativo": novo_status}}
+    )
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="categorias",
+        acao="alterar_status",
+        detalhes={"categoria_id": categoria_id, "nome": categoria["nome"], "novo_status": novo_status}
+    )
+    return {"message": f"Categoria {'ativada' if novo_status else 'inativada'} com sucesso", "ativo": novo_status}
+
+
 # ========== SUBCATEGORIAS ==========
 
 @api_router.get("/subcategorias", response_model=List[Subcategoria])
