@@ -2729,8 +2729,9 @@ async def toggle_marca_status(marca_id: str, current_user: dict = Depends(requir
 # ========== CATEGORIAS ==========
 
 @api_router.get("/categorias", response_model=List[Categoria])
-async def get_categorias(current_user: dict = Depends(require_permission("categorias", "ler"))):
-    categorias = await db.categorias.find({}, {"_id": 0}).to_list(1000)
+async def get_categorias(incluir_inativos: bool = False, current_user: dict = Depends(require_permission("categorias", "ler"))):
+    filtro = {} if incluir_inativos else {"ativo": True}
+    categorias = await db.categorias.find(filtro, {"_id": 0}).to_list(1000)
     return categorias
 
 @api_router.post("/categorias", response_model=Categoria)
