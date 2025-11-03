@@ -1820,9 +1820,7 @@ async def create_usuario(user_data: dict, current_user: dict = Depends(require_p
     return {"message": "Usuário criado com sucesso", "user_id": user.id}
 
 @api_router.get("/usuarios/{user_id}", response_model=User)
-async def get_usuario(user_id: str, current_user: dict = Depends(get_current_user)):
-    if current_user.get("papel") != "admin":
-        raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
+async def get_usuario(user_id: str, current_user: dict = Depends(require_permission("usuarios", "visualizar"))):
     
     usuario = await db.users.find_one({"id": user_id}, {"_id": 0})
     if not usuario:
