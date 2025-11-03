@@ -5957,7 +5957,7 @@ async def get_estatisticas_logs(
     }
 
 @api_router.get("/logs/dashboard")
-async def get_dashboard_logs(current_user: dict = Depends(get_current_user)):
+async def get_dashboard_logs(current_user: dict = Depends(require_permission("logs", "visualizar"))):
     """
     Dashboard resumido de logs para os últimos 7 dias
     """
