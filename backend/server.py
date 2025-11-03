@@ -3264,7 +3264,7 @@ async def busca_avancada_produtos(
     com_estoque: Optional[bool] = None,
     estoque_baixo: Optional[bool] = None,
     em_destaque: Optional[bool] = None,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("produtos", "visualizar"))
 ):
     """Busca avançada de produtos com múltiplos filtros"""
     filtros = {}
