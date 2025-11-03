@@ -1828,9 +1828,7 @@ async def get_usuario(user_id: str, current_user: dict = Depends(require_permiss
     return usuario
 
 @api_router.put("/usuarios/{user_id}")
-async def update_usuario(user_id: str, user_data: dict, current_user: dict = Depends(get_current_user)):
-    if current_user.get("papel") != "admin":
-        raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
+async def update_usuario(user_id: str, user_data: dict, current_user: dict = Depends(require_permission("usuarios", "editar"))):
     
     existing = await db.users.find_one({"id": user_id}, {"_id": 0})
     if not existing:
