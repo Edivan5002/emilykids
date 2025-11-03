@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Desenvolver o módulo completo de estoque com: 1) Visualização de todos produtos com estoque atual/mínimo/máximo e alertas visuais; 2) Histórico de movimentações (entradas/saídas) com filtros; 3) Alertas de estoque baixo/alto; 4) Ajuste manual de estoque com autorização de supervisor/administrador para vendedores."
+user_problem_statement: "Auditoria e Correção Completa do Sistema RBAC: Implementar verificação granular de permissões usando Depends(require_permission) em TODOS os endpoints críticos, substituir verificações manuais de admin por RBAC unificado, garantir que apenas usuários com permissões adequadas possam acessar cada módulo e ação."
 
 backend:
   - task: "Endpoint de verificação de estoque (POST /api/estoque/check-disponibilidade)"
