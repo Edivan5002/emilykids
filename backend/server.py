@@ -3232,7 +3232,7 @@ async def get_produtos_mais_vendidos(
     return resultados
 
 @api_router.get("/produtos/relatorios/valor-estoque")
-async def get_valor_total_estoque(current_user: dict = Depends(get_current_user)):
+async def get_valor_total_estoque(current_user: dict = Depends(require_permission("relatorios", "visualizar"))):
     """Calcula o valor total do estoque"""
     produtos = await db.produtos.find({"ativo": True}, {"_id": 0}).to_list(1000)
     
