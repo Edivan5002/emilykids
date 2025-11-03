@@ -5865,7 +5865,7 @@ async def get_logs(
 async def get_estatisticas_logs(
     data_inicio: str = None,
     data_fim: str = None,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("logs", "visualizar"))
 ):
     """
     Estatísticas avançadas de logs
