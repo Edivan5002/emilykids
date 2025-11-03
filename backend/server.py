@@ -3201,7 +3201,7 @@ async def get_produtos_mais_vendidos(
     limite: int = 10,
     data_inicio: Optional[str] = None,
     data_fim: Optional[str] = None,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("relatorios", "visualizar"))
 ):
     """Retorna os produtos mais vendidos"""
     # Agregar vendas por produto
