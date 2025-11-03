@@ -151,6 +151,7 @@ class Cliente(BaseModel):
     email: Optional[EmailStr] = None
     endereco: Optional[dict] = None
     observacoes: Optional[str] = None
+    ativo: bool = True
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class ClienteCreate(BaseModel):
