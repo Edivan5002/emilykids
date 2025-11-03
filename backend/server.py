@@ -3019,8 +3019,9 @@ async def toggle_subcategoria_status(subcategoria_id: str, current_user: dict = 
 # ========== PRODUTOS ==========
 
 @api_router.get("/produtos", response_model=List[Produto])
-async def get_produtos(current_user: dict = Depends(require_permission("produtos", "ler"))):
-    produtos = await db.produtos.find({}, {"_id": 0}).to_list(1000)
+async def get_produtos(incluir_inativos: bool = False, current_user: dict = Depends(require_permission("produtos", "ler"))):
+    filtro = {} if incluir_inativos else {"ativo": True}
+    produtos = await db.produtos.find(filtro, {"_id": 0}).to_list(1000)
     return produtos
 
 @api_router.post("/produtos", response_model=Produto)
