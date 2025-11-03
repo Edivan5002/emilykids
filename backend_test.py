@@ -1994,6 +1994,302 @@ class EmilyKidsBackendTester:
         except Exception as e:
             self.log_test("E2E - Complete Hierarchy", False, f"Error: {str(e)}")
     
+    def test_inactive_filters_functionality(self):
+        """Test the new inactive filters functionality as specified in review request"""
+        print("\n=== TESTING INACTIVE FILTERS FUNCTIONALITY ===")
+        
+        # Test 1: GET /api/marcas (deve retornar apenas marcas ATIVAS por padrão)
+        print("\n--- Testing Marcas Inactive Filter ---")
+        try:
+            response = requests.get(f"{self.base_url}/marcas", headers=self.get_headers())
+            if response.status_code == 200:
+                marcas_ativas = response.json()
+                # Verify all returned marcas are active
+                all_active = all(marca.get("ativo", True) for marca in marcas_ativas)
+                if all_active:
+                    self.log_test("Marcas - Default Active Filter", True, f"Retrieved {len(marcas_ativas)} active marcas only")
+                else:
+                    inactive_count = sum(1 for marca in marcas_ativas if not marca.get("ativo", True))
+                    self.log_test("Marcas - Default Active Filter", False, f"Found {inactive_count} inactive marcas in default listing")
+            else:
+                self.log_test("Marcas - Default Active Filter", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Marcas - Default Active Filter", False, f"Error: {str(e)}")
+        
+        # Test 2: GET /api/marcas?incluir_inativos=true (deve retornar todas as marcas)
+        try:
+            response = requests.get(f"{self.base_url}/marcas?incluir_inativos=true", headers=self.get_headers())
+            if response.status_code == 200:
+                todas_marcas = response.json()
+                self.log_test("Marcas - Include Inactive Filter", True, f"Retrieved {len(todas_marcas)} total marcas (active + inactive)")
+            else:
+                self.log_test("Marcas - Include Inactive Filter", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Marcas - Include Inactive Filter", False, f"Error: {str(e)}")
+        
+        # Test the same pattern for all other entities
+        entities = [
+            ("categorias", "categorias"),
+            ("subcategorias", "subcategorias"), 
+            ("produtos", "produtos"),
+            ("clientes", "clientes"),
+            ("fornecedores", "fornecedores")
+        ]
+        
+        for endpoint, entity_name in entities:
+            # Test default active filter
+            try:
+                response = requests.get(f"{self.base_url}/{endpoint}", headers=self.get_headers())
+                if response.status_code == 200:
+                    active_items = response.json()
+                    all_active = all(item.get("ativo", True) for item in active_items)
+                    if all_active:
+                        self.log_test(f"{entity_name.title()} - Default Active Filter", True, f"Retrieved {len(active_items)} active {entity_name} only")
+                    else:
+                        inactive_count = sum(1 for item in active_items if not item.get("ativo", True))
+                        self.log_test(f"{entity_name.title()} - Default Active Filter", False, f"Found {inactive_count} inactive {entity_name} in default listing")
+                else:
+                    self.log_test(f"{entity_name.title()} - Default Active Filter", False, f"HTTP {response.status_code}: {response.text}")
+            except Exception as e:
+                self.log_test(f"{entity_name.title()} - Default Active Filter", False, f"Error: {str(e)}")
+            
+            # Test include inactive filter
+            try:
+                response = requests.get(f"{self.base_url}/{endpoint}?incluir_inativos=true", headers=self.get_headers())
+                if response.status_code == 200:
+                    all_items = response.json()
+                    self.log_test(f"{entity_name.title()} - Include Inactive Filter", True, f"Retrieved {len(all_items)} total {entity_name} (active + inactive)")
+                else:
+                    self.log_test(f"{entity_name.title()} - Include Inactive Filter", False, f"HTTP {response.status_code}: {response.text}")
+            except Exception as e:
+                self.log_test(f"{entity_name.title()} - Include Inactive Filter", False, f"Error: {str(e)}")
+
+    def test_dependency_validation_functionality(self):
+        """Test dependency validation when trying to inactivate records"""
+        print("\n=== TESTING DEPENDENCY VALIDATION FUNCTIONALITY ===")
+        
+        # Test 1: Marcas dependency validation
+        print("\n--- Testing Marcas Dependency Validation ---")
+        
+        # Create test marca
+        marca_data = {
+            "nome": "Marca Teste Inativo",
+            "ativo": True
+        }
+        
+        marca_id = None
+        categoria_id = None
+        
+        try:
+            response = requests.post(f"{self.base_url}/marcas", json=marca_data, headers=self.get_headers())
+            if response.status_code == 200:
+                marca_id = response.json()["id"]
+                self.log_test("Create Test Marca", True, "Test marca created successfully")
+                
+                # Create categoria vinculada a essa marca
+                categoria_data = {
+                    "nome": "Categoria Teste Vinculada",
+                    "marca_id": marca_id,
+                    "ativo": True
+                }
+                
+                response = requests.post(f"{self.base_url}/categorias", json=categoria_data, headers=self.get_headers())
+                if response.status_code == 200:
+                    categoria_id = response.json()["id"]
+                    self.log_test("Create Test Categoria", True, "Test categoria linked to marca created")
+                    
+                    # Try to inactivate marca (should FAIL)
+                    response = requests.put(f"{self.base_url}/marcas/{marca_id}/toggle-status", headers=self.get_headers())
+                    if response.status_code == 400:
+                        error_msg = response.json().get("detail", response.text)
+                        if "categoria" in error_msg.lower() and "ativa" in error_msg.lower():
+                            self.log_test("Marcas - Dependency Validation FAIL", True, f"Correctly blocked inactivation: {error_msg}")
+                        else:
+                            self.log_test("Marcas - Dependency Validation FAIL", False, f"Wrong error message: {error_msg}")
+                    else:
+                        self.log_test("Marcas - Dependency Validation FAIL", False, f"Expected 400 but got {response.status_code}")
+                    
+                    # Inactivate categoria first
+                    response = requests.put(f"{self.base_url}/categorias/{categoria_id}/toggle-status", headers=self.get_headers())
+                    if response.status_code == 200:
+                        self.log_test("Inactivate Test Categoria", True, "Test categoria inactivated")
+                        
+                        # Now try to inactivate marca (should SUCCESS)
+                        response = requests.put(f"{self.base_url}/marcas/{marca_id}/toggle-status", headers=self.get_headers())
+                        if response.status_code == 200:
+                            self.log_test("Marcas - Dependency Validation SUCCESS", True, "Marca inactivated successfully after removing dependencies")
+                        else:
+                            self.log_test("Marcas - Dependency Validation SUCCESS", False, f"HTTP {response.status_code}: {response.text}")
+                    else:
+                        self.log_test("Inactivate Test Categoria", False, f"HTTP {response.status_code}: {response.text}")
+                else:
+                    self.log_test("Create Test Categoria", False, f"HTTP {response.status_code}: {response.text}")
+            else:
+                self.log_test("Create Test Marca", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Marcas Dependency Validation", False, f"Error: {str(e)}")
+        
+        # Test 2: Categorias dependency validation
+        print("\n--- Testing Categorias Dependency Validation ---")
+        
+        # Create test categoria with marca ativa
+        if marca_id:  # Reuse the marca from previous test
+            # Reactivate marca first
+            try:
+                response = requests.put(f"{self.base_url}/marcas/{marca_id}/toggle-status", headers=self.get_headers())
+                
+                categoria_data = {
+                    "nome": "Categoria Teste Dependencia",
+                    "marca_id": marca_id,
+                    "ativo": True
+                }
+                
+                response = requests.post(f"{self.base_url}/categorias", json=categoria_data, headers=self.get_headers())
+                if response.status_code == 200:
+                    categoria_test_id = response.json()["id"]
+                    
+                    # Create subcategoria vinculada
+                    subcategoria_data = {
+                        "nome": "Subcategoria Teste Vinculada",
+                        "categoria_id": categoria_test_id,
+                        "ativo": True
+                    }
+                    
+                    response = requests.post(f"{self.base_url}/subcategorias", json=subcategoria_data, headers=self.get_headers())
+                    if response.status_code == 200:
+                        subcategoria_id = response.json()["id"]
+                        
+                        # Try to inactivate categoria (should FAIL due to subcategoria)
+                        response = requests.put(f"{self.base_url}/categorias/{categoria_test_id}/toggle-status", headers=self.get_headers())
+                        if response.status_code == 400:
+                            error_msg = response.json().get("detail", response.text)
+                            if "subcategoria" in error_msg.lower() and "ativa" in error_msg.lower():
+                                self.log_test("Categorias - Subcategoria Dependency FAIL", True, f"Correctly blocked: {error_msg}")
+                            else:
+                                self.log_test("Categorias - Subcategoria Dependency FAIL", False, f"Wrong error: {error_msg}")
+                        else:
+                            self.log_test("Categorias - Subcategoria Dependency FAIL", False, f"Expected 400 but got {response.status_code}")
+                        
+                        # Inactivate subcategoria first
+                        response = requests.put(f"{self.base_url}/subcategorias/{subcategoria_id}/toggle-status", headers=self.get_headers())
+                        if response.status_code == 200:
+                            # Now try to inactivate categoria (should SUCCESS)
+                            response = requests.put(f"{self.base_url}/categorias/{categoria_test_id}/toggle-status", headers=self.get_headers())
+                            if response.status_code == 200:
+                                self.log_test("Categorias - Dependency Validation SUCCESS", True, "Categoria inactivated after removing subcategoria")
+                            else:
+                                self.log_test("Categorias - Dependency Validation SUCCESS", False, f"HTTP {response.status_code}: {response.text}")
+                        else:
+                            self.log_test("Inactivate Subcategoria", False, f"HTTP {response.status_code}: {response.text}")
+                    else:
+                        self.log_test("Create Test Subcategoria", False, f"HTTP {response.status_code}: {response.text}")
+                else:
+                    self.log_test("Create Test Categoria for Dependency", False, f"HTTP {response.status_code}: {response.text}")
+            except Exception as e:
+                self.log_test("Categorias Dependency Validation", False, f"Error: {str(e)}")
+        
+        # Test 3: Clientes dependency validation
+        print("\n--- Testing Clientes Dependency Validation ---")
+        
+        # Check if we have existing client with open budget
+        try:
+            response = requests.get(f"{self.base_url}/clientes", headers=self.get_headers())
+            if response.status_code == 200:
+                clientes = response.json()
+                if clientes and hasattr(self, 'test_client_id'):
+                    # Check if our test client has open budgets
+                    response = requests.get(f"{self.base_url}/orcamentos", headers=self.get_headers())
+                    if response.status_code == 200:
+                        orcamentos = response.json()
+                        open_budgets = [orc for orc in orcamentos if orc.get("cliente_id") == self.test_client_id and orc.get("status") in ["aberto", "em_analise", "aprovado"]]
+                        
+                        if open_budgets:
+                            # Try to inactivate client (should FAIL)
+                            response = requests.put(f"{self.base_url}/clientes/{self.test_client_id}/toggle-status", headers=self.get_headers())
+                            if response.status_code == 400:
+                                error_msg = response.json().get("detail", response.text)
+                                if "orçamento" in error_msg.lower() and "aberto" in error_msg.lower():
+                                    self.log_test("Clientes - Open Budget Dependency FAIL", True, f"Correctly blocked: {error_msg}")
+                                else:
+                                    self.log_test("Clientes - Open Budget Dependency FAIL", False, f"Wrong error: {error_msg}")
+                            else:
+                                self.log_test("Clientes - Open Budget Dependency FAIL", False, f"Expected 400 but got {response.status_code}")
+                        else:
+                            self.log_test("Clientes - No Open Budgets", True, "No open budgets found for dependency test")
+                    else:
+                        self.log_test("Get Orcamentos for Client Test", False, f"HTTP {response.status_code}: {response.text}")
+                else:
+                    self.log_test("Clientes - No Test Data", True, "No test clients available for dependency validation")
+            else:
+                self.log_test("Get Clientes for Dependency Test", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Clientes Dependency Validation", False, f"Error: {str(e)}")
+        
+        # Test 4: Fornecedores dependency validation
+        print("\n--- Testing Fornecedores Dependency Validation ---")
+        
+        try:
+            response = requests.get(f"{self.base_url}/fornecedores", headers=self.get_headers())
+            if response.status_code == 200:
+                fornecedores = response.json()
+                if fornecedores:
+                    # Check for pending fiscal notes
+                    response = requests.get(f"{self.base_url}/notas-fiscais", headers=self.get_headers())
+                    if response.status_code == 200:
+                        notas = response.json()
+                        pending_notes = [nota for nota in notas if nota.get("status") in ["rascunho", "aguardando_aprovacao"]]
+                        
+                        if pending_notes:
+                            fornecedor_with_pending = pending_notes[0].get("fornecedor_id")
+                            if fornecedor_with_pending:
+                                # Try to inactivate supplier (should FAIL)
+                                response = requests.put(f"{self.base_url}/fornecedores/{fornecedor_with_pending}/toggle-status", headers=self.get_headers())
+                                if response.status_code == 400:
+                                    error_msg = response.json().get("detail", response.text)
+                                    if "nota" in error_msg.lower() and "pendente" in error_msg.lower():
+                                        self.log_test("Fornecedores - Pending Note Dependency FAIL", True, f"Correctly blocked: {error_msg}")
+                                    else:
+                                        self.log_test("Fornecedores - Pending Note Dependency FAIL", False, f"Wrong error: {error_msg}")
+                                else:
+                                    self.log_test("Fornecedores - Pending Note Dependency FAIL", False, f"Expected 400 but got {response.status_code}")
+                            else:
+                                self.log_test("Fornecedores - No Supplier with Pending Notes", True, "No suppliers with pending notes for test")
+                        else:
+                            self.log_test("Fornecedores - No Pending Notes", True, "No pending fiscal notes found for dependency test")
+                    else:
+                        self.log_test("Get Notas Fiscais for Supplier Test", False, f"HTTP {response.status_code}: {response.text}")
+                else:
+                    self.log_test("Fornecedores - No Test Data", True, "No suppliers available for dependency validation")
+            else:
+                self.log_test("Get Fornecedores for Dependency Test", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Fornecedores Dependency Validation", False, f"Error: {str(e)}")
+        
+        # Test 5: Produtos dependency validation
+        print("\n--- Testing Produtos Dependency Validation ---")
+        
+        if hasattr(self, 'test_products') and self.test_products and hasattr(self, 'budget_id'):
+            # We should have products in open budgets from previous tests
+            product_in_budget = self.test_products[0]
+            
+            try:
+                # Try to inactivate product (should FAIL if in open budget)
+                response = requests.put(f"{self.base_url}/produtos/{product_in_budget['id']}/toggle-status", headers=self.get_headers())
+                if response.status_code == 400:
+                    error_msg = response.json().get("detail", response.text)
+                    if "orçamento" in error_msg.lower() and "aberto" in error_msg.lower():
+                        self.log_test("Produtos - Open Budget Dependency FAIL", True, f"Correctly blocked: {error_msg}")
+                    else:
+                        self.log_test("Produtos - Open Budget Dependency FAIL", False, f"Wrong error: {error_msg}")
+                elif response.status_code == 200:
+                    self.log_test("Produtos - No Open Budget Dependencies", True, "Product inactivated successfully (no open budget dependencies)")
+                else:
+                    self.log_test("Produtos - Open Budget Dependency Test", False, f"Unexpected response {response.status_code}: {response.text}")
+            except Exception as e:
+                self.log_test("Produtos Dependency Validation", False, f"Error: {str(e)}")
+        else:
+            self.log_test("Produtos - No Test Data", True, "No test products or budgets available for dependency validation")
+
     def run_all_tests(self):
         """Run all tests in sequence - FOCUS ON HIERARCHICAL SYSTEM"""
         print("🧪 EMILY KIDS ERP - HIERARCHICAL SYSTEM TESTING")
