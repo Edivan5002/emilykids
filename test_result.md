@@ -105,6 +105,174 @@
 user_problem_statement: "Auditoria e Correção Completa do Sistema RBAC: Implementar verificação granular de permissões usando Depends(require_permission) em TODOS os endpoints críticos, substituir verificações manuais de admin por RBAC unificado, garantir que apenas usuários com permissões adequadas possam acessar cada módulo e ação."
 
 backend:
+  - task: "Correção RBAC - Módulo Produtos (5 endpoints CRUD)"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Adicionar Depends(require_permission) nos endpoints: GET /produtos (visualizar), POST /produtos (criar), PUT /produtos/{id} (editar), DELETE /produtos/{id} (excluir), PUT /produtos/{id}/toggle-status (editar)"
+
+  - task: "Correção RBAC - Módulo Marcas (5 endpoints CRUD)"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Adicionar Depends(require_permission) nos endpoints: GET /marcas (visualizar), POST /marcas (criar), PUT /marcas/{id} (editar), DELETE /marcas/{id} (excluir), PUT /marcas/{id}/toggle-status (editar)"
+
+  - task: "Correção RBAC - Módulo Categorias (5 endpoints CRUD)"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Adicionar Depends(require_permission) nos endpoints: GET /categorias (visualizar), POST /categorias (criar), PUT /categorias/{id} (editar), DELETE /categorias/{id} (excluir), PUT /categorias/{id}/toggle-status (editar)"
+
+  - task: "Correção RBAC - Módulo Subcategorias (5 endpoints CRUD)"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Adicionar Depends(require_permission) nos endpoints: GET /subcategorias (visualizar), POST /subcategorias (criar), PUT /subcategorias/{id} (editar), DELETE /subcategorias/{id} (excluir), PUT /subcategorias/{id}/toggle-status (editar)"
+
+  - task: "Correção RBAC - Módulo Clientes (5 endpoints CRUD)"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Adicionar Depends(require_permission) nos endpoints: GET /clientes (visualizar), POST /clientes (criar), PUT /clientes/{id} (editar), DELETE /clientes/{id} (excluir), PUT /clientes/{id}/toggle-status (editar)"
+
+  - task: "Correção RBAC - Módulo Fornecedores (5 endpoints CRUD)"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Adicionar Depends(require_permission) nos endpoints: GET /fornecedores (visualizar), POST /fornecedores (criar), PUT /fornecedores/{id} (editar), DELETE /fornecedores/{id} (excluir), PUT /fornecedores/{id}/toggle-status (editar)"
+
+  - task: "Correção RBAC - Módulo Estoque (4 endpoints)"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Adicionar Depends(require_permission) nos endpoints: GET /estoque/alertas (visualizar), GET /estoque/movimentacoes (visualizar), POST /estoque/ajuste-manual (editar)"
+
+  - task: "Correção RBAC - Módulo Notas Fiscais (10 endpoints)"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Adicionar Depends(require_permission) nos endpoints de notas fiscais: GET /notas-fiscais (visualizar), POST /notas-fiscais (criar), PUT /notas-fiscais/{id} (editar), DELETE /notas-fiscais/{id} (excluir), aprovação, cancelamento, etc."
+
+  - task: "Correção RBAC - Módulo Orçamentos (12 endpoints)"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Adicionar Depends(require_permission) nos endpoints de orçamentos: GET /orcamentos (visualizar), POST /orcamentos (criar), PUT /orcamentos/{id} (editar), DELETE /orcamentos/{id} (excluir), conversão, aprovação, etc. Substituir verificação manual de admin em /orcamentos/verificar-expirados."
+
+  - task: "Correção RBAC - Módulo Vendas (12 endpoints)"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Adicionar Depends(require_permission) nos endpoints de vendas: GET /vendas (visualizar), POST /vendas (criar), PUT /vendas/{id} (editar), cancelamento, devolução, etc."
+
+  - task: "Correção RBAC - Módulo Logs (8 endpoints + verificações manuais)"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "CRÍTICO: Substituir TODAS as 9 verificações manuais 'if current_user[papel] != admin' por Depends(require_permission('logs', 'visualizar')). Endpoints: GET /logs, /logs/estatisticas, /logs/dashboard, /logs/seguranca, /logs/exportar, /logs/atividade-suspeita, POST /logs/arquivar-antigos, POST /logs/criar-indices."
+
+  - task: "Correção RBAC - Módulo Usuários (6 endpoints)"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Adicionar Depends(require_permission) nos endpoints de usuários: GET /usuarios (visualizar), POST /usuarios (criar), PUT /usuarios/{id} (editar), DELETE /usuarios/{id} (excluir), toggle-status (editar)."
+
+  - task: "Correção RBAC - Módulo Roles/Permissions (13 endpoints + verificações manuais)"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Adicionar Depends(require_permission) em TODOS os 13 endpoints RBAC: roles, permissions, user-groups, permission-history, temporary-permissions. Substituir verificações manuais de admin existentes."
+
+  - task: "Correção RBAC - Módulo Relatórios (7 endpoints)"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Adicionar Depends(require_permission('relatorios', 'visualizar')) nos endpoints de relatórios: /produtos/relatorios/mais-vendidos, /produtos/relatorios/valor-estoque, /relatorios/notas-fiscais, /relatorios/vendas, /relatorios/orcamentos, etc."
+
   - task: "Endpoint de verificação de estoque (POST /api/estoque/check-disponibilidade)"
     implemented: true
     working: true
