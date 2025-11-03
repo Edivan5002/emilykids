@@ -2426,6 +2426,93 @@ async def create_marca(marca_data: MarcaCreate, current_user: dict = Depends(get
     )
     return marca
 
+@api_router.put("/marcas/{marca_id}", response_model=Marca)
+async def update_marca(marca_id: str, marca_data: MarcaCreate, current_user: dict = Depends(get_current_user)):
+    # Verificar se a marca existe
+    existing = await db.marcas.find_one({"id": marca_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Marca não encontrada")
+    
+    # Atualizar dados
+    updated_data = marca_data.model_dump()
+    updated_data["id"] = marca_id
+    updated_data["created_at"] = existing["created_at"]
+    
+    await db.marcas.replace_one({"id": marca_id}, updated_data)
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="marcas",
+        acao="editar",
+        detalhes={"marca_id": marca_id, "nome": marca_data.nome}
+    )
+    return Marca(**updated_data)
+
+@api_router.delete("/marcas/{marca_id}")
+async def delete_marca(marca_id: str, current_user: dict = Depends(get_current_user)):
+    # Verificar se a marca existe
+    marca = await db.marcas.find_one({"id": marca_id}, {"_id": 0})
+    if not marca:
+        raise HTTPException(status_code=404, detail="Marca não encontrada")
+    
+    # Verificar dependências - Categorias vinculadas
+    categorias_count = await db.categorias.count_documents({"marca_id": marca_id})
+    if categorias_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível excluir a marca '{marca['nome']}' pois existem {categorias_count} categoria(s) vinculada(s). Exclua ou reatribua as categorias primeiro."
+        )
+    
+    # Excluir marca
+    await db.marcas.delete_one({"id": marca_id})
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="marcas",
+        acao="excluir",
+        detalhes={"marca_id": marca_id, "nome": marca["nome"]}
+    )
+    return {"message": "Marca excluída com sucesso"}
+
+@api_router.put("/marcas/{marca_id}/toggle-status")
+async def toggle_marca_status(marca_id: str, current_user: dict = Depends(get_current_user)):
+    # Verificar se a marca existe
+    marca = await db.marcas.find_one({"id": marca_id}, {"_id": 0})
+    if not marca:
+        raise HTTPException(status_code=404, detail="Marca não encontrada")
+    
+    novo_status = not marca.get("ativo", True)
+    
+    # Se estiver inativando, verificar se tem categorias ativas vinculadas
+    if not novo_status:
+        categorias_ativas = await db.categorias.count_documents({
+            "marca_id": marca_id,
+            "ativo": True
+        })
+        if categorias_ativas > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Não é possível inativar a marca '{marca['nome']}' pois existem {categorias_ativas} categoria(s) ativa(s) vinculada(s). Inative as categorias primeiro."
+            )
+    
+    # Atualizar status
+    await db.marcas.update_one(
+        {"id": marca_id},
+        {"$set": {"ativo": novo_status}}
+    )
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="marcas",
+        acao="alterar_status",
+        detalhes={"marca_id": marca_id, "nome": marca["nome"], "novo_status": novo_status}
+    )
+    return {"message": f"Marca {'ativada' if novo_status else 'inativada'} com sucesso", "ativo": novo_status}
+
+
 # ========== CATEGORIAS ==========
 
 @api_router.get("/categorias", response_model=List[Categoria])
