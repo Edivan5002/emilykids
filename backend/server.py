@@ -1882,9 +1882,7 @@ async def update_usuario(user_id: str, user_data: dict, current_user: dict = Dep
     return {"message": "Usuário atualizado com sucesso"}
 
 @api_router.delete("/usuarios/{user_id}")
-async def delete_usuario(user_id: str, current_user: dict = Depends(get_current_user)):
-    if current_user.get("papel") != "admin":
-        raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
+async def delete_usuario(user_id: str, current_user: dict = Depends(require_permission("usuarios", "deletar"))):
     
     # Não permitir deletar a si mesmo
     if user_id == current_user["id"]:
