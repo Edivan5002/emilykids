@@ -2883,8 +2883,9 @@ async def toggle_categoria_status(categoria_id: str, current_user: dict = Depend
 # ========== SUBCATEGORIAS ==========
 
 @api_router.get("/subcategorias", response_model=List[Subcategoria])
-async def get_subcategorias(current_user: dict = Depends(require_permission("subcategorias", "ler"))):
-    subcategorias = await db.subcategorias.find({}, {"_id": 0}).to_list(1000)
+async def get_subcategorias(incluir_inativos: bool = False, current_user: dict = Depends(require_permission("subcategorias", "ler"))):
+    filtro = {} if incluir_inativos else {"ativo": True}
+    subcategorias = await db.subcategorias.find(filtro, {"_id": 0}).to_list(1000)
     return subcategorias
 
 @api_router.post("/subcategorias", response_model=Subcategoria)
