@@ -406,8 +406,6 @@ metadata:
 test_plan:
   current_focus:
     - "Menu Cadastros com submenu (Frontend Layout.js)"
-    - "Hierarquia Marcas → Categorias (Backend validação)"
-    - "Hierarquia Categorias → Subcategorias (Backend validação)"
     - "Frontend Categorias.js com dropdown Marcas"
     - "Frontend Subcategorias.js melhorado com hierarquia"
   stuck_tasks: []
