@@ -713,7 +713,9 @@ const Vendas = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {clientes.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nome} - {c.cpf_cnpj}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
