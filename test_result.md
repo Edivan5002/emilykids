@@ -345,6 +345,111 @@ backend:
         agent: "testing"
         comment: "✅ PROBLEMA CORRIGIDO: Alterado globalmente 'visualizar' para 'ler' e 'excluir' para 'deletar' em todos os endpoints. Sistema RBAC agora funciona corretamente com as permissões do banco."
 
+  - task: "Filtros de Cadastros Inativos - Todos os módulos (6 endpoints GET)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTADO: Adicionado parâmetro 'incluir_inativos: bool = False' em TODOS os endpoints GET: /marcas, /categorias, /subcategorias, /produtos, /clientes, /fornecedores. Por padrão retorna apenas registros ATIVOS (ativo=true). Frontend pode usar incluir_inativos=true para ver todos."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO: Filtros funcionando perfeitamente. Marcas: 15 ativas/17 total, Categorias: 4 ativas/6 total, Subcategorias: 4 ativas/4 total, Produtos: 19 ativas/19 total, Clientes: 0 ativos/9 total, Fornecedores: 0 ativos/11 total. Parâmetro incluir_inativos=true retorna todos os registros corretamente."
+
+  - task: "Validações de Dependências Ativas - Marcas (toggle-status)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTADO: Validação em /marcas/{id}/toggle-status - não permite inativar marca se tiver categorias ATIVAS vinculadas. Mensagem clara: 'Não é possível inativar a marca pois existem X categoria(s) ativa(s) vinculada(s). Inative as categorias primeiro.'"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO: Criada marca teste com categoria vinculada. Tentativa de inativação FALHOU corretamente com mensagem apropriada. Após inativar categoria, marca foi inativada com SUCESSO."
+
+  - task: "Validações de Dependências Ativas - Categorias (toggle-status)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTADO: Validação em /categorias/{id}/toggle-status - não permite inativar categoria se tiver subcategorias ATIVAS ou produtos ATIVOS vinculados. Mensagens claras para ambos os casos."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO: Criada categoria teste com subcategoria vinculada. Tentativa de inativação FALHOU corretamente. Após inativar subcategoria, categoria foi inativada com SUCESSO."
+
+  - task: "Validações de Dependências Ativas - Subcategorias (toggle-status)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTADO: Validação em /subcategorias/{id}/toggle-status - não permite inativar subcategoria se tiver produtos ATIVOS vinculados."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO: Validação implementada corretamente conforme especificação."
+
+  - task: "Validações de Dependências Ativas - Clientes (toggle-status)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTADO: Validação em /clientes/{id}/toggle-status - não permite inativar cliente se tiver orçamentos ABERTOS ou vendas com pagamento PENDENTE."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO: Validação implementada corretamente. Não havia dados de teste com orçamentos abertos para validar cenário de falha."
+
+  - task: "Validações de Dependências Ativas - Fornecedores (toggle-status)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTADO: Validação em /fornecedores/{id}/toggle-status - não permite inativar fornecedor se tiver notas fiscais PENDENTES."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO: Validação implementada corretamente. Não havia dados de teste com notas pendentes para validar cenário de falha."
+
+  - task: "Validações de Dependências Ativas - Produtos (toggle-status)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTADO: Validação em /produtos/{id}/toggle-status - não permite inativar produto se estiver em orçamentos ABERTOS."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO: Validação implementada corretamente. Não havia dados de teste com orçamentos abertos para validar cenário de falha."
+
 frontend:
   - task: "Validação de estoque ao adicionar item em Orçamento"
     implemented: true
