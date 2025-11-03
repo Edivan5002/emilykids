@@ -471,9 +471,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Sistema RBAC Completo - Teste de todos os 74+ endpoints corrigidos"
-    - "Verificação de permissões granulares por papel (Admin, Gerente, Vendedor)"
-    - "Confirmação de que NENHUMA verificação manual de admin permanece"
+    - "Filtros de Cadastros Inativos - Teste de todos os 6 endpoints GET com parâmetro incluir_inativos"
+    - "Validações de Dependências Ativas - Teste de todos os 6 endpoints toggle-status"
+    - "Verificação de mensagens de erro claras e informativas para usuário"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
