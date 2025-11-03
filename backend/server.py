@@ -3108,7 +3108,7 @@ async def update_produto(produto_id: str, produto_data: ProdutoCreate, current_u
     return Produto(**updated_data)
 
 @api_router.delete("/produtos/{produto_id}")
-async def delete_produto(produto_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_produto(produto_id: str, current_user: dict = Depends(require_permission("produtos", "excluir"))):
     # Verificar se o produto existe
     produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
     if not produto:
