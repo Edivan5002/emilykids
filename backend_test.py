@@ -13,7 +13,7 @@ import sys
 import os
 
 # Backend URL from environment
-BACKEND_URL = "https://retail-kids-mgmt.preview.emergentagent.com/api"
+BACKEND_URL = "https://inventory-genius-17.preview.emergentagent.com/api"
 
 class EmilyKidsBackendTester:
     def __init__(self):
