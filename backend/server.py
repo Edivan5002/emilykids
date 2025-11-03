@@ -3027,7 +3027,7 @@ async def get_produtos(current_user: dict = Depends(require_permission("produtos
     return produtos
 
 @api_router.post("/produtos", response_model=Produto)
-async def create_produto(produto_data: ProdutoCreate, current_user: dict = Depends(get_current_user)):
+async def create_produto(produto_data: ProdutoCreate, current_user: dict = Depends(require_permission("produtos", "criar"))):
     # Calcular margem automaticamente se não fornecida
     if produto_data.margem_lucro is None and produto_data.preco_custo > 0:
         produto_data.margem_lucro = ((produto_data.preco_venda - produto_data.preco_custo) / produto_data.preco_custo) * 100
