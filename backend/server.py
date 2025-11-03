@@ -1757,7 +1757,7 @@ class UserUpdate(BaseModel):
     senha: Optional[str] = None
 
 @api_router.get("/usuarios", response_model=List[User])
-async def get_usuarios(current_user: dict = Depends(require_permission("usuarios", "visualizar"))):
+async def get_usuarios(current_user: dict = Depends(require_permission("usuarios", "ler"))):
     if current_user.get("papel") != "admin":
         raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
     
@@ -1820,7 +1820,7 @@ async def create_usuario(user_data: dict, current_user: dict = Depends(require_p
     return {"message": "Usuário criado com sucesso", "user_id": user.id}
 
 @api_router.get("/usuarios/{user_id}", response_model=User)
-async def get_usuario(user_id: str, current_user: dict = Depends(require_permission("usuarios", "visualizar"))):
+async def get_usuario(user_id: str, current_user: dict = Depends(require_permission("usuarios", "ler"))):
     
     usuario = await db.users.find_one({"id": user_id}, {"_id": 0})
     if not usuario:
@@ -1939,7 +1939,7 @@ async def toggle_usuario_status(user_id: str, current_user: dict = Depends(get_c
 # --- ROLES (Papéis) ---
 
 @api_router.get("/roles", response_model=List[Role])
-async def get_roles(current_user: dict = Depends(require_permission("usuarios", "visualizar"))):
+async def get_roles(current_user: dict = Depends(require_permission("usuarios", "ler"))):
     """Lista todos os papéis"""
     if current_user.get("papel") != "admin":
         raise HTTPException(status_code=403, detail="Apenas administradores podem gerenciar papéis")
@@ -2136,7 +2136,7 @@ async def duplicate_role(role_id: str, novo_nome: str, current_user: dict = Depe
 # --- PERMISSIONS (Permissões) ---
 
 @api_router.get("/permissions", response_model=List[Permission])
-async def get_permissions(current_user: dict = Depends(require_permission("usuarios", "visualizar"))):
+async def get_permissions(current_user: dict = Depends(require_permission("usuarios", "ler"))):
     """Lista todas as permissões do sistema"""
     if current_user.get("papel") != "admin":
         raise HTTPException(status_code=403, detail="Apenas administradores")
@@ -2163,7 +2163,7 @@ async def get_permissions_by_module(current_user: dict = Depends(get_current_use
     return by_module
 
 @api_router.get("/users/{user_id}/permissions")
-async def get_user_all_permissions(user_id: str, current_user: dict = Depends(require_permission("usuarios", "visualizar"))):
+async def get_user_all_permissions(user_id: str, current_user: dict = Depends(require_permission("usuarios", "ler"))):
     """Retorna todas as permissões efetivas de um usuário"""
     if current_user.get("papel") != "admin" and current_user["id"] != user_id:
         raise HTTPException(status_code=403, detail="Acesso negado")
@@ -2188,7 +2188,7 @@ async def get_user_all_permissions(user_id: str, current_user: dict = Depends(re
 # --- USER GROUPS (Grupos) ---
 
 @api_router.get("/user-groups", response_model=List[UserGroup])
-async def get_user_groups(current_user: dict = Depends(require_permission("usuarios", "visualizar"))):
+async def get_user_groups(current_user: dict = Depends(require_permission("usuarios", "ler"))):
     """Lista todos os grupos"""
     if current_user.get("papel") != "admin":
         raise HTTPException(status_code=403, detail="Apenas administradores")
@@ -2344,7 +2344,7 @@ async def grant_temporary_permission(
     return {"message": "Permissão temporária concedida", "id": temp_perm.id}
 
 @api_router.get("/users/{user_id}/temporary-permissions")
-async def get_user_temporary_permissions(user_id: str, current_user: dict = Depends(require_permission("usuarios", "visualizar"))):
+async def get_user_temporary_permissions(user_id: str, current_user: dict = Depends(require_permission("usuarios", "ler"))):
     """Lista permissões temporárias de um usuário"""
     if current_user.get("papel") != "admin" and current_user["id"] != user_id:
         raise HTTPException(status_code=403, detail="Acesso negado")
