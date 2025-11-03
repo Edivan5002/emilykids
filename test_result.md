@@ -399,7 +399,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Sistema Completo de RBAC (Role-Based Access Control)"
+    - "Menu Cadastros com submenu (Frontend Layout.js)"
+    - "Hierarquia Marcas → Categorias (Backend validação)"
+    - "Hierarquia Categorias → Subcategorias (Backend validação)"
+    - "Frontend Categorias.js com dropdown Marcas"
+    - "Frontend Subcategorias.js melhorado com hierarquia"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
