@@ -1664,6 +1664,336 @@ class EmilyKidsBackendTester:
         except Exception as e:
             self.log_test("Edge Case - Negative Quantity", False, f"Error: {str(e)}")
     
+    def test_hierarchical_system_marcas_categorias_subcategorias(self):
+        """Test complete hierarchical system: Marcas → Categorias → Subcategorias"""
+        print("\n=== TESTING HIERARCHICAL SYSTEM: MARCAS → CATEGORIAS → SUBCATEGORIAS ===")
+        
+        # Test 1: Create Marcas (Brands)
+        print("\n--- Testing POST /api/marcas ---")
+        marcas_data = [
+            {"nome": "Nike", "ativo": True},
+            {"nome": "Adidas", "ativo": True},
+            {"nome": "Puma", "ativo": True}
+        ]
+        
+        created_marcas = []
+        for marca_data in marcas_data:
+            try:
+                response = requests.post(f"{self.base_url}/marcas", json=marca_data, headers=self.get_headers())
+                if response.status_code == 200:
+                    marca = response.json()
+                    created_marcas.append(marca)
+                    self.log_test(f"Create Marca - {marca_data['nome']}", True, f"Marca created successfully: {marca['id']}")
+                else:
+                    self.log_test(f"Create Marca - {marca_data['nome']}", False, f"HTTP {response.status_code}: {response.text}")
+            except Exception as e:
+                self.log_test(f"Create Marca - {marca_data['nome']}", False, f"Error: {str(e)}")
+        
+        # Test 2: List Marcas
+        print("\n--- Testing GET /api/marcas ---")
+        try:
+            response = requests.get(f"{self.base_url}/marcas", headers=self.get_headers())
+            if response.status_code == 200:
+                marcas = response.json()
+                if len(marcas) >= len(created_marcas):
+                    self.log_test("List Marcas", True, f"Retrieved {len(marcas)} marcas successfully")
+                    self.marcas = marcas
+                else:
+                    self.log_test("List Marcas", False, f"Expected at least {len(created_marcas)} marcas, got {len(marcas)}")
+            else:
+                self.log_test("List Marcas", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("List Marcas", False, f"Error: {str(e)}")
+        
+        if not created_marcas:
+            self.log_test("Hierarchical System", False, "No marcas created, cannot continue with hierarchy tests")
+            return
+        
+        # Test 3: Create Categorias with marca_id (POSITIVE TEST)
+        print("\n--- Testing POST /api/categorias with marca_id ---")
+        nike_marca = created_marcas[0]  # Use Nike
+        categoria_data = {
+            "nome": "Tênis Esportivos",
+            "descricao": "Categoria para tênis esportivos da Nike",
+            "marca_id": nike_marca["id"],
+            "ativo": True
+        }
+        
+        created_categoria = None
+        try:
+            response = requests.post(f"{self.base_url}/categorias", json=categoria_data, headers=self.get_headers())
+            if response.status_code == 200:
+                created_categoria = response.json()
+                self.log_test("Create Categoria - Valid marca_id", True, f"Categoria created with marca_id: {created_categoria['id']}")
+            else:
+                self.log_test("Create Categoria - Valid marca_id", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Create Categoria - Valid marca_id", False, f"Error: {str(e)}")
+        
+        # Test 4: Try to create Categoria without marca_id (NEGATIVE TEST)
+        print("\n--- Testing POST /api/categorias without marca_id ---")
+        categoria_sem_marca = {
+            "nome": "Categoria Sem Marca",
+            "descricao": "Esta categoria não deveria ser criada",
+            "ativo": True
+            # Missing marca_id
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/categorias", json=categoria_sem_marca, headers=self.get_headers())
+            if response.status_code == 422:  # Pydantic validation error
+                self.log_test("Create Categoria - Missing marca_id", True, "Correctly rejected categoria without marca_id (422)")
+            elif response.status_code == 400:
+                self.log_test("Create Categoria - Missing marca_id", True, "Correctly rejected categoria without marca_id (400)")
+            else:
+                self.log_test("Create Categoria - Missing marca_id", False, f"Expected 422/400 but got {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Create Categoria - Missing marca_id", False, f"Error: {str(e)}")
+        
+        # Test 5: Try to create Categoria with invalid marca_id (NEGATIVE TEST)
+        print("\n--- Testing POST /api/categorias with invalid marca_id ---")
+        categoria_marca_invalida = {
+            "nome": "Categoria Marca Inválida",
+            "descricao": "Esta categoria não deveria ser criada",
+            "marca_id": "marca-inexistente-123",
+            "ativo": True
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/categorias", json=categoria_marca_invalida, headers=self.get_headers())
+            if response.status_code == 400:
+                error_msg = response.json().get("detail", response.text)
+                if "não encontrada" in error_msg.lower() or "não existe" in error_msg.lower():
+                    self.log_test("Create Categoria - Invalid marca_id", True, f"Correctly rejected invalid marca_id: {error_msg}")
+                else:
+                    self.log_test("Create Categoria - Invalid marca_id", False, f"Wrong error message: {error_msg}")
+            else:
+                self.log_test("Create Categoria - Invalid marca_id", False, f"Expected 400 but got {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Create Categoria - Invalid marca_id", False, f"Error: {str(e)}")
+        
+        # Test 6: Create inactive marca and try to create categoria with it (NEGATIVE TEST)
+        print("\n--- Testing POST /api/categorias with inactive marca ---")
+        inactive_marca_data = {"nome": "Marca Inativa Teste", "ativo": False}
+        
+        try:
+            response = requests.post(f"{self.base_url}/marcas", json=inactive_marca_data, headers=self.get_headers())
+            if response.status_code == 200:
+                inactive_marca = response.json()
+                
+                categoria_marca_inativa = {
+                    "nome": "Categoria Marca Inativa",
+                    "descricao": "Esta categoria não deveria ser criada",
+                    "marca_id": inactive_marca["id"],
+                    "ativo": True
+                }
+                
+                response = requests.post(f"{self.base_url}/categorias", json=categoria_marca_inativa, headers=self.get_headers())
+                if response.status_code == 400:
+                    error_msg = response.json().get("detail", response.text)
+                    if "inativa" in error_msg.lower():
+                        self.log_test("Create Categoria - Inactive marca", True, f"Correctly rejected inactive marca: {error_msg}")
+                    else:
+                        self.log_test("Create Categoria - Inactive marca", False, f"Wrong error message: {error_msg}")
+                else:
+                    self.log_test("Create Categoria - Inactive marca", False, f"Expected 400 but got {response.status_code}: {response.text}")
+            else:
+                self.log_test("Create Inactive Marca", False, f"Failed to create inactive marca: {response.text}")
+        except Exception as e:
+            self.log_test("Create Categoria - Inactive marca", False, f"Error: {str(e)}")
+        
+        # Test 7: List Categorias (should show marca_id)
+        print("\n--- Testing GET /api/categorias ---")
+        try:
+            response = requests.get(f"{self.base_url}/categorias", headers=self.get_headers())
+            if response.status_code == 200:
+                categorias = response.json()
+                if len(categorias) > 0:
+                    # Check if categorias have marca_id field
+                    has_marca_id = all("marca_id" in cat for cat in categorias)
+                    if has_marca_id:
+                        self.log_test("List Categorias - marca_id field", True, f"All {len(categorias)} categorias have marca_id field")
+                    else:
+                        self.log_test("List Categorias - marca_id field", False, "Some categorias missing marca_id field")
+                    self.categorias = categorias
+                else:
+                    self.log_test("List Categorias", True, "No categorias found (expected for new system)")
+            else:
+                self.log_test("List Categorias", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("List Categorias", False, f"Error: {str(e)}")
+        
+        if not created_categoria:
+            self.log_test("Subcategoria Tests", False, "No categoria created, cannot test subcategorias")
+            return
+        
+        # Test 8: Create Subcategoria with categoria_id (POSITIVE TEST)
+        print("\n--- Testing POST /api/subcategorias with categoria_id ---")
+        subcategoria_data = {
+            "nome": "Tênis Running",
+            "descricao": "Subcategoria para tênis de corrida",
+            "categoria_id": created_categoria["id"],
+            "ativo": True
+        }
+        
+        created_subcategoria = None
+        try:
+            response = requests.post(f"{self.base_url}/subcategorias", json=subcategoria_data, headers=self.get_headers())
+            if response.status_code == 200:
+                created_subcategoria = response.json()
+                self.log_test("Create Subcategoria - Valid categoria_id", True, f"Subcategoria created with categoria_id: {created_subcategoria['id']}")
+            else:
+                self.log_test("Create Subcategoria - Valid categoria_id", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Create Subcategoria - Valid categoria_id", False, f"Error: {str(e)}")
+        
+        # Test 9: Try to create Subcategoria without categoria_id (NEGATIVE TEST)
+        print("\n--- Testing POST /api/subcategorias without categoria_id ---")
+        subcategoria_sem_categoria = {
+            "nome": "Subcategoria Sem Categoria",
+            "descricao": "Esta subcategoria não deveria ser criada",
+            "ativo": True
+            # Missing categoria_id
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/subcategorias", json=subcategoria_sem_categoria, headers=self.get_headers())
+            if response.status_code == 422:  # Pydantic validation error
+                self.log_test("Create Subcategoria - Missing categoria_id", True, "Correctly rejected subcategoria without categoria_id (422)")
+            elif response.status_code == 400:
+                self.log_test("Create Subcategoria - Missing categoria_id", True, "Correctly rejected subcategoria without categoria_id (400)")
+            else:
+                self.log_test("Create Subcategoria - Missing categoria_id", False, f"Expected 422/400 but got {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Create Subcategoria - Missing categoria_id", False, f"Error: {str(e)}")
+        
+        # Test 10: Try to create Subcategoria with invalid categoria_id (NEGATIVE TEST)
+        print("\n--- Testing POST /api/subcategorias with invalid categoria_id ---")
+        subcategoria_categoria_invalida = {
+            "nome": "Subcategoria Categoria Inválida",
+            "descricao": "Esta subcategoria não deveria ser criada",
+            "categoria_id": "categoria-inexistente-123",
+            "ativo": True
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/subcategorias", json=subcategoria_categoria_invalida, headers=self.get_headers())
+            if response.status_code == 400:
+                error_msg = response.json().get("detail", response.text)
+                if "não encontrada" in error_msg.lower() or "não existe" in error_msg.lower():
+                    self.log_test("Create Subcategoria - Invalid categoria_id", True, f"Correctly rejected invalid categoria_id: {error_msg}")
+                else:
+                    self.log_test("Create Subcategoria - Invalid categoria_id", False, f"Wrong error message: {error_msg}")
+            else:
+                self.log_test("Create Subcategoria - Invalid categoria_id", False, f"Expected 400 but got {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Create Subcategoria - Invalid categoria_id", False, f"Error: {str(e)}")
+        
+        # Test 11: Create inactive categoria and try to create subcategoria with it (NEGATIVE TEST)
+        print("\n--- Testing POST /api/subcategorias with inactive categoria ---")
+        if nike_marca:
+            inactive_categoria_data = {
+                "nome": "Categoria Inativa Teste",
+                "descricao": "Categoria inativa para teste",
+                "marca_id": nike_marca["id"],
+                "ativo": False
+            }
+            
+            try:
+                response = requests.post(f"{self.base_url}/categorias", json=inactive_categoria_data, headers=self.get_headers())
+                if response.status_code == 200:
+                    inactive_categoria = response.json()
+                    
+                    subcategoria_categoria_inativa = {
+                        "nome": "Subcategoria Categoria Inativa",
+                        "descricao": "Esta subcategoria não deveria ser criada",
+                        "categoria_id": inactive_categoria["id"],
+                        "ativo": True
+                    }
+                    
+                    response = requests.post(f"{self.base_url}/subcategorias", json=subcategoria_categoria_inativa, headers=self.get_headers())
+                    if response.status_code == 400:
+                        error_msg = response.json().get("detail", response.text)
+                        if "inativa" in error_msg.lower():
+                            self.log_test("Create Subcategoria - Inactive categoria", True, f"Correctly rejected inactive categoria: {error_msg}")
+                        else:
+                            self.log_test("Create Subcategoria - Inactive categoria", False, f"Wrong error message: {error_msg}")
+                    else:
+                        self.log_test("Create Subcategoria - Inactive categoria", False, f"Expected 400 but got {response.status_code}: {response.text}")
+                else:
+                    self.log_test("Create Inactive Categoria", False, f"Failed to create inactive categoria: {response.text}")
+            except Exception as e:
+                self.log_test("Create Subcategoria - Inactive categoria", False, f"Error: {str(e)}")
+        
+        # Test 12: List Subcategorias (should show categoria_id)
+        print("\n--- Testing GET /api/subcategorias ---")
+        try:
+            response = requests.get(f"{self.base_url}/subcategorias", headers=self.get_headers())
+            if response.status_code == 200:
+                subcategorias = response.json()
+                if len(subcategorias) > 0:
+                    # Check if subcategorias have categoria_id field
+                    has_categoria_id = all("categoria_id" in subcat for subcat in subcategorias)
+                    if has_categoria_id:
+                        self.log_test("List Subcategorias - categoria_id field", True, f"All {len(subcategorias)} subcategorias have categoria_id field")
+                    else:
+                        self.log_test("List Subcategorias - categoria_id field", False, "Some subcategorias missing categoria_id field")
+                else:
+                    self.log_test("List Subcategorias", True, "No subcategorias found (expected for new system)")
+            else:
+                self.log_test("List Subcategorias", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("List Subcategorias", False, f"Error: {str(e)}")
+        
+        # Test 13: Complete E2E Hierarchy Test (Disney → Princesas → Frozen)
+        print("\n--- Testing Complete E2E Hierarchy: Disney → Princesas → Frozen ---")
+        
+        # Step 1: Create Disney brand
+        disney_data = {"nome": "Disney", "ativo": True}
+        try:
+            response = requests.post(f"{self.base_url}/marcas", json=disney_data, headers=self.get_headers())
+            if response.status_code == 200:
+                disney_marca = response.json()
+                self.log_test("E2E - Create Disney Brand", True, f"Disney brand created: {disney_marca['id']}")
+                
+                # Step 2: Create Princesas category linked to Disney
+                princesas_data = {
+                    "nome": "Princesas",
+                    "descricao": "Categoria de produtos das Princesas Disney",
+                    "marca_id": disney_marca["id"],
+                    "ativo": True
+                }
+                
+                response = requests.post(f"{self.base_url}/categorias", json=princesas_data, headers=self.get_headers())
+                if response.status_code == 200:
+                    princesas_categoria = response.json()
+                    self.log_test("E2E - Create Princesas Category", True, f"Princesas category created: {princesas_categoria['id']}")
+                    
+                    # Step 3: Create Frozen subcategory linked to Princesas
+                    frozen_data = {
+                        "nome": "Frozen",
+                        "descricao": "Subcategoria de produtos do filme Frozen",
+                        "categoria_id": princesas_categoria["id"],
+                        "ativo": True
+                    }
+                    
+                    response = requests.post(f"{self.base_url}/subcategorias", json=frozen_data, headers=self.get_headers())
+                    if response.status_code == 200:
+                        frozen_subcategoria = response.json()
+                        self.log_test("E2E - Create Frozen Subcategory", True, f"Frozen subcategory created: {frozen_subcategoria['id']}")
+                        
+                        # Step 4: Verify complete hierarchy
+                        self.log_test("E2E - Complete Hierarchy", True, 
+                                    f"✅ HIERARCHY COMPLETE: Disney (Marca) → Princesas (Categoria) → Frozen (Subcategoria)")
+                    else:
+                        self.log_test("E2E - Create Frozen Subcategory", False, f"HTTP {response.status_code}: {response.text}")
+                else:
+                    self.log_test("E2E - Create Princesas Category", False, f"HTTP {response.status_code}: {response.text}")
+            else:
+                self.log_test("E2E - Create Disney Brand", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("E2E - Complete Hierarchy", False, f"Error: {str(e)}")
+    
     def run_all_tests(self):
         """Run all tests in sequence - FOCUS ON RBAC SYSTEM"""
         print("🧪 EMILY KIDS ERP - RBAC SYSTEM TESTING")
