@@ -2455,8 +2455,23 @@ async def get_subcategorias(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/subcategorias", response_model=Subcategoria)
 async def create_subcategoria(subcategoria_data: SubcategoriaCreate, current_user: dict = Depends(get_current_user)):
+    # Validar que a categoria existe
+    categoria = await db.categorias.find_one({"id": subcategoria_data.categoria_id}, {"_id": 0})
+    if not categoria:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Categoria com ID {subcategoria_data.categoria_id} não encontrada. Por favor, cadastre a categoria primeiro."
+        )
+    
+    if not categoria.get("ativo", False):
+        raise HTTPException(
+            status_code=400,
+            detail="A categoria selecionada está inativa. Por favor, selecione uma categoria ativa."
+        )
+    
     subcategoria = Subcategoria(**subcategoria_data.model_dump())
     await db.subcategorias.insert_one(subcategoria.model_dump())
+    await log_action(current_user["id"], "criar", "subcategorias", subcategoria.id, {"nome": subcategoria.nome, "categoria_id": subcategoria.categoria_id})
     return subcategoria
 
 # ========== PRODUTOS ==========
