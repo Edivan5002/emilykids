@@ -3028,8 +3028,36 @@ async def get_produtos(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/produtos", response_model=Produto)
 async def create_produto(produto_data: ProdutoCreate, current_user: dict = Depends(get_current_user)):
+    # Calcular margem automaticamente se não fornecida
+    if produto_data.margem_lucro is None and produto_data.preco_custo > 0:
+        produto_data.margem_lucro = ((produto_data.preco_venda - produto_data.preco_custo) / produto_data.preco_custo) * 100
+    
     produto = Produto(**produto_data.model_dump())
     await db.produtos.insert_one(produto.model_dump())
+    
+    # Registrar histórico de preço inicial
+    historico = HistoricoPreco(
+        produto_id=produto.id,
+        preco_custo_anterior=0,
+        preco_custo_novo=produto.preco_custo,
+        preco_venda_anterior=0,
+        preco_venda_novo=produto.preco_venda,
+        margem_anterior=0,
+        margem_nova=produto.margem_lucro or 0,
+        usuario_id=current_user["id"],
+        usuario_nome=current_user["nome"],
+        motivo="Criação do produto"
+    )
+    await db.historico_precos.insert_one(historico.model_dump())
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="produtos",
+        acao="criar",
+        detalhes={"produto_id": produto.id, "nome": produto.nome, "sku": produto.sku}
+    )
     return produto
 
 @api_router.put("/produtos/{produto_id}", response_model=Produto)
@@ -3038,13 +3066,244 @@ async def update_produto(produto_id: str, produto_data: ProdutoCreate, current_u
     if not existing:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
     
+    # Calcular margem automaticamente se não fornecida
+    if produto_data.margem_lucro is None and produto_data.preco_custo > 0:
+        produto_data.margem_lucro = ((produto_data.preco_venda - produto_data.preco_custo) / produto_data.preco_custo) * 100
+    
     updated_data = produto_data.model_dump()
     updated_data["id"] = produto_id
     updated_data["estoque_atual"] = existing.get("estoque_atual", 0)
     updated_data["created_at"] = existing["created_at"]
     
+    # Verificar se houve alteração de preços
+    preco_custo_alterado = existing.get("preco_custo") != updated_data["preco_custo"]
+    preco_venda_alterado = existing.get("preco_venda") != updated_data["preco_venda"]
+    
+    if preco_custo_alterado or preco_venda_alterado:
+        # Registrar no histórico
+        margem_anterior = existing.get("margem_lucro", 0)
+        historico = HistoricoPreco(
+            produto_id=produto_id,
+            preco_custo_anterior=existing.get("preco_custo", 0),
+            preco_custo_novo=updated_data["preco_custo"],
+            preco_venda_anterior=existing.get("preco_venda", 0),
+            preco_venda_novo=updated_data["preco_venda"],
+            margem_anterior=margem_anterior,
+            margem_nova=updated_data.get("margem_lucro", 0),
+            usuario_id=current_user["id"],
+            usuario_nome=current_user["nome"],
+            motivo="Atualização de preços"
+        )
+        await db.historico_precos.insert_one(historico.model_dump())
+    
     await db.produtos.replace_one({"id": produto_id}, updated_data)
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="produtos",
+        acao="editar",
+        detalhes={"produto_id": produto_id, "nome": updated_data["nome"]}
+    )
     return Produto(**updated_data)
+
+@api_router.delete("/produtos/{produto_id}")
+async def delete_produto(produto_id: str, current_user: dict = Depends(get_current_user)):
+    # Verificar se o produto existe
+    produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    
+    # Verificar dependências - Orçamentos
+    orcamentos_count = await db.orcamentos.count_documents({"itens.produto_id": produto_id})
+    if orcamentos_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível excluir o produto '{produto['nome']}' pois está vinculado a {orcamentos_count} orçamento(s). Remova o produto dos orçamentos primeiro."
+        )
+    
+    # Verificar dependências - Vendas
+    vendas_count = await db.vendas.count_documents({"itens.produto_id": produto_id})
+    if vendas_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível excluir o produto '{produto['nome']}' pois está vinculado a {vendas_count} venda(s)."
+        )
+    
+    # Verificar dependências - Movimentações de estoque
+    movimentacoes_count = await db.movimentacoes_estoque.count_documents({"produto_id": produto_id})
+    if movimentacoes_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível excluir o produto '{produto['nome']}' pois possui {movimentacoes_count} movimentação(ões) de estoque registrada(s)."
+        )
+    
+    # Excluir produto
+    await db.produtos.delete_one({"id": produto_id})
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="produtos",
+        acao="excluir",
+        detalhes={"produto_id": produto_id, "nome": produto["nome"]}
+    )
+    return {"message": "Produto excluído com sucesso"}
+
+@api_router.put("/produtos/{produto_id}/toggle-status")
+async def toggle_produto_status(produto_id: str, current_user: dict = Depends(get_current_user)):
+    # Verificar se o produto existe
+    produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    
+    novo_status = not produto.get("ativo", True)
+    
+    # Se estiver inativando, verificar orçamentos e vendas em aberto
+    if not novo_status:
+        # Verificar orçamentos abertos
+        orcamentos_abertos = await db.orcamentos.count_documents({
+            "itens.produto_id": produto_id,
+            "status": {"$in": ["aberto", "em_analise", "aprovado"]}
+        })
+        if orcamentos_abertos > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Não é possível inativar o produto '{produto['nome']}' pois está em {orcamentos_abertos} orçamento(s) aberto(s). Finalize ou remova o produto dos orçamentos primeiro."
+            )
+    
+    # Atualizar status
+    await db.produtos.update_one(
+        {"id": produto_id},
+        {"$set": {"ativo": novo_status}}
+    )
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="produtos",
+        acao="alterar_status",
+        detalhes={"produto_id": produto_id, "nome": produto["nome"], "novo_status": novo_status}
+    )
+    return {"message": f"Produto {'ativado' if novo_status else 'inativado'} com sucesso", "ativo": novo_status}
+
+@api_router.get("/produtos/{produto_id}/historico-precos")
+async def get_historico_precos_produto(produto_id: str, current_user: dict = Depends(get_current_user)):
+    """Retorna o histórico de alterações de preços de um produto"""
+    historico = await db.historico_precos.find(
+        {"produto_id": produto_id},
+        {"_id": 0}
+    ).sort("data_alteracao", -1).to_list(100)
+    return historico
+
+@api_router.get("/produtos/relatorios/mais-vendidos")
+async def get_produtos_mais_vendidos(
+    limite: int = 10,
+    data_inicio: Optional[str] = None,
+    data_fim: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Retorna os produtos mais vendidos"""
+    # Agregar vendas por produto
+    pipeline = [
+        {"$unwind": "$itens"},
+        {"$group": {
+            "_id": "$itens.produto_id",
+            "total_vendido": {"$sum": "$itens.quantidade"},
+            "valor_total": {"$sum": {"$multiply": ["$itens.quantidade", "$itens.preco_unitario"]}}
+        }},
+        {"$sort": {"total_vendido": -1}},
+        {"$limit": limite}
+    ]
+    
+    resultados = await db.vendas.aggregate(pipeline).to_list(limite)
+    
+    # Buscar informações dos produtos
+    produtos_ids = [r["_id"] for r in resultados]
+    produtos = await db.produtos.find({"id": {"$in": produtos_ids}}, {"_id": 0}).to_list(len(produtos_ids))
+    produtos_dict = {p["id"]: p for p in produtos}
+    
+    # Combinar resultados
+    for resultado in resultados:
+        produto_info = produtos_dict.get(resultado["_id"], {})
+        resultado["produto_nome"] = produto_info.get("nome", "Desconhecido")
+        resultado["produto_sku"] = produto_info.get("sku", "N/A")
+    
+    return resultados
+
+@api_router.get("/produtos/relatorios/valor-estoque")
+async def get_valor_total_estoque(current_user: dict = Depends(get_current_user)):
+    """Calcula o valor total do estoque"""
+    produtos = await db.produtos.find({"ativo": True}, {"_id": 0}).to_list(1000)
+    
+    valor_custo_total = sum(p.get("estoque_atual", 0) * p.get("preco_custo", 0) for p in produtos)
+    valor_venda_total = sum(p.get("estoque_atual", 0) * p.get("preco_venda", 0) for p in produtos)
+    total_produtos = len(produtos)
+    total_itens = sum(p.get("estoque_atual", 0) for p in produtos)
+    
+    # Produtos com estoque baixo
+    produtos_estoque_baixo = [p for p in produtos if p.get("estoque_atual", 0) <= p.get("estoque_minimo", 0)]
+    
+    return {
+        "valor_custo_total": round(valor_custo_total, 2),
+        "valor_venda_total": round(valor_venda_total, 2),
+        "margem_potencial": round(valor_venda_total - valor_custo_total, 2),
+        "total_produtos": total_produtos,
+        "total_itens_estoque": total_itens,
+        "produtos_estoque_baixo": len(produtos_estoque_baixo),
+        "produtos_estoque_baixo_lista": [{"id": p["id"], "nome": p["nome"], "estoque_atual": p.get("estoque_atual", 0)} for p in produtos_estoque_baixo[:10]]
+    }
+
+@api_router.get("/produtos/busca-avancada")
+async def busca_avancada_produtos(
+    termo: Optional[str] = None,
+    marca_id: Optional[str] = None,
+    categoria_id: Optional[str] = None,
+    subcategoria_id: Optional[str] = None,
+    ativo: Optional[bool] = None,
+    com_estoque: Optional[bool] = None,
+    estoque_baixo: Optional[bool] = None,
+    em_destaque: Optional[bool] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Busca avançada de produtos com múltiplos filtros"""
+    filtros = {}
+    
+    if termo:
+        filtros["$or"] = [
+            {"nome": {"$regex": termo, "$options": "i"}},
+            {"sku": {"$regex": termo, "$options": "i"}},
+            {"codigo_barras": {"$regex": termo, "$options": "i"}}
+        ]
+    
+    if marca_id:
+        filtros["marca_id"] = marca_id
+    
+    if categoria_id:
+        filtros["categoria_id"] = categoria_id
+    
+    if subcategoria_id:
+        filtros["subcategoria_id"] = subcategoria_id
+    
+    if ativo is not None:
+        filtros["ativo"] = ativo
+    
+    if em_destaque is not None:
+        filtros["em_destaque"] = em_destaque
+    
+    produtos = await db.produtos.find(filtros, {"_id": 0}).to_list(1000)
+    
+    # Filtros pós-busca
+    if com_estoque is not None:
+        if com_estoque:
+            produtos = [p for p in produtos if p.get("estoque_atual", 0) > 0]
+        else:
+            produtos = [p for p in produtos if p.get("estoque_atual", 0) == 0]
+    
+    if estoque_baixo:
+        produtos = [p for p in produtos if p.get("estoque_atual", 0) <= p.get("estoque_minimo", 0)]
+    
+    return produtos
 
 # ========== ESTOQUE ==========
 
