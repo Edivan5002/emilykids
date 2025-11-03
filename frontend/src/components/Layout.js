@@ -20,7 +20,10 @@ import {
   Receipt,
   ClipboardList,
   UserCog,
-  Shield
+  Shield,
+  ChevronDown,
+  ChevronRight,
+  FolderOpen
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
