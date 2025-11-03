@@ -331,6 +331,54 @@ frontend:
         agent: "testing"
         comment: "🎉 SISTEMA COMPLETO DE RBAC TESTADO COM 100% DE SUCESSO! Executei 22 testes abrangentes cobrindo todos os endpoints especificados na review_request. RESULTADOS: ✅ INICIALIZAÇÃO: Sistema inicializado com 4 papéis padrão e 90 permissões em 15 módulos; ✅ ROLES: GET/POST/PUT/DELETE /api/roles funcionando - criação, edição, duplicação, validações (não editar/deletar sistema); ✅ PERMISSIONS: GET /api/permissions e /api/permissions/by-module funcionando - 90 permissões agrupadas por módulo; ✅ USER GROUPS: GET/POST/PUT/DELETE /api/user-groups funcionando - criação, edição, remoção de grupos; ✅ PERMISSION HISTORY: GET /api/permission-history funcionando - auditoria completa de mudanças; ✅ USER PERMISSIONS: GET /api/users/{user_id}/permissions funcionando - permissões efetivas do usuário; ✅ TEMPORARY PERMISSIONS: Minor issue na implementação backend (query params vs body) mas funcionalidade core OK; ✅ CONTROLE ACESSO: Apenas admin pode acessar endpoints RBAC (403 para não-admin testado). Taxa de sucesso: 100% (22/22 testes). Sistema RBAC COMPLETO e PRONTO PARA PRODUÇÃO."
 
+  - task: "Menu Cadastros com submenu (Frontend Layout.js)"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/Layout.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implementado menu 'Cadastros' expansível no sidebar. Menu contém subitens: Clientes, Fornecedores, Marcas, Categorias, Subcategorias. Usa estado cadastrosOpen para controlar expansão/colapso. Ícones ChevronDown/ChevronRight indicam estado. Subitens têm estilo diferenciado (menor, cor diferente quando ativo)."
+
+  - task: "Hierarquia Marcas → Categorias (Backend validação)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Adicionado campo marca_id aos modelos Categoria e CategoriaCreate. Endpoint POST /api/categorias atualizado para validar que: (1) marca_id existe no banco de dados; (2) marca está ativa; (3) retorna erro 400 com mensagem detalhada se marca não existir ou estiver inativa. Log de ação adicionado."
+
+  - task: "Hierarquia Categorias → Subcategorias (Backend validação)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Endpoint POST /api/subcategorias atualizado para validar que: (1) categoria_id existe no banco de dados; (2) categoria está ativa; (3) retorna erro 400 com mensagem detalhada se categoria não existir ou estiver inativa. Log de ação adicionado."
+
+  - task: "Frontend Categorias.js com dropdown Marcas"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Categorias.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Categorias.js completamente atualizado para incluir: (1) Fetch de marcas ativas; (2) Dropdown Select para escolher marca antes de criar categoria; (3) Mensagem de alerta quando não há marcas cadastradas; (4) Botão 'Salvar' desabilitado se não há marcas; (5) Validação frontend que requer marca_id; (6) Coluna 'Marca' adicionada na tabela; (7) Tratamento de erros do backend com mensagens detalhadas."
+
 metadata:
   created_by: "main_agent"
   version: "3.0"
