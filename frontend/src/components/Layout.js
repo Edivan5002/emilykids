@@ -74,13 +74,13 @@ const Layout = ({ children }) => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen" style={{backgroundColor: '#F5F2E9'}}>
       {/* Sidebar */}
       <div
         className={`sidebar fixed top-0 left-0 h-full z-40 transition-all duration-300 ${
           sidebarOpen ? 'w-64' : 'w-20'
         }`}
-        style={{backgroundColor: '#F7F4E9'}}
+        style={{backgroundColor: '#F5F2E9'}}
       >
         <div className="h-full flex flex-col"
              style={{color: '#3A3A3A'}}>
