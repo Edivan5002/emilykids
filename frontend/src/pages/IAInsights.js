@@ -442,7 +442,7 @@ const IAInsights = () => {
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <Brain size={20} style={{color: '#E76F51'}} />
+                        <EmilyIcon size={20} />
                         Análise Preditiva Completa (GPT-4)
                       </CardTitle>
                     </CardHeader>
