@@ -116,26 +116,10 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-white to-purple-50 p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#F5F2E9' }}>
       <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-4 shadow-lg"
-               style={{backgroundColor: '#267698'}}>
-            <Brain size={40} className="text-white" />
-          </div>
-          <div className="mb-3">
-            <div className="flex items-center justify-center gap-1">
-              <span className="text-6xl font-bold" style={{color: '#F26C4F'}}>E</span>
-              <span className="text-6xl font-bold" style={{color: '#F4A261'}}>M</span>
-              <span className="text-6xl font-bold" style={{color: '#267698'}}>I</span>
-              <span className="text-6xl font-bold" style={{color: '#2C9AA1'}}>L</span>
-              <span className="text-6xl font-bold" style={{color: '#E76F51'}}>Y</span>
-            </div>
-            <div className="text-3xl font-bold mt-1" style={{color: '#3A3A3A'}}>KIDS</div>
-          </div>
-          <p className="text-gray-600 font-medium">Sistema Inteligente de Gestão</p>
-        </div>
+        {/* Logo Emily Kids */}
+        <EmilyKidsLogo />
 
         {/* Card de Login */}
         <Card className="shadow-xl">
