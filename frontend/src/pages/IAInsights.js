@@ -108,7 +108,7 @@ const IAInsights = () => {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-3 rounded-xl" style={{backgroundColor: '#267698'}}>
-            <Brain className="text-white" size={32} />
+            <EmilyIcon size={32} className="text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
