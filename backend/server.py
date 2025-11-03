@@ -761,7 +761,7 @@ async def send_password_reset_email(email: str, token: str, user_name: str):
         ip="0.0.0.0",
         user_id="",
         user_nome=user_name,
-        user_email=email,
+        
         tela="recuperacao_senha",
         acao="email_enviado",
         severidade="INFO",
@@ -1129,7 +1129,7 @@ async def log_seguranca(tipo: str, ip: str, detalhes: dict, user_id: str = None,
     log_seg = LogSeguranca(
         tipo=tipo,
         user_id=user_id,
-        user_email=user_email,
+        
         ip=ip,
         user_agent=user_agent,
         detalhes=detalhes
@@ -1209,7 +1209,7 @@ async def login(login_data: UserLogin, request: Request):
             ip=request.client.host if request.client else "0.0.0.0",
             user_id="",
             user_nome="Desconhecido",
-            user_email=login_data.email,
+            
             tela="login",
             acao="login_falha",
             severidade="WARNING",
@@ -1229,7 +1229,7 @@ async def login(login_data: UserLogin, request: Request):
                 ip=request.client.host if request.client else "0.0.0.0",
                 user_id=user["id"],
                 user_nome=user["nome"],
-                user_email=user["email"],
+                
                 tela="login",
                 acao="login_bloqueado",
                 severidade="SECURITY",
@@ -1265,7 +1265,7 @@ async def login(login_data: UserLogin, request: Request):
                 ip=request.client.host if request.client else "0.0.0.0",
                 user_id=user["id"],
                 user_nome=user["nome"],
-                user_email=user["email"],
+                
                 tela="login",
                 acao="conta_bloqueada",
                 severidade="SECURITY",
@@ -1284,7 +1284,7 @@ async def login(login_data: UserLogin, request: Request):
             ip=request.client.host if request.client else "0.0.0.0",
             user_id=user["id"],
             user_nome=user["nome"],
-            user_email=user["email"],
+            
             tela="login",
             acao="login_falha",
             severidade="WARNING",
@@ -1299,7 +1299,7 @@ async def login(login_data: UserLogin, request: Request):
             ip=request.client.host if request.client else "0.0.0.0",
             user_id=user["id"],
             user_nome=user["nome"],
-            user_email=user["email"],
+            
             tela="login",
             acao="login_usuario_inativo",
             severidade="WARNING",
@@ -1322,7 +1322,7 @@ async def login(login_data: UserLogin, request: Request):
                 ip=request.client.host if request.client else "0.0.0.0",
                 user_id=user["id"],
                 user_nome=user["nome"],
-                user_email=user["email"],
+                
                 tela="login",
                 acao="senha_expirada",
                 severidade="WARNING",
@@ -1358,7 +1358,7 @@ async def login(login_data: UserLogin, request: Request):
         ip=request.client.host if request.client else "0.0.0.0",
         user_id=user["id"],
         user_nome=user["nome"],
-        user_email=user["email"],
+        
         tela="login",
         acao="login",
         severidade="INFO",
@@ -1390,7 +1390,7 @@ async def logout(request: Request, current_user: dict = Depends(get_current_user
         ip=request.client.host if request.client else "0.0.0.0",
         user_id=current_user["id"],
         user_nome=current_user["nome"],
-        user_email=current_user.get("email", ""),
+        
         tela="login",
         acao="logout",
         severidade="INFO"
@@ -1410,7 +1410,7 @@ async def forgot_password(email: EmailStr, request: Request):
             ip=request.client.host if request.client else "0.0.0.0",
             user_id="",
             user_nome="Desconhecido",
-            user_email=email,
+            
             tela="recuperacao_senha",
             acao="solicitacao_email_inexistente",
             severidade="WARNING"
@@ -1432,7 +1432,7 @@ async def forgot_password(email: EmailStr, request: Request):
             ip=request.client.host if request.client else "0.0.0.0",
             user_id=user["id"],
             user_nome=user["nome"],
-            user_email=email,
+            
             tela="recuperacao_senha",
             acao="rate_limit_excedido",
             severidade="WARNING"
@@ -1461,7 +1461,7 @@ async def forgot_password(email: EmailStr, request: Request):
             ip=request.client.host if request.client else "0.0.0.0",
             user_id=user["id"],
             user_nome=user["nome"],
-            user_email=email,
+            
             tela="recuperacao_senha",
             acao="solicitacao_enviada",
             severidade="INFO",
@@ -1473,7 +1473,7 @@ async def forgot_password(email: EmailStr, request: Request):
             ip=request.client.host if request.client else "0.0.0.0",
             user_id=user["id"],
             user_nome=user["nome"],
-            user_email=email,
+            
             tela="recuperacao_senha",
             acao="erro_envio_email",
             severidade="ERROR",
@@ -1573,7 +1573,7 @@ async def reset_password(token: str, new_password: str, request: Request):
         ip=request.client.host if request.client else "0.0.0.0",
         user_id=user["id"],
         user_nome=user["nome"],
-        user_email=user["email"],
+        
         tela="recuperacao_senha",
         acao="senha_redefinida",
         severidade="INFO"
