@@ -1676,6 +1676,61 @@ async def get_usuarios(current_user: dict = Depends(get_current_user)):
     usuarios = await db.users.find({}, {"_id": 0}).to_list(1000)
     return usuarios
 
+
+@api_router.post("/usuarios")
+async def create_usuario(user_data: dict, current_user: dict = Depends(get_current_user)):
+    """Cria novo usuário (apenas admin) com suporte RBAC"""
+    if current_user.get("papel") != "admin":
+        raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
+    
+    # Validar email único
+    existing = await db.users.find_one({"email": user_data.get("email")}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email já cadastrado")
+    
+    # Validar senha
+    if not user_data.get("senha") or len(user_data["senha"]) < 6:
+        raise HTTPException(status_code=400, detail="Senha deve ter pelo menos 6 caracteres")
+    
+    # Validar role_id
+    if user_data.get("role_id"):
+        role = await db.roles.find_one({"id": user_data["role_id"]}, {"_id": 0})
+        if not role:
+            raise HTTPException(status_code=400, detail="Papel não encontrado")
+    
+    # Criar usuário
+    user = User(
+        email=user_data["email"],
+        nome=user_data["nome"],
+        senha_hash=hash_password(user_data["senha"]),
+        papel=user_data.get("papel", "vendedor"),  # Compatibilidade
+        ativo=user_data.get("ativo", True)
+    )
+    
+    user_dict = user.model_dump()
+    
+    # Adicionar campos RBAC
+    user_dict["role_id"] = user_data.get("role_id")
+    user_dict["grupos"] = user_data.get("grupos", [])
+    user_dict["require_2fa"] = user_data.get("require_2fa", False)
+    user_dict["senha_ultimo_change"] = datetime.now(timezone.utc).isoformat()
+    user_dict["senha_historia"] = []
+    user_dict["login_attempts"] = 0
+    user_dict["locked_until"] = None
+    
+    await db.users.insert_one(user_dict)
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="usuarios",
+        acao="criar",
+        detalhes={"usuario_criado_id": user.id, "usuario_email": user.email}
+    )
+    
+    return {"message": "Usuário criado com sucesso", "user_id": user.id}
+
 @api_router.get("/usuarios/{user_id}", response_model=User)
 async def get_usuario(user_id: str, current_user: dict = Depends(get_current_user)):
     if current_user.get("papel") != "admin":
