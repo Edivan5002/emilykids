@@ -508,7 +508,9 @@ const Vendas = () => {
                     <SelectContent>
                       <SelectItem value="todos">Todos</SelectItem>
                       {clientes.map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.nome} - {c.cpf_cnpj}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
