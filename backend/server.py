@@ -3061,7 +3061,7 @@ async def create_produto(produto_data: ProdutoCreate, current_user: dict = Depen
     return produto
 
 @api_router.put("/produtos/{produto_id}", response_model=Produto)
-async def update_produto(produto_id: str, produto_data: ProdutoCreate, current_user: dict = Depends(get_current_user)):
+async def update_produto(produto_id: str, produto_data: ProdutoCreate, current_user: dict = Depends(require_permission("produtos", "editar"))):
     existing = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
     if not existing:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
