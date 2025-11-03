@@ -28,6 +28,7 @@ import {
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [cadastrosOpen, setCadastrosOpen] = useState(true); // Estado para menu Cadastros
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,11 +37,18 @@ const Layout = ({ children }) => {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/usuarios', label: 'Usuários', icon: UserCog, adminOnly: true },
     { path: '/papeis-permissoes', label: 'Papéis & Permissões', icon: Shield, adminOnly: true },
-    { path: '/clientes', label: 'Clientes', icon: Users },
-    { path: '/fornecedores', label: 'Fornecedores', icon: Truck },
-    { path: '/marcas', label: 'Marcas', icon: Tag },
-    { path: '/categorias', label: 'Categorias', icon: Folder },
-    { path: '/subcategorias', label: 'Subcategorias', icon: Layers },
+    { 
+      label: 'Cadastros', 
+      icon: FolderOpen, 
+      isSubmenu: true,
+      children: [
+        { path: '/clientes', label: 'Clientes', icon: Users },
+        { path: '/fornecedores', label: 'Fornecedores', icon: Truck },
+        { path: '/marcas', label: 'Marcas', icon: Tag },
+        { path: '/categorias', label: 'Categorias', icon: Folder },
+        { path: '/subcategorias', label: 'Subcategorias', icon: Layers }
+      ]
+    },
     { path: '/produtos', label: 'Produtos', icon: Package },
     { path: '/estoque', label: 'Estoque', icon: Package },
     { path: '/notas-fiscais', label: 'Notas Fiscais', icon: Receipt },
