@@ -221,6 +221,18 @@ class SubcategoriaCreate(BaseModel):
     categoria_id: str
     ativo: bool = True
 
+class ProdutoVariante(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    tamanho: Optional[str] = None
+    cor: Optional[str] = None
+    sku_variante: str
+    estoque_atual: int = 0
+    preco_adicional: float = 0
+
+class ComponenteKit(BaseModel):
+    produto_id: str
+    quantidade: int
+
 class Produto(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -230,13 +242,44 @@ class Produto(BaseModel):
     categoria_id: Optional[str] = None
     subcategoria_id: Optional[str] = None
     unidade: str = "UN"
+    
+    # Preços
     preco_custo: float
     preco_venda: float
+    margem_lucro: Optional[float] = None  # Calculado: (preco_venda - preco_custo) / preco_custo * 100
+    preco_promocional: Optional[float] = None
+    data_inicio_promo: Optional[str] = None
+    data_fim_promo: Optional[str] = None
+    
+    # Estoque
     estoque_atual: int = 0
     estoque_minimo: int = 0
     estoque_maximo: int = 0
+    
+    # Variações
+    tem_variacoes: bool = False
+    variacoes: Optional[List[ProdutoVariante]] = None
+    
+    # Campos adicionais
+    codigo_barras: Optional[str] = None
+    peso: Optional[float] = None  # em kg
+    altura: Optional[float] = None  # em cm
+    largura: Optional[float] = None  # em cm
+    profundidade: Optional[float] = None  # em cm
+    fornecedor_preferencial_id: Optional[str] = None
+    comissao_vendedor: Optional[float] = None  # % ou valor fixo
+    tags: Optional[List[str]] = None  # ["promoção", "lançamento", "bestseller"]
+    em_destaque: bool = False
+    
+    # Kits
+    eh_kit: bool = False
+    componentes_kit: Optional[List[ComponenteKit]] = None
+    
+    # Mídia
     fotos: Optional[List[str]] = None
     descricao: Optional[str] = None
+    
+    # Status
     ativo: bool = True
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
@@ -247,13 +290,56 @@ class ProdutoCreate(BaseModel):
     categoria_id: Optional[str] = None
     subcategoria_id: Optional[str] = None
     unidade: str = "UN"
+    
+    # Preços
     preco_custo: float
     preco_venda: float
+    margem_lucro: Optional[float] = None
+    preco_promocional: Optional[float] = None
+    data_inicio_promo: Optional[str] = None
+    data_fim_promo: Optional[str] = None
+    
+    # Estoque
     estoque_minimo: int = 0
     estoque_maximo: int = 0
+    
+    # Variações
+    tem_variacoes: bool = False
+    variacoes: Optional[List[ProdutoVariante]] = None
+    
+    # Campos adicionais
+    codigo_barras: Optional[str] = None
+    peso: Optional[float] = None
+    altura: Optional[float] = None
+    largura: Optional[float] = None
+    profundidade: Optional[float] = None
+    fornecedor_preferencial_id: Optional[str] = None
+    comissao_vendedor: Optional[float] = None
+    tags: Optional[List[str]] = None
+    em_destaque: bool = False
+    
+    # Kits
+    eh_kit: bool = False
+    componentes_kit: Optional[List[ComponenteKit]] = None
+    
+    # Mídia
     fotos: Optional[List[str]] = None
     descricao: Optional[str] = None
     ativo: bool = True
+
+class HistoricoPreco(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    produto_id: str
+    preco_custo_anterior: float
+    preco_custo_novo: float
+    preco_venda_anterior: float
+    preco_venda_novo: float
+    margem_anterior: float
+    margem_nova: float
+    usuario_id: str
+    usuario_nome: str
+    data_alteracao: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    motivo: Optional[str] = None
 
 class NotaFiscal(BaseModel):
     model_config = ConfigDict(extra="ignore")
