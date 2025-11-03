@@ -2566,6 +2566,7 @@ async def update_fornecedor(fornecedor_id: str, fornecedor_data: FornecedorCreat
     updated_data = fornecedor_data.model_dump()
     updated_data["id"] = fornecedor_id
     updated_data["created_at"] = existing["created_at"]
+    updated_data["ativo"] = existing.get("ativo", True)  # Preservar status ativo
     
     await db.fornecedores.replace_one({"id": fornecedor_id}, updated_data)
     await log_action(
