@@ -2451,7 +2451,14 @@ async def create_categoria(categoria_data: CategoriaCreate, current_user: dict =
     
     categoria = Categoria(**categoria_data.model_dump())
     await db.categorias.insert_one(categoria.model_dump())
-    await log_action(current_user["id"], "criar", "categorias", categoria.id, {"nome": categoria.nome, "marca_id": categoria.marca_id})
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="categorias",
+        acao="criar",
+        detalhes={"nome": categoria.nome, "marca_id": categoria.marca_id, "categoria_id": categoria.id}
+    )
     return categoria
 
 # ========== SUBCATEGORIAS ==========
