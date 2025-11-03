@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Auditoria e Correção Completa do Sistema RBAC: Implementar verificação granular de permissões usando Depends(require_permission) em TODOS os endpoints críticos, substituir verificações manuais de admin por RBAC unificado, garantir que apenas usuários com permissões adequadas possam acessar cada módulo e ação."
+user_problem_statement: "Teste de Filtros de Cadastros Inativos e Validações de Dependências: (1) Cadastros inativos NÃO devem aparecer por padrão nas listagens (para evitar que apareçam em dropdowns), (2) Cadastros só podem ser inativados se NÃO houver dependências ATIVAS vinculadas, (3) Mensagens de erro devem ser claras e informativas para o usuário."
 
 backend:
   - task: "Correção RBAC - Módulo Produtos (9 endpoints CRUD)"
