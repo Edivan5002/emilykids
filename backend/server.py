@@ -2624,7 +2624,7 @@ async def toggle_fornecedor_status(fornecedor_id: str, current_user: dict = Depe
         if notas_pendentes > 0:
             raise HTTPException(
                 status_code=400,
-                detail=f"Não é possível inativar o fornecedor '{fornecedor['nome']}' pois existem {notas_pendentes} nota(s) fiscal(is) pendente(s). Confirme ou cancele as notas primeiro."
+                detail=f"Não é possível inativar o fornecedor '{fornecedor['razao_social']}' pois existem {notas_pendentes} nota(s) fiscal(is) pendente(s). Confirme ou cancele as notas primeiro."
             )
     
     # Atualizar status
@@ -2638,7 +2638,7 @@ async def toggle_fornecedor_status(fornecedor_id: str, current_user: dict = Depe
         user_nome=current_user["nome"],
         tela="fornecedores",
         acao="alterar_status",
-        detalhes={"fornecedor_id": fornecedor_id, "nome": fornecedor["nome"], "novo_status": novo_status}
+        detalhes={"fornecedor_id": fornecedor_id, "razao_social": fornecedor["razao_social"], "novo_status": novo_status}
     )
     return {"message": f"Fornecedor {'ativado' if novo_status else 'inativado'} com sucesso", "ativo": novo_status}
 
