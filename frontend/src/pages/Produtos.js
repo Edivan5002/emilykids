@@ -124,7 +124,15 @@ const Produtos = () => {
   };
 
   const aplicarFiltros = async () => {
-    if (Object.values(filtros).every(v => !v || v === '')) {
+    // Se não há filtros aplicados, mostrar todos
+    if (filtros.termo === '' && 
+        (filtros.marca_id === 'todas' || filtros.marca_id === '') && 
+        (filtros.categoria_id === 'todas' || filtros.categoria_id === '') && 
+        (filtros.subcategoria_id === 'todas' || filtros.subcategoria_id === '') && 
+        (filtros.ativo === 'todos' || filtros.ativo === '') && 
+        filtros.com_estoque === '' && 
+        !filtros.estoque_baixo && 
+        !filtros.em_destaque) {
       setProdutosFiltrados(produtos);
       return;
     }
@@ -132,10 +140,10 @@ const Produtos = () => {
     try {
       const params = new URLSearchParams();
       if (filtros.termo) params.append('termo', filtros.termo);
-      if (filtros.marca_id) params.append('marca_id', filtros.marca_id);
-      if (filtros.categoria_id) params.append('categoria_id', filtros.categoria_id);
-      if (filtros.subcategoria_id) params.append('subcategoria_id', filtros.subcategoria_id);
-      if (filtros.ativo !== '') params.append('ativo', filtros.ativo);
+      if (filtros.marca_id && filtros.marca_id !== 'todas') params.append('marca_id', filtros.marca_id);
+      if (filtros.categoria_id && filtros.categoria_id !== 'todas') params.append('categoria_id', filtros.categoria_id);
+      if (filtros.subcategoria_id && filtros.subcategoria_id !== 'todas') params.append('subcategoria_id', filtros.subcategoria_id);
+      if (filtros.ativo && filtros.ativo !== 'todos') params.append('ativo', filtros.ativo);
       if (filtros.com_estoque !== '') params.append('com_estoque', filtros.com_estoque);
       if (filtros.estoque_baixo) params.append('estoque_baixo', 'true');
       if (filtros.em_destaque) params.append('em_destaque', 'true');
