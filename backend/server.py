@@ -2459,6 +2459,84 @@ async def create_fornecedor(fornecedor_data: FornecedorCreate, current_user: dic
     await db.fornecedores.insert_one(fornecedor.model_dump())
     return fornecedor
 
+@api_router.put("/fornecedores/{fornecedor_id}", response_model=Fornecedor)
+async def update_fornecedor(fornecedor_id: str, fornecedor_data: FornecedorCreate, current_user: dict = Depends(get_current_user)):
+    # Verificar se o fornecedor existe
+    existing = await db.fornecedores.find_one({"id": fornecedor_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Fornecedor não encontrado")
+    
+    # Atualizar dados
+    updated_data = fornecedor_data.model_dump()
+    updated_data["id"] = fornecedor_id
+    updated_data["created_at"] = existing["created_at"]
+    
+    await db.fornecedores.replace_one({"id": fornecedor_id}, updated_data)
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="fornecedores",
+        acao="editar",
+        detalhes={"fornecedor_id": fornecedor_id, "nome": fornecedor_data.nome}
+    )
+    return Fornecedor(**updated_data)
+
+@api_router.delete("/fornecedores/{fornecedor_id}")
+async def delete_fornecedor(fornecedor_id: str, current_user: dict = Depends(get_current_user)):
+    # Verificar se o fornecedor existe
+    fornecedor = await db.fornecedores.find_one({"id": fornecedor_id}, {"_id": 0})
+    if not fornecedor:
+        raise HTTPException(status_code=404, detail="Fornecedor não encontrado")
+    
+    # Verificar dependências - Notas Fiscais
+    notas_count = await db.notas_fiscais.count_documents({"fornecedor_id": fornecedor_id})
+    if notas_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível excluir o fornecedor '{fornecedor['nome']}' pois existem {notas_count} nota(s) fiscal(is) vinculada(s). Exclua as notas fiscais primeiro."
+        )
+    
+    # Excluir fornecedor
+    await db.fornecedores.delete_one({"id": fornecedor_id})
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="fornecedores",
+        acao="excluir",
+        detalhes={"fornecedor_id": fornecedor_id, "nome": fornecedor["nome"]}
+    )
+    return {"message": "Fornecedor excluído com sucesso"}
+
+@api_router.put("/fornecedores/{fornecedor_id}/toggle-status")
+async def toggle_fornecedor_status(fornecedor_id: str, current_user: dict = Depends(get_current_user)):
+    # Verificar se o fornecedor existe
+    fornecedor = await db.fornecedores.find_one({"id": fornecedor_id}, {"_id": 0})
+    if not fornecedor:
+        raise HTTPException(status_code=404, detail="Fornecedor não encontrado")
+    
+    novo_status = not fornecedor.get("ativo", True)
+    
+    # Se estiver inativando, pode ter uma lógica de verificação de notas fiscais pendentes
+    # Por enquanto, permitir inativação livre
+    
+    # Atualizar status
+    await db.fornecedores.update_one(
+        {"id": fornecedor_id},
+        {"$set": {"ativo": novo_status}}
+    )
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="fornecedores",
+        acao="alterar_status",
+        detalhes={"fornecedor_id": fornecedor_id, "nome": fornecedor["nome"], "novo_status": novo_status}
+    )
+    return {"message": f"Fornecedor {'ativado' if novo_status else 'inativado'} com sucesso", "ativo": novo_status}
+
+
 # ========== MARCAS ==========
 
 @api_router.get("/marcas", response_model=List[Marca])
