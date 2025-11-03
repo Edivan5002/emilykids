@@ -6071,7 +6071,7 @@ async def exportar_logs(
         raise HTTPException(status_code=400, detail="Formato inválido. Use 'json' ou 'csv'")
 
 @api_router.post("/logs/arquivar-antigos")
-async def arquivar_logs_antigos(current_user: dict = Depends(get_current_user)):
+async def arquivar_logs_antigos(current_user: dict = Depends(require_permission("logs", "editar"))):
     """
     Arquiva logs com mais de X dias (apenas admin)
     """
