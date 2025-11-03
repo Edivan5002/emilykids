@@ -2427,8 +2427,23 @@ async def get_categorias(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/categorias", response_model=Categoria)
 async def create_categoria(categoria_data: CategoriaCreate, current_user: dict = Depends(get_current_user)):
+    # Validar que a marca existe
+    marca = await db.marcas.find_one({"id": categoria_data.marca_id}, {"_id": 0})
+    if not marca:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Marca com ID {categoria_data.marca_id} não encontrada. Por favor, cadastre a marca primeiro."
+        )
+    
+    if not marca.get("ativo", False):
+        raise HTTPException(
+            status_code=400,
+            detail="A marca selecionada está inativa. Por favor, selecione uma marca ativa."
+        )
+    
     categoria = Categoria(**categoria_data.model_dump())
     await db.categorias.insert_one(categoria.model_dump())
+    await log_action(current_user["id"], "criar", "categorias", categoria.id, {"nome": categoria.nome, "marca_id": categoria.marca_id})
     return categoria
 
 # ========== SUBCATEGORIAS ==========
