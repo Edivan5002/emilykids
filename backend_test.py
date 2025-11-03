@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Backend Test Suite for Emily Kids ERP - Orçamentos, Notas Fiscais e Vendas Testing
-Tests critical endpoints after corrections applied for datetime issues and conversion problems
-Focus: Orçamento conversion to Venda, Notas Fiscais datetime validation, Vendas creation
+Backend Test Suite for Emily Kids ERP - Clientes e Fornecedores Testing
+Tests corrections applied to Clientes and Fornecedores modules as per review request
+Focus: CRUD operations, ativo field preservation, dependency validations, error messages
 """
 
 import requests
