@@ -2668,7 +2668,7 @@ async def update_marca(marca_id: str, marca_data: MarcaCreate, current_user: dic
     return Marca(**updated_data)
 
 @api_router.delete("/marcas/{marca_id}")
-async def delete_marca(marca_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_marca(marca_id: str, current_user: dict = Depends(require_permission("marcas", "excluir"))):
     # Verificar se a marca existe
     marca = await db.marcas.find_one({"id": marca_id}, {"_id": 0})
     if not marca:
@@ -2695,7 +2695,7 @@ async def delete_marca(marca_id: str, current_user: dict = Depends(get_current_u
     return {"message": "Marca excluída com sucesso"}
 
 @api_router.put("/marcas/{marca_id}/toggle-status")
-async def toggle_marca_status(marca_id: str, current_user: dict = Depends(get_current_user)):
+async def toggle_marca_status(marca_id: str, current_user: dict = Depends(require_permission("marcas", "editar"))):
     # Verificar se a marca existe
     marca = await db.marcas.find_one({"id": marca_id}, {"_id": 0})
     if not marca:
