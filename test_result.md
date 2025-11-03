@@ -588,11 +588,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Menu Cadastros com submenu (Frontend Layout.js)"
-    - "Frontend Categorias.js com dropdown Marcas"
-    - "Frontend Subcategorias.js melhorado com hierarquia"
+    - "Correção RBAC - Todos os módulos (74 endpoints corrigidos)"
+    - "Verificação de permissões granulares em produção"
+    - "Teste de acesso com diferentes papéis (Admin, Gerente, Vendedor)"
   stuck_tasks: []
-  test_all: false
+  test_all: true
   test_priority: "high_first"
 
 agent_communication:
