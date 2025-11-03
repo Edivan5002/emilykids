@@ -717,26 +717,26 @@ const Produtos = () => {
           <div className="grid grid-cols-4 gap-4">
             <Input placeholder="Buscar por nome, SKU ou código de barras" value={filtros.termo} onChange={(e) => setFiltros({ ...filtros, termo: e.target.value })} />
             
-            <Select value={filtros.marca_id} onValueChange={(value) => setFiltros({ ...filtros, marca_id: value })}>
+            <Select value={filtros.marca_id || 'todas'} onValueChange={(value) => setFiltros({ ...filtros, marca_id: value === 'todas' ? '' : value })}>
               <SelectTrigger><SelectValue placeholder="Todas as marcas" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas</SelectItem>
+                <SelectItem value="todas">Todas</SelectItem>
                 {marcas.map(m => <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>)}
               </SelectContent>
             </Select>
             
-            <Select value={filtros.categoria_id} onValueChange={(value) => setFiltros({ ...filtros, categoria_id: value })}>
+            <Select value={filtros.categoria_id || 'todas'} onValueChange={(value) => setFiltros({ ...filtros, categoria_id: value === 'todas' ? '' : value })}>
               <SelectTrigger><SelectValue placeholder="Todas as categorias" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas</SelectItem>
+                <SelectItem value="todas">Todas</SelectItem>
                 {categorias.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
               </SelectContent>
             </Select>
             
-            <Select value={filtros.ativo} onValueChange={(value) => setFiltros({ ...filtros, ativo: value })}>
+            <Select value={filtros.ativo || 'todos'} onValueChange={(value) => setFiltros({ ...filtros, ativo: value === 'todos' ? '' : value })}>
               <SelectTrigger><SelectValue placeholder="Todos os status" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="todos">Todos</SelectItem>
                 <SelectItem value="true">Apenas Ativos</SelectItem>
                 <SelectItem value="false">Apenas Inativos</SelectItem>
               </SelectContent>
