@@ -1995,21 +1995,21 @@ class EmilyKidsBackendTester:
             self.log_test("E2E - Complete Hierarchy", False, f"Error: {str(e)}")
     
     def run_all_tests(self):
-        """Run all tests in sequence - FOCUS ON RBAC SYSTEM"""
-        print("🧪 EMILY KIDS ERP - RBAC SYSTEM TESTING")
-        print("🎯 FOCUS: Complete RBAC (Role-Based Access Control) System")
+        """Run all tests in sequence - FOCUS ON HIERARCHICAL SYSTEM"""
+        print("🧪 EMILY KIDS ERP - HIERARCHICAL SYSTEM TESTING")
+        print("🎯 FOCUS: Menu Cadastros e Hierarquia Marcas → Categorias → Subcategorias")
         print("=" * 70)
         
         if not self.authenticate():
             print("❌ Authentication failed. Cannot proceed with tests.")
             return False
         
-        # PRIORITY 1: Test the COMPLETE RBAC SYSTEM as specified in review request
-        print("\n🔐 TESTING COMPLETE RBAC SYSTEM")
+        # PRIORITY 1: Test the COMPLETE HIERARCHICAL SYSTEM as specified in review request
+        print("\n🏗️ TESTING COMPLETE HIERARCHICAL SYSTEM")
         print("=" * 70)
         
-        # Test all RBAC endpoints as specified in review request
-        self.test_rbac_system_complete()
+        # Test all hierarchical endpoints as specified in review request
+        self.test_hierarchical_system_marcas_categorias_subcategorias()
         
         # Summary with focus on RBAC
         print("\n" + "=" * 70)
