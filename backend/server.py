@@ -2626,12 +2626,12 @@ async def toggle_fornecedor_status(fornecedor_id: str, current_user: dict = Depe
 # ========== MARCAS ==========
 
 @api_router.get("/marcas", response_model=List[Marca])
-async def get_marcas(current_user: dict = Depends(get_current_user)):
+async def get_marcas(current_user: dict = Depends(require_permission("marcas", "visualizar"))):
     marcas = await db.marcas.find({}, {"_id": 0}).to_list(1000)
     return marcas
 
 @api_router.post("/marcas", response_model=Marca)
-async def create_marca(marca_data: MarcaCreate, current_user: dict = Depends(get_current_user)):
+async def create_marca(marca_data: MarcaCreate, current_user: dict = Depends(require_permission("marcas", "criar"))):
     marca = Marca(**marca_data.model_dump())
     await db.marcas.insert_one(marca.model_dump())
     await log_action(
@@ -2645,7 +2645,7 @@ async def create_marca(marca_data: MarcaCreate, current_user: dict = Depends(get
     return marca
 
 @api_router.put("/marcas/{marca_id}", response_model=Marca)
-async def update_marca(marca_id: str, marca_data: MarcaCreate, current_user: dict = Depends(get_current_user)):
+async def update_marca(marca_id: str, marca_data: MarcaCreate, current_user: dict = Depends(require_permission("marcas", "editar"))):
     # Verificar se a marca existe
     existing = await db.marcas.find_one({"id": marca_id}, {"_id": 0})
     if not existing:
