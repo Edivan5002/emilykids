@@ -6158,7 +6158,7 @@ async def verificar_atividade_suspeita(current_user: dict = Depends(require_perm
     }
 
 @api_router.post("/logs/criar-indices")
-async def criar_indices_logs(current_user: dict = Depends(get_current_user)):
+async def criar_indices_logs(current_user: dict = Depends(require_permission("logs", "editar"))):
     """
     Cria índices no MongoDB para otimização de queries (apenas admin)
     """
