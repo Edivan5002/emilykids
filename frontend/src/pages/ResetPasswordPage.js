@@ -178,26 +178,6 @@ const ResetPasswordPage = () => {
         {/* Logo Emily Kids */}
         <EmilyKidsLogo />
 
-        {/* Card */}
-        <Card className="shadow-xl">
-          <CardHeader className="text-center pb-4">
-            <div className="flex justify-center mb-3">
-              <div className="bg-blue-100 p-3 rounded-full">
-                <Lock className="text-blue-600" size={28} />
-              </div>
-            </div>
-          <div className="mb-3">
-            <div className="flex items-center justify-center gap-1">
-              <span className="text-6xl font-bold" style={{color: '#F26C4F'}}>E</span>
-              <span className="text-6xl font-bold" style={{color: '#F4A261'}}>M</span>
-              <span className="text-6xl font-bold" style={{color: '#267698'}}>I</span>
-              <span className="text-6xl font-bold" style={{color: '#2C9AA1'}}>L</span>
-              <span className="text-6xl font-bold" style={{color: '#E76F51'}}>Y</span>
-            </div>
-            <div className="text-3xl font-bold mt-1" style={{color: '#3A3A3A'}}>KIDS</div>
-          </div>
-        </div>
-
         {/* Card de Reset */}
         <Card className="shadow-xl">
           <CardHeader className="text-center pb-4">
