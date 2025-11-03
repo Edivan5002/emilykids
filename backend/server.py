@@ -2377,20 +2377,74 @@ async def update_cliente(cliente_id: str, cliente_data: ClienteCreate, current_u
 
 @api_router.delete("/clientes/{cliente_id}")
 async def delete_cliente(cliente_id: str, current_user: dict = Depends(get_current_user)):
-    result = await db.clientes.delete_one({"id": cliente_id})
-    if result.deleted_count == 0:
+    # Verificar se o cliente existe
+    cliente = await db.clientes.find_one({"id": cliente_id}, {"_id": 0})
+    if not cliente:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
     
+    # Verificar dependências - Orçamentos
+    orcamentos_count = await db.orcamentos.count_documents({"cliente_id": cliente_id})
+    if orcamentos_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível excluir o cliente '{cliente['nome']}' pois existem {orcamentos_count} orçamento(s) vinculado(s). Exclua os orçamentos primeiro."
+        )
+    
+    # Verificar dependências - Vendas
+    vendas_count = await db.vendas.count_documents({"cliente_id": cliente_id})
+    if vendas_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível excluir o cliente '{cliente['nome']}' pois existem {vendas_count} venda(s) vinculada(s). Exclua as vendas primeiro."
+        )
+    
+    # Excluir cliente
+    await db.clientes.delete_one({"id": cliente_id})
     await log_action(
         ip="0.0.0.0",
         user_id=current_user["id"],
         user_nome=current_user["nome"],
         tela="clientes",
-        acao="deletar",
-        detalhes={"cliente_id": cliente_id}
+        acao="excluir",
+        detalhes={"cliente_id": cliente_id, "nome": cliente["nome"]}
     )
+    return {"message": "Cliente excluído com sucesso"}
+
+@api_router.put("/clientes/{cliente_id}/toggle-status")
+async def toggle_cliente_status(cliente_id: str, current_user: dict = Depends(get_current_user)):
+    # Verificar se o cliente existe
+    cliente = await db.clientes.find_one({"id": cliente_id}, {"_id": 0})
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
     
-    return {"message": "Cliente deletado com sucesso"}
+    novo_status = not cliente.get("ativo", True)
+    
+    # Se estiver inativando, verificar orçamentos e vendas em aberto
+    if not novo_status:
+        orcamentos_abertos = await db.orcamentos.count_documents({
+            "cliente_id": cliente_id,
+            "status": {"$in": ["aberto", "em_analise", "aprovado"]}
+        })
+        if orcamentos_abertos > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Não é possível inativar o cliente '{cliente['nome']}' pois existem {orcamentos_abertos} orçamento(s) em aberto. Finalize ou cancele os orçamentos primeiro."
+            )
+    
+    # Atualizar status
+    await db.clientes.update_one(
+        {"id": cliente_id},
+        {"$set": {"ativo": novo_status}}
+    )
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="clientes",
+        acao="alterar_status",
+        detalhes={"cliente_id": cliente_id, "nome": cliente["nome"], "novo_status": novo_status}
+    )
+    return {"message": f"Cliente {'ativado' if novo_status else 'inativado'} com sucesso", "ativo": novo_status}
 
 # ========== FORNECEDORES ==========
 
