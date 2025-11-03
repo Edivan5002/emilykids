@@ -2575,7 +2575,7 @@ async def update_fornecedor(fornecedor_id: str, fornecedor_data: FornecedorCreat
         user_nome=current_user["nome"],
         tela="fornecedores",
         acao="editar",
-        detalhes={"fornecedor_id": fornecedor_id, "nome": fornecedor_data.nome}
+        detalhes={"fornecedor_id": fornecedor_id, "razao_social": fornecedor_data.razao_social}
     )
     return Fornecedor(**updated_data)
 
