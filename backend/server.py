@@ -2803,7 +2803,7 @@ async def update_categoria(categoria_id: str, categoria_data: CategoriaCreate, c
     return Categoria(**updated_data)
 
 @api_router.delete("/categorias/{categoria_id}")
-async def delete_categoria(categoria_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_categoria(categoria_id: str, current_user: dict = Depends(require_permission("categorias", "excluir"))):
     # Verificar se a categoria existe
     categoria = await db.categorias.find_one({"id": categoria_id}, {"_id": 0})
     if not categoria:
@@ -2838,7 +2838,7 @@ async def delete_categoria(categoria_id: str, current_user: dict = Depends(get_c
     return {"message": "Categoria excluída com sucesso"}
 
 @api_router.put("/categorias/{categoria_id}/toggle-status")
-async def toggle_categoria_status(categoria_id: str, current_user: dict = Depends(get_current_user)):
+async def toggle_categoria_status(categoria_id: str, current_user: dict = Depends(require_permission("categorias", "editar"))):
     # Verificar se a categoria existe
     categoria = await db.categorias.find_one({"id": categoria_id}, {"_id": 0})
     if not categoria:
