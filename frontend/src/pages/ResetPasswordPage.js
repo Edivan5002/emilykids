@@ -13,7 +13,7 @@ import { Eye, EyeOff, Lock, CheckCircle, XCircle, AlertCircle, ArrowLeft } from 
 const EmilyKidsLogo = () => (
   <div className="flex flex-col items-center mb-6">
     <img 
-      src="https://customer-assets.emergentagent.com/job_retail-kids-mgmt/artifacts/gnn10sag_WhatsApp%20Image%202025-11-01%20at%2021.07.08.jpeg" 
+      src="/boneca.png" 
       alt="Emily Kids" 
       className="w-32 h-32 object-contain mb-2"
     />
