@@ -64,7 +64,7 @@ const Layout = ({ children }) => {
     { path: '/orcamentos', label: 'Orçamentos', icon: ClipboardList },
     { path: '/vendas', label: 'Vendas', icon: ShoppingCart },
     { path: '/relatorios', label: 'Relatórios', icon: BarChart3 },
-    { path: '/ia-insights', label: 'IA Insights', icon: Brain },
+    { path: '/ia-insights', label: 'IA Insights', icon: EmilyIcon },
     { path: '/logs', label: 'Logs', icon: History }
   ];
 
