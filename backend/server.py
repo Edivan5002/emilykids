@@ -1742,7 +1742,7 @@ async def get_usuario(user_id: str, current_user: dict = Depends(get_current_use
     return usuario
 
 @api_router.put("/usuarios/{user_id}")
-async def update_usuario(user_id: str, user_data: UserUpdate, current_user: dict = Depends(get_current_user)):
+async def update_usuario(user_id: str, user_data: dict, current_user: dict = Depends(get_current_user)):
     if current_user.get("papel") != "admin":
         raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
     
@@ -1751,26 +1751,40 @@ async def update_usuario(user_id: str, user_data: UserUpdate, current_user: dict
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     
     # Verificar se email já existe em outro usuário
-    email_exists = await db.users.find_one({"email": user_data.email, "id": {"$ne": user_id}}, {"_id": 0})
-    if email_exists:
-        raise HTTPException(status_code=400, detail="Email já cadastrado para outro usuário")
+    if user_data.get("email"):
+        email_exists = await db.users.find_one({"email": user_data["email"], "id": {"$ne": user_id}}, {"_id": 0})
+        if email_exists:
+            raise HTTPException(status_code=400, detail="Email já cadastrado para outro usuário")
     
-    updated_data = {
-        "id": user_id,
-        "nome": user_data.nome,
-        "email": user_data.email,
-        "papel": user_data.papel,
-        "ativo": user_data.ativo,
-        "created_at": existing["created_at"]
-    }
+    # Preparar dados de atualização
+    update_fields = {}
+    
+    if user_data.get("nome"):
+        update_fields["nome"] = user_data["nome"]
+    if user_data.get("email"):
+        update_fields["email"] = user_data["email"]
+    if user_data.get("ativo") is not None:
+        update_fields["ativo"] = user_data["ativo"]
+    if user_data.get("role_id") is not None:
+        # Validar role existe
+        if user_data["role_id"]:
+            role = await db.roles.find_one({"id": user_data["role_id"]}, {"_id": 0})
+            if not role:
+                raise HTTPException(status_code=400, detail="Papel não encontrado")
+        update_fields["role_id"] = user_data["role_id"]
+    if user_data.get("require_2fa") is not None:
+        update_fields["require_2fa"] = user_data["require_2fa"]
     
     # Atualizar senha se fornecida
-    if user_data.senha:
-        updated_data["senha_hash"] = hash_password(user_data.senha)
-    else:
-        updated_data["senha_hash"] = existing["senha_hash"]
+    if user_data.get("senha"):
+        if len(user_data["senha"]) < 6:
+            raise HTTPException(status_code=400, detail="Senha deve ter pelo menos 6 caracteres")
+        update_fields["senha_hash"] = hash_password(user_data["senha"])
+        update_fields["senha_ultimo_change"] = datetime.now(timezone.utc).isoformat()
     
-    await db.users.replace_one({"id": user_id}, updated_data)
+    update_fields["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.users.update_one({"id": user_id}, {"$set": update_fields})
     
     await log_action(
         ip="0.0.0.0",
