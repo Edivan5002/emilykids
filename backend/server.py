@@ -978,7 +978,7 @@ async def check_permission(user_id: str, modulo: str, acao: str) -> bool:
     
     return False
 
-async def require_permission(modulo: str, acao: str):
+def require_permission(modulo: str, acao: str):
     """Dependency para verificar permissão"""
     async def permission_checker(current_user: dict = Depends(get_current_user)):
         has_permission = await check_permission(current_user["id"], modulo, acao)
