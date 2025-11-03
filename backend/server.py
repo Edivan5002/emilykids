@@ -196,12 +196,14 @@ class Categoria(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     nome: str
     descricao: Optional[str] = None
+    marca_id: str  # Categoria deve pertencer a uma Marca
     ativo: bool = True
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class CategoriaCreate(BaseModel):
     nome: str
     descricao: Optional[str] = None
+    marca_id: str  # Categoria deve pertencer a uma Marca
     ativo: bool = True
 
 class Subcategoria(BaseModel):
