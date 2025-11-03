@@ -6107,7 +6107,7 @@ async def arquivar_logs_antigos(current_user: dict = Depends(require_permission(
     }
 
 @api_router.get("/logs/atividade-suspeita")
-async def verificar_atividade_suspeita(current_user: dict = Depends(get_current_user)):
+async def verificar_atividade_suspeita(current_user: dict = Depends(require_permission("logs", "visualizar"))):
     """
     Verifica atividades suspeitas no sistema
     """
