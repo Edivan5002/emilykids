@@ -2591,7 +2591,7 @@ async def delete_fornecedor(fornecedor_id: str, current_user: dict = Depends(req
     if notas_count > 0:
         raise HTTPException(
             status_code=400,
-            detail=f"Não é possível excluir o fornecedor '{fornecedor['nome']}' pois existem {notas_count} nota(s) fiscal(is) vinculada(s). Exclua as notas fiscais primeiro."
+            detail=f"Não é possível excluir o fornecedor '{fornecedor['razao_social']}' pois existem {notas_count} nota(s) fiscal(is) vinculada(s). Exclua as notas fiscais primeiro."
         )
     
     # Excluir fornecedor
@@ -2602,7 +2602,7 @@ async def delete_fornecedor(fornecedor_id: str, current_user: dict = Depends(req
         user_nome=current_user["nome"],
         tela="fornecedores",
         acao="deletar",
-        detalhes={"fornecedor_id": fornecedor_id, "nome": fornecedor["nome"]}
+        detalhes={"fornecedor_id": fornecedor_id, "razao_social": fornecedor["razao_social"]}
     )
     return {"message": "Fornecedor excluído com sucesso"}
 
