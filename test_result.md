@@ -562,11 +562,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Filtros de Cadastros Inativos - Teste de todos os 6 endpoints GET com parâmetro incluir_inativos"
-    - "Validações de Dependências Ativas - Teste de todos os 6 endpoints toggle-status"
-    - "Verificação de mensagens de erro claras e informativas para usuário"
+    - "Correções Clientes e Fornecedores - CONCLUÍDO COM SUCESSO"
+    - "Todas as 4 correções validadas e funcionando"
   stuck_tasks: []
-  test_all: true
+  test_all: false
   test_priority: "high_first"
 
 agent_communication:
