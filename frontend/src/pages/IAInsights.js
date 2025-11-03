@@ -284,7 +284,7 @@ const IAInsights = () => {
                   </>
                 ) : (
                   <>
-                    <Brain className="mr-2" size={16} />
+                    <EmilyIcon size={16} className="mr-2" />
                     Gerar Recomendações
                   </>
                 )}
