@@ -331,7 +331,7 @@ const IAInsights = () => {
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <Brain size={20} style={{color: '#2C9AA1'}} />
+                        <EmilyIcon size={20} />
                         Recomendações da IA (GPT-4)
                       </CardTitle>
                     </CardHeader>
