@@ -3151,7 +3151,7 @@ async def delete_produto(produto_id: str, current_user: dict = Depends(require_p
     return {"message": "Produto excluído com sucesso"}
 
 @api_router.put("/produtos/{produto_id}/toggle-status")
-async def toggle_produto_status(produto_id: str, current_user: dict = Depends(get_current_user)):
+async def toggle_produto_status(produto_id: str, current_user: dict = Depends(require_permission("produtos", "editar"))):
     # Verificar se o produto existe
     produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
     if not produto:
