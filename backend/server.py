@@ -2511,6 +2511,17 @@ async def toggle_cliente_status(cliente_id: str, current_user: dict = Depends(re
                 status_code=400,
                 detail=f"Não é possível inativar o cliente '{cliente['nome']}' pois existem {orcamentos_abertos} orçamento(s) em aberto. Finalize ou cancele os orçamentos primeiro."
             )
+        
+        # Verificar vendas pendentes
+        vendas_pendentes = await db.vendas.count_documents({
+            "cliente_id": cliente_id,
+            "status_pagamento": {"$in": ["pendente", "parcial"]}
+        })
+        if vendas_pendentes > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Não é possível inativar o cliente '{cliente['nome']}' pois existem {vendas_pendentes} venda(s) com pagamento pendente. Finalize os pagamentos primeiro."
+            )
     
     # Atualizar status
     await db.clientes.update_one(
