@@ -2011,9 +2011,9 @@ class EmilyKidsBackendTester:
         # Test all hierarchical endpoints as specified in review request
         self.test_hierarchical_system_marcas_categorias_subcategorias()
         
-        # Summary with focus on RBAC
+        # Summary with focus on Hierarchical System
         print("\n" + "=" * 70)
-        print("📊 RBAC SYSTEM TEST SUMMARY")
+        print("📊 HIERARCHICAL SYSTEM TEST SUMMARY")
         print("=" * 70)
         
         total_tests = len(self.test_results)
