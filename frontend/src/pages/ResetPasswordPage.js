@@ -7,7 +7,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Brain, Eye, EyeOff, Lock, CheckCircle, XCircle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Lock, CheckCircle, XCircle, AlertCircle, ArrowLeft } from 'lucide-react';
+
+// Logo Emily Kids
+const EmilyKidsLogo = () => (
+  <div className="flex flex-col items-center mb-6">
+    <img 
+      src="https://customer-assets.emergentagent.com/job_retail-kids-mgmt/artifacts/gnn10sag_WhatsApp%20Image%202025-11-01%20at%2021.07.08.jpeg" 
+      alt="Emily Kids" 
+      className="w-32 h-32 object-contain mb-2"
+    />
+  </div>
+);
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
