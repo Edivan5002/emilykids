@@ -2286,7 +2286,7 @@ async def delete_user_group(group_id: str, current_user: dict = Depends(get_curr
 async def get_permission_history(
     limit: int = 100,
     offset: int = 0,
-    current_user: dict = Depends(require_permission("logs", "visualizar"))
+    current_user: dict = Depends(require_permission("logs", "ler"))
 ):
     """Lista histórico de mudanças de permissões"""
     if current_user.get("papel") != "admin":
@@ -5810,7 +5810,7 @@ async def get_logs(
     metodo_http: str = None,
     limit: int = 50,
     offset: int = 0,
-    current_user: dict = Depends(require_permission("logs", "visualizar"))
+    current_user: dict = Depends(require_permission("logs", "ler"))
 ):
     """
     Lista logs com filtros avançados e paginação
@@ -5859,7 +5859,7 @@ async def get_logs(
 async def get_estatisticas_logs(
     data_inicio: str = None,
     data_fim: str = None,
-    current_user: dict = Depends(require_permission("logs", "visualizar"))
+    current_user: dict = Depends(require_permission("logs", "ler"))
 ):
     """
     Estatísticas avançadas de logs
@@ -5951,7 +5951,7 @@ async def get_estatisticas_logs(
     }
 
 @api_router.get("/logs/dashboard")
-async def get_dashboard_logs(current_user: dict = Depends(require_permission("logs", "visualizar"))):
+async def get_dashboard_logs(current_user: dict = Depends(require_permission("logs", "ler"))):
     """
     Dashboard resumido de logs para os últimos 7 dias
     """
@@ -6101,7 +6101,7 @@ async def arquivar_logs_antigos(current_user: dict = Depends(require_permission(
     }
 
 @api_router.get("/logs/atividade-suspeita")
-async def verificar_atividade_suspeita(current_user: dict = Depends(require_permission("logs", "visualizar"))):
+async def verificar_atividade_suspeita(current_user: dict = Depends(require_permission("logs", "ler"))):
     """
     Verifica atividades suspeitas no sistema
     """
