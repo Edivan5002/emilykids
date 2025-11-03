@@ -361,8 +361,8 @@ const Produtos = () => {
 
   const limparFiltros = () => {
     setFiltros({
-      termo: '', marca_id: '', categoria_id: '', subcategoria_id: '',
-      ativo: '', com_estoque: '', estoque_baixo: false, em_destaque: false
+      termo: '', marca_id: 'todas', categoria_id: 'todas', subcategoria_id: 'todas',
+      ativo: 'todos', com_estoque: '', estoque_baixo: false, em_destaque: false
     });
   };
 
