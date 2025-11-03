@@ -17,7 +17,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const EmilyKidsLogo = () => (
   <div className="flex flex-col items-center mb-6">
     <img 
-      src="https://customer-assets.emergentagent.com/job_retail-kids-mgmt/artifacts/gnn10sag_WhatsApp%20Image%202025-11-01%20at%2021.07.08.jpeg" 
+      src="/boneca.png" 
       alt="Emily Kids" 
       className="w-48 h-48 object-contain mb-2"
     />
