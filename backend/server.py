@@ -171,6 +171,7 @@ class Fornecedor(BaseModel):
     telefone: Optional[str] = None
     email: Optional[EmailStr] = None
     endereco: Optional[dict] = None
+    ativo: bool = True
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class FornecedorCreate(BaseModel):
