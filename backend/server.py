@@ -2620,8 +2620,9 @@ async def toggle_fornecedor_status(fornecedor_id: str, current_user: dict = Depe
 # ========== MARCAS ==========
 
 @api_router.get("/marcas", response_model=List[Marca])
-async def get_marcas(current_user: dict = Depends(require_permission("marcas", "ler"))):
-    marcas = await db.marcas.find({}, {"_id": 0}).to_list(1000)
+async def get_marcas(incluir_inativos: bool = False, current_user: dict = Depends(require_permission("marcas", "ler"))):
+    filtro = {} if incluir_inativos else {"ativo": True}
+    marcas = await db.marcas.find(filtro, {"_id": 0}).to_list(1000)
     return marcas
 
 @api_router.post("/marcas", response_model=Marca)
