@@ -2412,8 +2412,9 @@ async def validar_autorizacao(auth_data: AutorizacaoRequest, current_user: dict 
 # ========== CLIENTES ==========
 
 @api_router.get("/clientes", response_model=List[Cliente])
-async def get_clientes(current_user: dict = Depends(require_permission("clientes", "ler"))):
-    clientes = await db.clientes.find({}, {"_id": 0}).to_list(1000)
+async def get_clientes(incluir_inativos: bool = False, current_user: dict = Depends(require_permission("clientes", "ler"))):
+    filtro = {} if incluir_inativos else {"ativo": True}
+    clientes = await db.clientes.find(filtro, {"_id": 0}).to_list(1000)
     return clientes
 
 @api_router.post("/clientes", response_model=Cliente)
