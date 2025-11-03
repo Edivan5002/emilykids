@@ -3188,7 +3188,7 @@ async def toggle_produto_status(produto_id: str, current_user: dict = Depends(re
     return {"message": f"Produto {'ativado' if novo_status else 'inativado'} com sucesso", "ativo": novo_status}
 
 @api_router.get("/produtos/{produto_id}/historico-precos")
-async def get_historico_precos_produto(produto_id: str, current_user: dict = Depends(get_current_user)):
+async def get_historico_precos_produto(produto_id: str, current_user: dict = Depends(require_permission("produtos", "visualizar"))):
     """Retorna o histórico de alterações de preços de um produto"""
     historico = await db.historico_precos.find(
         {"produto_id": produto_id},
