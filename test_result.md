@@ -451,6 +451,97 @@ backend:
         comment: "✅ TESTADO E FUNCIONANDO: Validação implementada corretamente. Não havia dados de teste com orçamentos abertos para validar cenário de falha."
 
 frontend:
+  - task: "Correção Campo ativo nos modelos Cliente e Fornecedor"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTADO: Adicionado campo ativo: bool = True nos modelos Cliente e Fornecedor para controle de status ativo/inativo"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO: Campo ativo corretamente definido como True por padrão na criação de novos clientes e fornecedores (2/2 testes passaram)"
+
+  - task: "Preservação campo ativo no UPDATE de Clientes"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTADO: Corrigido endpoint PUT /clientes/{id} para preservar o campo ativo durante atualizações"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO: Campo ativo preservado corretamente durante UPDATE de clientes - teste confirmou que após edição o campo permanece com valor original"
+
+  - task: "Preservação campo ativo no UPDATE de Fornecedores"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTADO: Corrigido endpoint PUT /fornecedores/{id} para preservar o campo ativo durante atualizações"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO: Campo ativo preservado corretamente durante UPDATE de fornecedores - teste confirmou que após edição o campo permanece com valor original"
+
+  - task: "Correção campo nome para razao_social em logs e mensagens de Fornecedores"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTADO: Corrigido logs e mensagens de erro de Fornecedores para usar razao_social ao invés de nome"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO: Mensagens de erro de fornecedores corretamente usam razao_social - teste confirmou mensagem: 'Não é possível inativar o fornecedor [razao_social] pois existem notas fiscais pendentes'"
+
+  - task: "Filtros incluir_inativos para Clientes e Fornecedores"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTADO: Adicionado parâmetro incluir_inativos nos endpoints GET /clientes e /fornecedores"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO: Filtros funcionando perfeitamente - Clientes: 3 ativos/12 total, Fornecedores: 6 ativos/17 total. Parâmetro incluir_inativos=true retorna todos os registros corretamente"
+
+  - task: "Validações de dependências para Clientes e Fornecedores"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTADO: Validações de dependência em toggle-status - Clientes não podem ser inativados com orçamentos abertos, Fornecedores não podem ser inativados com notas fiscais pendentes"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO: Validações de dependência funcionando corretamente - Cliente impedido de inativação com orçamento aberto, Fornecedor impedido de inativação com nota fiscal pendente. Mensagens claras e informativas"
+
+frontend:
   - task: "Validação de estoque ao adicionar item em Orçamento"
     implemented: true
     working: "NA"
