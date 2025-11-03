@@ -2418,12 +2418,12 @@ async def validar_autorizacao(auth_data: AutorizacaoRequest, current_user: dict 
 # ========== CLIENTES ==========
 
 @api_router.get("/clientes", response_model=List[Cliente])
-async def get_clientes(current_user: dict = Depends(get_current_user)):
+async def get_clientes(current_user: dict = Depends(require_permission("clientes", "visualizar"))):
     clientes = await db.clientes.find({}, {"_id": 0}).to_list(1000)
     return clientes
 
 @api_router.post("/clientes", response_model=Cliente)
-async def create_cliente(cliente_data: ClienteCreate, current_user: dict = Depends(get_current_user)):
+async def create_cliente(cliente_data: ClienteCreate, current_user: dict = Depends(require_permission("clientes", "criar"))):
     cliente = Cliente(**cliente_data.model_dump())
     await db.clientes.insert_one(cliente.model_dump())
     
@@ -2439,7 +2439,7 @@ async def create_cliente(cliente_data: ClienteCreate, current_user: dict = Depen
     return cliente
 
 @api_router.put("/clientes/{cliente_id}", response_model=Cliente)
-async def update_cliente(cliente_id: str, cliente_data: ClienteCreate, current_user: dict = Depends(get_current_user)):
+async def update_cliente(cliente_id: str, cliente_data: ClienteCreate, current_user: dict = Depends(require_permission("clientes", "editar"))):
     existing = await db.clientes.find_one({"id": cliente_id}, {"_id": 0})
     if not existing:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
@@ -2462,7 +2462,7 @@ async def update_cliente(cliente_id: str, cliente_data: ClienteCreate, current_u
     return Cliente(**updated_data)
 
 @api_router.delete("/clientes/{cliente_id}")
-async def delete_cliente(cliente_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_cliente(cliente_id: str, current_user: dict = Depends(require_permission("clientes", "excluir"))):
     # Verificar se o cliente existe
     cliente = await db.clientes.find_one({"id": cliente_id}, {"_id": 0})
     if not cliente:
@@ -2497,7 +2497,7 @@ async def delete_cliente(cliente_id: str, current_user: dict = Depends(get_curre
     return {"message": "Cliente excluído com sucesso"}
 
 @api_router.put("/clientes/{cliente_id}/toggle-status")
-async def toggle_cliente_status(cliente_id: str, current_user: dict = Depends(get_current_user)):
+async def toggle_cliente_status(cliente_id: str, current_user: dict = Depends(require_permission("clientes", "editar"))):
     # Verificar se o cliente existe
     cliente = await db.clientes.find_one({"id": cliente_id}, {"_id": 0})
     if not cliente:
@@ -2535,18 +2535,18 @@ async def toggle_cliente_status(cliente_id: str, current_user: dict = Depends(ge
 # ========== FORNECEDORES ==========
 
 @api_router.get("/fornecedores", response_model=List[Fornecedor])
-async def get_fornecedores(current_user: dict = Depends(get_current_user)):
+async def get_fornecedores(current_user: dict = Depends(require_permission("fornecedores", "visualizar"))):
     fornecedores = await db.fornecedores.find({}, {"_id": 0}).to_list(1000)
     return fornecedores
 
 @api_router.post("/fornecedores", response_model=Fornecedor)
-async def create_fornecedor(fornecedor_data: FornecedorCreate, current_user: dict = Depends(get_current_user)):
+async def create_fornecedor(fornecedor_data: FornecedorCreate, current_user: dict = Depends(require_permission("fornecedores", "criar"))):
     fornecedor = Fornecedor(**fornecedor_data.model_dump())
     await db.fornecedores.insert_one(fornecedor.model_dump())
     return fornecedor
 
 @api_router.put("/fornecedores/{fornecedor_id}", response_model=Fornecedor)
-async def update_fornecedor(fornecedor_id: str, fornecedor_data: FornecedorCreate, current_user: dict = Depends(get_current_user)):
+async def update_fornecedor(fornecedor_id: str, fornecedor_data: FornecedorCreate, current_user: dict = Depends(require_permission("fornecedores", "editar"))):
     # Verificar se o fornecedor existe
     existing = await db.fornecedores.find_one({"id": fornecedor_id}, {"_id": 0})
     if not existing:
@@ -2569,7 +2569,7 @@ async def update_fornecedor(fornecedor_id: str, fornecedor_data: FornecedorCreat
     return Fornecedor(**updated_data)
 
 @api_router.delete("/fornecedores/{fornecedor_id}")
-async def delete_fornecedor(fornecedor_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_fornecedor(fornecedor_id: str, current_user: dict = Depends(require_permission("fornecedores", "excluir"))):
     # Verificar se o fornecedor existe
     fornecedor = await db.fornecedores.find_one({"id": fornecedor_id}, {"_id": 0})
     if not fornecedor:
@@ -2596,7 +2596,7 @@ async def delete_fornecedor(fornecedor_id: str, current_user: dict = Depends(get
     return {"message": "Fornecedor excluído com sucesso"}
 
 @api_router.put("/fornecedores/{fornecedor_id}/toggle-status")
-async def toggle_fornecedor_status(fornecedor_id: str, current_user: dict = Depends(get_current_user)):
+async def toggle_fornecedor_status(fornecedor_id: str, current_user: dict = Depends(require_permission("fornecedores", "editar"))):
     # Verificar se o fornecedor existe
     fornecedor = await db.fornecedores.find_one({"id": fornecedor_id}, {"_id": 0})
     if not fornecedor:
@@ -2887,12 +2887,12 @@ async def toggle_categoria_status(categoria_id: str, current_user: dict = Depend
 # ========== SUBCATEGORIAS ==========
 
 @api_router.get("/subcategorias", response_model=List[Subcategoria])
-async def get_subcategorias(current_user: dict = Depends(get_current_user)):
+async def get_subcategorias(current_user: dict = Depends(require_permission("subcategorias", "visualizar"))):
     subcategorias = await db.subcategorias.find({}, {"_id": 0}).to_list(1000)
     return subcategorias
 
 @api_router.post("/subcategorias", response_model=Subcategoria)
-async def create_subcategoria(subcategoria_data: SubcategoriaCreate, current_user: dict = Depends(get_current_user)):
+async def create_subcategoria(subcategoria_data: SubcategoriaCreate, current_user: dict = Depends(require_permission("subcategorias", "criar"))):
     # Validar que a categoria existe
     categoria = await db.categorias.find_one({"id": subcategoria_data.categoria_id}, {"_id": 0})
     if not categoria:
@@ -2920,7 +2920,7 @@ async def create_subcategoria(subcategoria_data: SubcategoriaCreate, current_use
     return subcategoria
 
 @api_router.put("/subcategorias/{subcategoria_id}", response_model=Subcategoria)
-async def update_subcategoria(subcategoria_id: str, subcategoria_data: SubcategoriaCreate, current_user: dict = Depends(get_current_user)):
+async def update_subcategoria(subcategoria_id: str, subcategoria_data: SubcategoriaCreate, current_user: dict = Depends(require_permission("subcategorias", "editar"))):
     # Verificar se a subcategoria existe
     existing = await db.subcategorias.find_one({"id": subcategoria_id}, {"_id": 0})
     if not existing:
@@ -2956,7 +2956,7 @@ async def update_subcategoria(subcategoria_id: str, subcategoria_data: Subcatego
     return Subcategoria(**updated_data)
 
 @api_router.delete("/subcategorias/{subcategoria_id}")
-async def delete_subcategoria(subcategoria_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_subcategoria(subcategoria_id: str, current_user: dict = Depends(require_permission("subcategorias", "excluir"))):
     # Verificar se a subcategoria existe
     subcategoria = await db.subcategorias.find_one({"id": subcategoria_id}, {"_id": 0})
     if not subcategoria:
@@ -2983,7 +2983,7 @@ async def delete_subcategoria(subcategoria_id: str, current_user: dict = Depends
     return {"message": "Subcategoria excluída com sucesso"}
 
 @api_router.put("/subcategorias/{subcategoria_id}/toggle-status")
-async def toggle_subcategoria_status(subcategoria_id: str, current_user: dict = Depends(get_current_user)):
+async def toggle_subcategoria_status(subcategoria_id: str, current_user: dict = Depends(require_permission("subcategorias", "editar"))):
     # Verificar se a subcategoria existe
     subcategoria = await db.subcategorias.find_one({"id": subcategoria_id}, {"_id": 0})
     if not subcategoria:
@@ -3365,7 +3365,7 @@ async def check_disponibilidade_estoque(request: CheckEstoqueRequest, current_us
     )
 
 @api_router.post("/estoque/ajuste-manual")
-async def ajuste_manual_estoque(request: AjusteEstoqueRequest, current_user: dict = Depends(get_current_user)):
+async def ajuste_manual_estoque(request: AjusteEstoqueRequest, current_user: dict = Depends(require_permission("estoque", "editar"))):
     """
     Permite ajuste manual de estoque.
     Admin e Gerente podem ajustar direto.
