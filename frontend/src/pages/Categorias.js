@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
+import { Plus, Edit, Trash2, Power } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -14,7 +15,11 @@ const Categorias = () => {
   const [categorias, setCategorias] = useState([]);
   const [marcas, setMarcas] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ nome: '', descricao: '', marca_id: '', ativo: true });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, nome: '' });
+  const [toggleDialog, setToggleDialog] = useState({ open: false, id: null, nome: '', ativo: false });
 
   useEffect(() => {
     fetchCategorias();
@@ -48,15 +53,62 @@ const Categorias = () => {
     }
     
     try {
-      await axios.post(`${API}/categorias`, formData);
-      toast.success('Categoria cadastrada!');
+      if (isEditing) {
+        await axios.put(`${API}/categorias/${editingId}`, formData);
+        toast.success('Categoria atualizada com sucesso!');
+      } else {
+        await axios.post(`${API}/categorias`, formData);
+        toast.success('Categoria cadastrada com sucesso!');
+      }
       fetchCategorias();
-      setIsOpen(false);
-      setFormData({ nome: '', descricao: '', marca_id: '', ativo: true });
+      handleCloseDialog();
     } catch (error) {
       const errorMsg = error.response?.data?.detail || 'Erro ao salvar categoria';
       toast.error(errorMsg);
     }
+  };
+
+  const handleEdit = (categoria) => {
+    setIsEditing(true);
+    setEditingId(categoria.id);
+    setFormData({ 
+      nome: categoria.nome, 
+      descricao: categoria.descricao || '', 
+      marca_id: categoria.marca_id,
+      ativo: categoria.ativo 
+    });
+    setIsOpen(true);
+  };
+
+  const handleDelete = async () => {
+    try {
+      await axios.delete(`${API}/categorias/${deleteDialog.id}`);
+      toast.success('Categoria excluída com sucesso!');
+      fetchCategorias();
+      setDeleteDialog({ open: false, id: null, nome: '' });
+    } catch (error) {
+      const errorMsg = error.response?.data?.detail || 'Erro ao excluir categoria';
+      toast.error(errorMsg);
+    }
+  };
+
+  const handleToggleStatus = async () => {
+    try {
+      const response = await axios.put(`${API}/categorias/${toggleDialog.id}/toggle-status`);
+      toast.success(response.data.message);
+      fetchCategorias();
+      setToggleDialog({ open: false, id: null, nome: '', ativo: false });
+    } catch (error) {
+      const errorMsg = error.response?.data?.detail || 'Erro ao alterar status';
+      toast.error(errorMsg);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setIsOpen(false);
+    setIsEditing(false);
+    setEditingId(null);
+    setFormData({ nome: '', descricao: '', marca_id: '', ativo: true });
   };
 
   const getMarcaNome = (marca_id) => {
@@ -71,12 +123,14 @@ const Categorias = () => {
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Categorias</h1>
           <p className="text-gray-600">Gerencie as categorias de produtos (vinculadas a marcas)</p>
         </div>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleCloseDialog(); else setIsOpen(true); }}>
           <DialogTrigger asChild>
             <Button data-testid="add-categoria-btn"><Plus className="mr-2" size={18} />Nova Categoria</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Nova Categoria</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>{isEditing ? 'Editar Categoria' : 'Nova Categoria'}</DialogTitle>
+            </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label>Marca *</Label>
@@ -103,7 +157,9 @@ const Categorias = () => {
                 <Label>Descrição</Label>
                 <Input value={formData.descricao} onChange={(e) => setFormData({ ...formData, descricao: e.target.value })} />
               </div>
-              <Button type="submit" className="w-full" disabled={marcas.length === 0}>Salvar</Button>
+              <Button type="submit" className="w-full" disabled={marcas.length === 0}>
+                {isEditing ? 'Atualizar' : 'Salvar'}
+              </Button>
             </form>
           </DialogContent>
         </Dialog>
@@ -111,7 +167,13 @@ const Categorias = () => {
       <div className="table-container">
         <table>
           <thead>
-            <tr><th>Nome</th><th>Marca</th><th>Descrição</th><th>Status</th></tr>
+            <tr>
+              <th>Nome</th>
+              <th>Marca</th>
+              <th>Descrição</th>
+              <th>Status</th>
+              <th className="text-right">Ações</th>
+            </tr>
           </thead>
           <tbody>
             {categorias.map((c) => (
@@ -119,12 +181,71 @@ const Categorias = () => {
                 <td className="font-medium">{c.nome}</td>
                 <td>{getMarcaNome(c.marca_id)}</td>
                 <td>{c.descricao || '-'}</td>
-                <td><span className={`badge ${c.ativo ? 'badge-success' : 'badge-danger'}`}>{c.ativo ? 'Ativo' : 'Inativo'}</span></td>
+                <td>
+                  <span className={`badge ${c.ativo ? 'badge-success' : 'badge-danger'}`}>
+                    {c.ativo ? 'Ativo' : 'Inativo'}
+                  </span>
+                </td>
+                <td className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(c)} title="Editar">
+                      <Edit size={16} />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setToggleDialog({ open: true, id: c.id, nome: c.nome, ativo: c.ativo })} 
+                      title={c.ativo ? 'Inativar' : 'Ativar'}
+                    >
+                      <Power size={16} className={c.ativo ? 'text-orange-500' : 'text-green-500'} />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteDialog({ open: true, id: c.id, nome: c.nome })} title="Excluir">
+                      <Trash2 size={16} className="text-red-500" />
+                    </Button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a categoria <strong>{deleteDialog.nome}</strong>?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Toggle Status Dialog */}
+      <AlertDialog open={toggleDialog.open} onOpenChange={(open) => setToggleDialog({ ...toggleDialog, open })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Alteração de Status</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja {toggleDialog.ativo ? 'inativar' : 'ativar'} a categoria <strong>{toggleDialog.nome}</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleToggleStatus}>
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
