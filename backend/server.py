@@ -36,7 +36,7 @@ api_router = APIRouter(prefix="/api")
 
 class UserRole(BaseModel):
     nome: str
-    permissoes: dict  # {"tela": ["visualizar", "criar", "editar", "excluir"]}
+    permissoes: dict  # {"tela": ["ler", "criar", "editar", "excluir"]}
 
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -2412,7 +2412,7 @@ async def validar_autorizacao(auth_data: AutorizacaoRequest, current_user: dict 
 # ========== CLIENTES ==========
 
 @api_router.get("/clientes", response_model=List[Cliente])
-async def get_clientes(current_user: dict = Depends(require_permission("clientes", "visualizar"))):
+async def get_clientes(current_user: dict = Depends(require_permission("clientes", "ler"))):
     clientes = await db.clientes.find({}, {"_id": 0}).to_list(1000)
     return clientes
 
@@ -2529,7 +2529,7 @@ async def toggle_cliente_status(cliente_id: str, current_user: dict = Depends(re
 # ========== FORNECEDORES ==========
 
 @api_router.get("/fornecedores", response_model=List[Fornecedor])
-async def get_fornecedores(current_user: dict = Depends(require_permission("fornecedores", "visualizar"))):
+async def get_fornecedores(current_user: dict = Depends(require_permission("fornecedores", "ler"))):
     fornecedores = await db.fornecedores.find({}, {"_id": 0}).to_list(1000)
     return fornecedores
 
@@ -2620,7 +2620,7 @@ async def toggle_fornecedor_status(fornecedor_id: str, current_user: dict = Depe
 # ========== MARCAS ==========
 
 @api_router.get("/marcas", response_model=List[Marca])
-async def get_marcas(current_user: dict = Depends(require_permission("marcas", "visualizar"))):
+async def get_marcas(current_user: dict = Depends(require_permission("marcas", "ler"))):
     marcas = await db.marcas.find({}, {"_id": 0}).to_list(1000)
     return marcas
 
@@ -2728,7 +2728,7 @@ async def toggle_marca_status(marca_id: str, current_user: dict = Depends(requir
 # ========== CATEGORIAS ==========
 
 @api_router.get("/categorias", response_model=List[Categoria])
-async def get_categorias(current_user: dict = Depends(require_permission("categorias", "visualizar"))):
+async def get_categorias(current_user: dict = Depends(require_permission("categorias", "ler"))):
     categorias = await db.categorias.find({}, {"_id": 0}).to_list(1000)
     return categorias
 
@@ -2881,7 +2881,7 @@ async def toggle_categoria_status(categoria_id: str, current_user: dict = Depend
 # ========== SUBCATEGORIAS ==========
 
 @api_router.get("/subcategorias", response_model=List[Subcategoria])
-async def get_subcategorias(current_user: dict = Depends(require_permission("subcategorias", "visualizar"))):
+async def get_subcategorias(current_user: dict = Depends(require_permission("subcategorias", "ler"))):
     subcategorias = await db.subcategorias.find({}, {"_id": 0}).to_list(1000)
     return subcategorias
 
@@ -3016,7 +3016,7 @@ async def toggle_subcategoria_status(subcategoria_id: str, current_user: dict = 
 # ========== PRODUTOS ==========
 
 @api_router.get("/produtos", response_model=List[Produto])
-async def get_produtos(current_user: dict = Depends(require_permission("produtos", "visualizar"))):
+async def get_produtos(current_user: dict = Depends(require_permission("produtos", "ler"))):
     produtos = await db.produtos.find({}, {"_id": 0}).to_list(1000)
     return produtos
 
@@ -3182,7 +3182,7 @@ async def toggle_produto_status(produto_id: str, current_user: dict = Depends(re
     return {"message": f"Produto {'ativado' if novo_status else 'inativado'} com sucesso", "ativo": novo_status}
 
 @api_router.get("/produtos/{produto_id}/historico-precos")
-async def get_historico_precos_produto(produto_id: str, current_user: dict = Depends(require_permission("produtos", "visualizar"))):
+async def get_historico_precos_produto(produto_id: str, current_user: dict = Depends(require_permission("produtos", "ler"))):
     """Retorna o histórico de alterações de preços de um produto"""
     historico = await db.historico_precos.find(
         {"produto_id": produto_id},
@@ -3195,7 +3195,7 @@ async def get_produtos_mais_vendidos(
     limite: int = 10,
     data_inicio: Optional[str] = None,
     data_fim: Optional[str] = None,
-    current_user: dict = Depends(require_permission("relatorios", "visualizar"))
+    current_user: dict = Depends(require_permission("relatorios", "ler"))
 ):
     """Retorna os produtos mais vendidos"""
     # Agregar vendas por produto
@@ -3226,7 +3226,7 @@ async def get_produtos_mais_vendidos(
     return resultados
 
 @api_router.get("/produtos/relatorios/valor-estoque")
-async def get_valor_total_estoque(current_user: dict = Depends(require_permission("relatorios", "visualizar"))):
+async def get_valor_total_estoque(current_user: dict = Depends(require_permission("relatorios", "ler"))):
     """Calcula o valor total do estoque"""
     produtos = await db.produtos.find({"ativo": True}, {"_id": 0}).to_list(1000)
     
@@ -3258,7 +3258,7 @@ async def busca_avancada_produtos(
     com_estoque: Optional[bool] = None,
     estoque_baixo: Optional[bool] = None,
     em_destaque: Optional[bool] = None,
-    current_user: dict = Depends(require_permission("produtos", "visualizar"))
+    current_user: dict = Depends(require_permission("produtos", "ler"))
 ):
     """Busca avançada de produtos com múltiplos filtros"""
     filtros = {}
@@ -3440,7 +3440,7 @@ VALOR_MINIMO_APROVACAO = 5000.00
 async def get_notas_fiscais(
     status: str = None,
     fornecedor_id: str = None,
-    current_user: dict = Depends(require_permission("notas_fiscais", "visualizar"))
+    current_user: dict = Depends(require_permission("notas_fiscais", "ler"))
 ):
     """Lista notas fiscais com filtros opcionais"""
     filtro = {}
@@ -3945,7 +3945,7 @@ async def relatorio_notas_fiscais(
     data_fim: str = None,
     fornecedor_id: str = None,
     status: str = None,
-    current_user: dict = Depends(require_permission("notas_fiscais", "visualizar"))
+    current_user: dict = Depends(require_permission("notas_fiscais", "ler"))
 ):
     """
     Relatório de notas fiscais com filtros
@@ -4035,7 +4035,7 @@ def calcular_margem_lucro(itens: List[dict], produtos_db) -> float:
 async def get_orcamentos(
     status: str = None,
     cliente_id: str = None,
-    current_user: dict = Depends(require_permission("orcamentos", "visualizar"))
+    current_user: dict = Depends(require_permission("orcamentos", "ler"))
 ):
     """Lista orçamentos com filtros"""
     filtro = {}
@@ -4774,7 +4774,7 @@ async def get_vendas(
     status_venda: str = None,
     status_entrega: str = None,
     cliente_id: str = None,
-    current_user: dict = Depends(require_permission("vendas", "visualizar"))
+    current_user: dict = Depends(require_permission("vendas", "ler"))
 ):
     """Lista vendas com filtros"""
     filtro = {}
@@ -5758,7 +5758,7 @@ Seja específico, use números e forneça recomendações práticas e acionávei
 # ========== RELATÓRIOS ==========
 
 @api_router.get("/relatorios/dashboard")
-async def get_dashboard(current_user: dict = Depends(require_permission("relatorios", "visualizar"))):
+async def get_dashboard(current_user: dict = Depends(require_permission("relatorios", "ler"))):
     total_clientes = await db.clientes.count_documents({})
     total_produtos = await db.produtos.count_documents({})
     total_vendas = await db.vendas.count_documents({})
@@ -5778,7 +5778,7 @@ async def get_dashboard(current_user: dict = Depends(require_permission("relator
     }
 
 @api_router.get("/relatorios/vendas-por-periodo")
-async def vendas_por_periodo(current_user: dict = Depends(require_permission("relatorios", "visualizar"))):
+async def vendas_por_periodo(current_user: dict = Depends(require_permission("relatorios", "ler"))):
     vendas = await db.vendas.find({}, {"_id": 0}).to_list(1000)
     
     # Agrupar por data
@@ -6181,7 +6181,7 @@ async def criar_indices_logs(current_user: dict = Depends(require_permission("lo
 # ========== RELATÓRIOS AVANÇADOS ==========
 
 @api_router.get("/relatorios/dashboard/kpis")
-async def get_kpis_dashboard(data_inicio: str = None, data_fim: str = None, current_user: dict = Depends(require_permission("relatorios", "visualizar"))):
+async def get_kpis_dashboard(data_inicio: str = None, data_fim: str = None, current_user: dict = Depends(require_permission("relatorios", "ler"))):
     """
     Retorna KPIs principais do dashboard executivo
     """
@@ -6270,7 +6270,7 @@ async def relatorio_vendas_periodo(
     data_inicio: str, 
     data_fim: str,
     agrupamento: str = "dia",  # dia, semana, mes
-    current_user: dict = Depends(require_permission("relatorios", "visualizar"))
+    current_user: dict = Depends(require_permission("relatorios", "ler"))
 ):
     """
     Relatório de vendas agrupadas por período com comparação
@@ -6318,7 +6318,7 @@ async def relatorio_vendas_periodo(
 async def relatorio_vendas_vendedor(
     data_inicio: str = None,
     data_fim: str = None,
-    current_user: dict = Depends(require_permission("relatorios", "visualizar"))
+    current_user: dict = Depends(require_permission("relatorios", "ler"))
 ):
     """
     Relatório de vendas por vendedor/usuário
@@ -6362,7 +6362,7 @@ async def relatorio_vendas_vendedor(
 async def relatorio_dre(
     data_inicio: str,
     data_fim: str,
-    current_user: dict = Depends(require_permission("relatorios", "visualizar"))
+    current_user: dict = Depends(require_permission("relatorios", "ler"))
 ):
     """
     DRE Simplificado - Demonstrativo de Resultado
@@ -6410,7 +6410,7 @@ async def relatorio_dre(
     }
 
 @api_router.get("/relatorios/estoque/curva-abc")
-async def relatorio_curva_abc(current_user: dict = Depends(require_permission("relatorios", "visualizar"))):
+async def relatorio_curva_abc(current_user: dict = Depends(require_permission("relatorios", "ler"))):
     """
     Curva ABC de produtos baseada em faturamento
     """
@@ -6473,7 +6473,7 @@ async def relatorio_curva_abc(current_user: dict = Depends(require_permission("r
     }
 
 @api_router.get("/relatorios/clientes/rfm")
-async def relatorio_rfm(current_user: dict = Depends(require_permission("relatorios", "visualizar"))):
+async def relatorio_rfm(current_user: dict = Depends(require_permission("relatorios", "ler"))):
     """
     Análise RFM (Recência, Frequência, Valor Monetário) dos clientes
     """
@@ -6589,7 +6589,7 @@ async def relatorio_rfm(current_user: dict = Depends(require_permission("relator
 async def relatorio_conversao_orcamentos(
     data_inicio: str = None,
     data_fim: str = None,
-    current_user: dict = Depends(require_permission("relatorios", "visualizar"))
+    current_user: dict = Depends(require_permission("relatorios", "ler"))
 ):
     """
     Análise de conversão de orçamentos em vendas
@@ -6635,7 +6635,7 @@ async def relatorio_auditoria(
     data_fim: str = None,
     user_id: str = None,
     acao: str = None,
-    current_user: dict = Depends(require_permission("relatorios", "visualizar"))
+    current_user: dict = Depends(require_permission("relatorios", "ler"))
 ):
     """
     Relatório de auditoria - logs de ações do sistema
