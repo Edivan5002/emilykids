@@ -9,9 +9,30 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Brain, Eye, EyeOff, Shield, Lock, AlertCircle, Mail, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Shield, Lock, AlertCircle, Mail, ArrowLeft } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+// Logo Emily Kids colorido
+const EmilyKidsLogo = () => (
+  <div className="flex flex-col items-center mb-6">
+    <img 
+      src="https://customer-assets.emergentagent.com/job_retail-kids-mgmt/artifacts/gnn10sag_WhatsApp%20Image%202025-11-01%20at%2021.07.08.jpeg" 
+      alt="Emily Kids" 
+      className="w-48 h-48 object-contain mb-2"
+    />
+    <div className="text-5xl font-bold tracking-wider flex" style={{ fontFamily: 'Arial, sans-serif' }}>
+      <span style={{ color: '#F89A50' }}>E</span>
+      <span style={{ color: '#FDC948' }}>M</span>
+      <span style={{ color: '#39B5A7' }}>I</span>
+      <span style={{ color: '#5B8FB9' }}>L</span>
+      <span style={{ color: '#E8509B' }}>Y</span>
+    </div>
+    <div className="text-2xl font-semibold tracking-widest" style={{ color: '#8C7C6F' }}>
+      KIDS
+    </div>
+  </div>
+);
 
 const LoginPage = () => {
   const [loginData, setLoginData] = useState({ email: '', senha: '' });
