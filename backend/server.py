@@ -2734,12 +2734,12 @@ async def toggle_marca_status(marca_id: str, current_user: dict = Depends(requir
 # ========== CATEGORIAS ==========
 
 @api_router.get("/categorias", response_model=List[Categoria])
-async def get_categorias(current_user: dict = Depends(get_current_user)):
+async def get_categorias(current_user: dict = Depends(require_permission("categorias", "visualizar"))):
     categorias = await db.categorias.find({}, {"_id": 0}).to_list(1000)
     return categorias
 
 @api_router.post("/categorias", response_model=Categoria)
-async def create_categoria(categoria_data: CategoriaCreate, current_user: dict = Depends(get_current_user)):
+async def create_categoria(categoria_data: CategoriaCreate, current_user: dict = Depends(require_permission("categorias", "criar"))):
     # Validar que a marca existe
     marca = await db.marcas.find_one({"id": categoria_data.marca_id}, {"_id": 0})
     if not marca:
@@ -2767,7 +2767,7 @@ async def create_categoria(categoria_data: CategoriaCreate, current_user: dict =
     return categoria
 
 @api_router.put("/categorias/{categoria_id}", response_model=Categoria)
-async def update_categoria(categoria_id: str, categoria_data: CategoriaCreate, current_user: dict = Depends(get_current_user)):
+async def update_categoria(categoria_id: str, categoria_data: CategoriaCreate, current_user: dict = Depends(require_permission("categorias", "editar"))):
     # Verificar se a categoria existe
     existing = await db.categorias.find_one({"id": categoria_id}, {"_id": 0})
     if not existing:
