@@ -103,13 +103,96 @@ const Layout = ({ children }) => {
 
           {/* Menu Items */}
           <div className="flex-1 overflow-y-auto py-4">
-            {menuItems.map((item) => {
+            {menuItems.map((item, index) => {
               // Esconder itens adminOnly se não for admin
               if (item.adminOnly && user?.papel !== 'admin') {
                 return null;
               }
               
               const Icon = item.icon;
+              
+              // Se for um submenu (Cadastros)
+              if (item.isSubmenu) {
+                const hasActiveChild = item.children?.some(child => location.pathname === child.path);
+                return (
+                  <div key={index}>
+                    {/* Menu pai - Cadastros */}
+                    <div
+                      data-testid={`menu-item-${item.label.toLowerCase().replace(/ /g, '-')}`}
+                      onClick={() => setCadastrosOpen(!cadastrosOpen)}
+                      className={`sidebar-item mx-2 mb-1 flex items-center gap-3`}
+                      style={{
+                        backgroundColor: hasActiveChild ? '#267698' : 'transparent',
+                        color: hasActiveChild ? '#FFFFFF' : '#3A3A3A',
+                        padding: '0.75rem 1rem',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!hasActiveChild) {
+                          e.currentTarget.style.backgroundColor = '#E5E5E5';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!hasActiveChild) {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }
+                      }}
+                    >
+                      <Icon size={20} />
+                      {sidebarOpen && (
+                        <>
+                          <span className="flex-1">{item.label}</span>
+                          {cadastrosOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                        </>
+                      )}
+                    </div>
+                    
+                    {/* Subitens - Clientes, Fornecedores, etc */}
+                    {cadastrosOpen && sidebarOpen && item.children && (
+                      <div className="ml-4">
+                        {item.children.map((child) => {
+                          const ChildIcon = child.icon;
+                          const isChildActive = location.pathname === child.path;
+                          return (
+                            <div
+                              key={child.path}
+                              data-testid={`menu-item-${child.label.toLowerCase().replace(/ /g, '-')}`}
+                              onClick={() => navigate(child.path)}
+                              className={`sidebar-item mx-2 mb-1 flex items-center gap-3`}
+                              style={{
+                                backgroundColor: isChildActive ? '#2C9AA1' : 'transparent',
+                                color: isChildActive ? '#FFFFFF' : '#3A3A3A',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                fontSize: '0.9rem'
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!isChildActive) {
+                                  e.currentTarget.style.backgroundColor = '#E5E5E5';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isChildActive) {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                }
+                              }}
+                            >
+                              <ChildIcon size={18} />
+                              <span>{child.label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              
+              // Menu item normal
               const isActive = location.pathname === item.path;
               return (
                 <div
