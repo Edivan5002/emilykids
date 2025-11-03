@@ -28,7 +28,7 @@ import {
 // Componente para ícone Emily Kids (boneca com balão)
 const EmilyIcon = ({ size = 20, className = "" }) => (
   <img 
-    src="https://customer-assets.emergentagent.com/job_retail-kids-mgmt/artifacts/gnn10sag_WhatsApp%20Image%202025-11-01%20at%2021.07.08.jpeg" 
+    src="/boneca.png" 
     alt="Emily Kids" 
     style={{ width: size, height: size }}
     className={`inline-block ${className}`}
