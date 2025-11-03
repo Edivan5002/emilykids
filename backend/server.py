@@ -2416,6 +2416,7 @@ async def get_marcas(current_user: dict = Depends(get_current_user)):
 async def create_marca(marca_data: MarcaCreate, current_user: dict = Depends(get_current_user)):
     marca = Marca(**marca_data.model_dump())
     await db.marcas.insert_one(marca.model_dump())
+    await log_action(current_user["id"], "criar", "marcas", marca.id, {"nome": marca.nome})
     return marca
 
 # ========== CATEGORIAS ==========
