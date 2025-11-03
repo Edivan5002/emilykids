@@ -2291,21 +2291,24 @@ class EmilyKidsBackendTester:
             self.log_test("Produtos - No Test Data", True, "No test products or budgets available for dependency validation")
 
     def run_all_tests(self):
-        """Run all tests in sequence - FOCUS ON HIERARCHICAL SYSTEM"""
-        print("🧪 EMILY KIDS ERP - HIERARCHICAL SYSTEM TESTING")
-        print("🎯 FOCUS: Menu Cadastros e Hierarquia Marcas → Categorias → Subcategorias")
+        """Run all tests in sequence - FOCUS ON INACTIVE FILTERS AND DEPENDENCY VALIDATION"""
+        print("🧪 EMILY KIDS ERP - INACTIVE FILTERS AND DEPENDENCY VALIDATION TESTING")
+        print("🎯 FOCUS: Filtros de Cadastros Inativos e Validações de Dependências")
         print("=" * 70)
         
         if not self.authenticate():
             print("❌ Authentication failed. Cannot proceed with tests.")
             return False
         
-        # PRIORITY 1: Test the COMPLETE HIERARCHICAL SYSTEM as specified in review request
-        print("\n🏗️ TESTING COMPLETE HIERARCHICAL SYSTEM")
+        # PRIORITY 1: Test the NEW INACTIVE FILTERS functionality as specified in review request
+        print("\n🔍 TESTING INACTIVE FILTERS FUNCTIONALITY")
         print("=" * 70)
+        self.test_inactive_filters_functionality()
         
-        # Test all hierarchical endpoints as specified in review request
-        self.test_hierarchical_system_marcas_categorias_subcategorias()
+        # PRIORITY 2: Test the NEW DEPENDENCY VALIDATION functionality as specified in review request
+        print("\n🔗 TESTING DEPENDENCY VALIDATION FUNCTIONALITY")
+        print("=" * 70)
+        self.test_dependency_validation_functionality()
         
         # Summary with focus on Hierarchical System
         print("\n" + "=" * 70)
