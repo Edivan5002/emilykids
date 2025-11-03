@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Search } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Plus, Edit, Trash2, Power, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -14,14 +15,18 @@ const Clientes = () => {
   const [filteredClientes, setFilteredClientes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
-  const [editingCliente, setEditingCliente] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     nome: '',
     cpf_cnpj: '',
     telefone: '',
     email: '',
-    observacoes: ''
+    observacoes: '',
+    ativo: true
   });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, nome: '' });
+  const [toggleDialog, setToggleDialog] = useState({ open: false, id: null, nome: '', ativo: false });
 
   useEffect(() => {
     fetchClientes();
@@ -48,52 +53,70 @@ const Clientes = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editingCliente) {
-        await axios.put(`${API}/clientes/${editingCliente.id}`, formData);
+      if (isEditing) {
+        await axios.put(`${API}/clientes/${editingId}`, formData);
         toast.success('Cliente atualizado com sucesso!');
       } else {
         await axios.post(`${API}/clientes`, formData);
         toast.success('Cliente cadastrado com sucesso!');
       }
       fetchClientes();
-      handleClose();
+      handleCloseDialog();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao salvar cliente');
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Tem certeza que deseja excluir este cliente?')) return;
-    try {
-      await axios.delete(`${API}/clientes/${id}`);
-      toast.success('Cliente excluído com sucesso!');
-      fetchClientes();
-    } catch (error) {
-      toast.error('Erro ao excluir cliente');
+      const errorMsg = error.response?.data?.detail || 'Erro ao salvar cliente';
+      toast.error(errorMsg);
     }
   };
 
   const handleEdit = (cliente) => {
-    setEditingCliente(cliente);
+    setIsEditing(true);
+    setEditingId(cliente.id);
     setFormData({
       nome: cliente.nome,
       cpf_cnpj: cliente.cpf_cnpj,
       telefone: cliente.telefone || '',
       email: cliente.email || '',
-      observacoes: cliente.observacoes || ''
+      observacoes: cliente.observacoes || '',
+      ativo: cliente.ativo
     });
     setIsOpen(true);
   };
 
-  const handleClose = () => {
+  const handleDelete = async () => {
+    try {
+      await axios.delete(`${API}/clientes/${deleteDialog.id}`);
+      toast.success('Cliente excluído com sucesso!');
+      fetchClientes();
+      setDeleteDialog({ open: false, id: null, nome: '' });
+    } catch (error) {
+      const errorMsg = error.response?.data?.detail || 'Erro ao excluir cliente';
+      toast.error(errorMsg);
+    }
+  };
+
+  const handleToggleStatus = async () => {
+    try {
+      const response = await axios.put(`${API}/clientes/${toggleDialog.id}/toggle-status`);
+      toast.success(response.data.message);
+      fetchClientes();
+      setToggleDialog({ open: false, id: null, nome: '', ativo: false });
+    } catch (error) {
+      const errorMsg = error.response?.data?.detail || 'Erro ao alterar status';
+      toast.error(errorMsg);
+    }
+  };
+
+  const handleCloseDialog = () => {
     setIsOpen(false);
-    setEditingCliente(null);
+    setIsEditing(false);
+    setEditingId(null);
     setFormData({
       nome: '',
       cpf_cnpj: '',
       telefone: '',
       email: '',
-      observacoes: ''
+      observacoes: '',
+      ativo: true
     });
   };
 
@@ -104,79 +127,46 @@ const Clientes = () => {
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Clientes</h1>
           <p className="text-gray-600">Gerencie seus clientes</p>
         </div>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleCloseDialog(); else setIsOpen(true); }}>
           <DialogTrigger asChild>
-            <Button data-testid="add-cliente-btn" onClick={() => setEditingCliente(null)}>
-              <Plus className="mr-2" size={18} />
-              Novo Cliente
-            </Button>
+            <Button data-testid="add-cliente-btn"><Plus className="mr-2" size={18} />Novo Cliente</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editingCliente ? 'Editar Cliente' : 'Novo Cliente'}</DialogTitle>
+              <DialogTitle>{isEditing ? 'Editar Cliente' : 'Novo Cliente'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4" data-testid="cliente-form">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label>Nome *</Label>
-                <Input
-                  data-testid="cliente-nome-input"
-                  value={formData.nome}
-                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  required
-                />
+                <Input value={formData.nome} onChange={(e) => setFormData({ ...formData, nome: e.target.value })} required />
               </div>
               <div>
                 <Label>CPF/CNPJ *</Label>
-                <Input
-                  data-testid="cliente-cpf-input"
-                  value={formData.cpf_cnpj}
-                  onChange={(e) => setFormData({ ...formData, cpf_cnpj: e.target.value })}
-                  required
-                />
+                <Input value={formData.cpf_cnpj} onChange={(e) => setFormData({ ...formData, cpf_cnpj: e.target.value })} required />
               </div>
               <div>
                 <Label>Telefone</Label>
-                <Input
-                  data-testid="cliente-telefone-input"
-                  value={formData.telefone}
-                  onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                />
+                <Input value={formData.telefone} onChange={(e) => setFormData({ ...formData, telefone: e.target.value })} />
               </div>
               <div>
                 <Label>Email</Label>
-                <Input
-                  data-testid="cliente-email-input"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
+                <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
               </div>
               <div>
                 <Label>Observações</Label>
-                <Input
-                  data-testid="cliente-obs-input"
-                  value={formData.observacoes}
-                  onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                />
+                <Input value={formData.observacoes} onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })} />
               </div>
-              <div className="flex gap-2">
-                <Button type="submit" data-testid="cliente-save-btn" className="flex-1">
-                  Salvar
-                </Button>
-                <Button type="button" variant="outline" onClick={handleClose}>
-                  Cancelar
-                </Button>
-              </div>
+              <Button type="submit" className="w-full">{isEditing ? 'Atualizar' : 'Salvar'}</Button>
             </form>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="mb-6">
+      {/* Search */}
+      <div className="mb-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <Input
-            data-testid="search-clientes-input"
             placeholder="Buscar por nome ou CPF/CNPJ..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -185,7 +175,7 @@ const Clientes = () => {
         </div>
       </div>
 
-      <div className="table-container" data-testid="clientes-table">
+      <div className="table-container">
         <table>
           <thead>
             <tr>
@@ -193,32 +183,36 @@ const Clientes = () => {
               <th>CPF/CNPJ</th>
               <th>Telefone</th>
               <th>Email</th>
+              <th>Status</th>
               <th className="text-right">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {filteredClientes.map((cliente) => (
-              <tr key={cliente.id} data-testid={`cliente-row-${cliente.id}`}>
-                <td className="font-medium">{cliente.nome}</td>
-                <td>{cliente.cpf_cnpj}</td>
-                <td>{cliente.telefone || '-'}</td>
-                <td>{cliente.email || '-'}</td>
+            {filteredClientes.map((c) => (
+              <tr key={c.id}>
+                <td className="font-medium">{c.nome}</td>
+                <td>{c.cpf_cnpj}</td>
+                <td>{c.telefone || '-'}</td>
+                <td>{c.email || '-'}</td>
+                <td>
+                  <span className={`badge ${c.ativo ? 'badge-success' : 'badge-danger'}`}>
+                    {c.ativo ? 'Ativo' : 'Inativo'}
+                  </span>
+                </td>
                 <td className="text-right">
-                  <div className="flex gap-2 justify-end">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      data-testid={`edit-cliente-${cliente.id}`}
-                      onClick={() => handleEdit(cliente)}
-                    >
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(c)} title="Editar">
                       <Edit size={16} />
                     </Button>
                     <Button
-                      size="sm"
                       variant="ghost"
-                      data-testid={`delete-cliente-${cliente.id}`}
-                      onClick={() => handleDelete(cliente.id)}
+                      size="sm"
+                      onClick={() => setToggleDialog({ open: true, id: c.id, nome: c.nome, ativo: c.ativo })}
+                      title={c.ativo ? 'Inativar' : 'Ativar'}
                     >
+                      <Power size={16} className={c.ativo ? 'text-orange-500' : 'text-green-500'} />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteDialog({ open: true, id: c.id, nome: c.nome })} title="Excluir">
                       <Trash2 size={16} className="text-red-500" />
                     </Button>
                   </div>
@@ -227,12 +221,44 @@ const Clientes = () => {
             ))}
           </tbody>
         </table>
-        {filteredClientes.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
-            Nenhum cliente encontrado
-          </div>
-        )}
       </div>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o cliente <strong>{deleteDialog.nome}</strong>?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Toggle Status Dialog */}
+      <AlertDialog open={toggleDialog.open} onOpenChange={(open) => setToggleDialog({ ...toggleDialog, open })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Alteração de Status</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja {toggleDialog.ativo ? 'inativar' : 'ativar'} o cliente <strong>{toggleDialog.nome}</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleToggleStatus}>
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
