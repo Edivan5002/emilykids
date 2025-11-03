@@ -2701,6 +2701,106 @@ async def create_subcategoria(subcategoria_data: SubcategoriaCreate, current_use
     )
     return subcategoria
 
+@api_router.put("/subcategorias/{subcategoria_id}", response_model=Subcategoria)
+async def update_subcategoria(subcategoria_id: str, subcategoria_data: SubcategoriaCreate, current_user: dict = Depends(get_current_user)):
+    # Verificar se a subcategoria existe
+    existing = await db.subcategorias.find_one({"id": subcategoria_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Subcategoria não encontrada")
+    
+    # Validar que a categoria existe e está ativa
+    categoria = await db.categorias.find_one({"id": subcategoria_data.categoria_id}, {"_id": 0})
+    if not categoria:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Categoria com ID {subcategoria_data.categoria_id} não encontrada."
+        )
+    if not categoria.get("ativo", False):
+        raise HTTPException(
+            status_code=400,
+            detail="A categoria selecionada está inativa. Por favor, selecione uma categoria ativa."
+        )
+    
+    # Atualizar dados
+    updated_data = subcategoria_data.model_dump()
+    updated_data["id"] = subcategoria_id
+    updated_data["created_at"] = existing["created_at"]
+    
+    await db.subcategorias.replace_one({"id": subcategoria_id}, updated_data)
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="subcategorias",
+        acao="editar",
+        detalhes={"subcategoria_id": subcategoria_id, "nome": subcategoria_data.nome, "categoria_id": subcategoria_data.categoria_id}
+    )
+    return Subcategoria(**updated_data)
+
+@api_router.delete("/subcategorias/{subcategoria_id}")
+async def delete_subcategoria(subcategoria_id: str, current_user: dict = Depends(get_current_user)):
+    # Verificar se a subcategoria existe
+    subcategoria = await db.subcategorias.find_one({"id": subcategoria_id}, {"_id": 0})
+    if not subcategoria:
+        raise HTTPException(status_code=404, detail="Subcategoria não encontrada")
+    
+    # Verificar dependências - Produtos vinculados
+    produtos_count = await db.produtos.count_documents({"subcategoria_id": subcategoria_id})
+    if produtos_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível excluir a subcategoria '{subcategoria['nome']}' pois existem {produtos_count} produto(s) vinculado(s). Exclua ou reatribua os produtos primeiro."
+        )
+    
+    # Excluir subcategoria
+    await db.subcategorias.delete_one({"id": subcategoria_id})
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="subcategorias",
+        acao="excluir",
+        detalhes={"subcategoria_id": subcategoria_id, "nome": subcategoria["nome"]}
+    )
+    return {"message": "Subcategoria excluída com sucesso"}
+
+@api_router.put("/subcategorias/{subcategoria_id}/toggle-status")
+async def toggle_subcategoria_status(subcategoria_id: str, current_user: dict = Depends(get_current_user)):
+    # Verificar se a subcategoria existe
+    subcategoria = await db.subcategorias.find_one({"id": subcategoria_id}, {"_id": 0})
+    if not subcategoria:
+        raise HTTPException(status_code=404, detail="Subcategoria não encontrada")
+    
+    novo_status = not subcategoria.get("ativo", True)
+    
+    # Se estiver inativando, verificar produtos ativos
+    if not novo_status:
+        produtos_ativos = await db.produtos.count_documents({
+            "subcategoria_id": subcategoria_id,
+            "ativo": True
+        })
+        if produtos_ativos > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Não é possível inativar a subcategoria '{subcategoria['nome']}' pois existem {produtos_ativos} produto(s) ativo(s) vinculado(s). Inative os produtos primeiro."
+            )
+    
+    # Atualizar status
+    await db.subcategorias.update_one(
+        {"id": subcategoria_id},
+        {"$set": {"ativo": novo_status}}
+    )
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="subcategorias",
+        acao="alterar_status",
+        detalhes={"subcategoria_id": subcategoria_id, "nome": subcategoria["nome"], "novo_status": novo_status}
+    )
+    return {"message": f"Subcategoria {'ativada' if novo_status else 'inativada'} com sucesso", "ativo": novo_status}
+
+
 # ========== PRODUTOS ==========
 
 @api_router.get("/produtos", response_model=List[Produto])
