@@ -2486,7 +2486,14 @@ async def create_subcategoria(subcategoria_data: SubcategoriaCreate, current_use
     
     subcategoria = Subcategoria(**subcategoria_data.model_dump())
     await db.subcategorias.insert_one(subcategoria.model_dump())
-    await log_action(current_user["id"], "criar", "subcategorias", subcategoria.id, {"nome": subcategoria.nome, "categoria_id": subcategoria.categoria_id})
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="subcategorias",
+        acao="criar",
+        detalhes={"nome": subcategoria.nome, "categoria_id": subcategoria.categoria_id, "subcategoria_id": subcategoria.id}
+    )
     return subcategoria
 
 # ========== PRODUTOS ==========
