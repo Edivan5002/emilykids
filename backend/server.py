@@ -1757,7 +1757,7 @@ class UserUpdate(BaseModel):
     senha: Optional[str] = None
 
 @api_router.get("/usuarios", response_model=List[User])
-async def get_usuarios(current_user: dict = Depends(get_current_user)):
+async def get_usuarios(current_user: dict = Depends(require_permission("usuarios", "visualizar"))):
     if current_user.get("papel") != "admin":
         raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
     
@@ -1766,7 +1766,7 @@ async def get_usuarios(current_user: dict = Depends(get_current_user)):
 
 
 @api_router.post("/usuarios")
-async def create_usuario(user_data: dict, current_user: dict = Depends(get_current_user)):
+async def create_usuario(user_data: dict, current_user: dict = Depends(require_permission("usuarios", "criar"))):
     """Cria novo usuário (apenas admin) com suporte RBAC"""
     if current_user.get("papel") != "admin":
         raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
@@ -1945,7 +1945,7 @@ async def toggle_usuario_status(user_id: str, current_user: dict = Depends(get_c
 # --- ROLES (Papéis) ---
 
 @api_router.get("/roles", response_model=List[Role])
-async def get_roles(current_user: dict = Depends(get_current_user)):
+async def get_roles(current_user: dict = Depends(require_permission("usuarios", "visualizar"))):
     """Lista todos os papéis"""
     if current_user.get("papel") != "admin":
         raise HTTPException(status_code=403, detail="Apenas administradores podem gerenciar papéis")
@@ -1965,7 +1965,7 @@ async def get_role(role_id: str, current_user: dict = Depends(get_current_user))
     return role
 
 @api_router.post("/roles")
-async def create_role(role_data: RoleCreate, current_user: dict = Depends(get_current_user)):
+async def create_role(role_data: RoleCreate, current_user: dict = Depends(require_permission("usuarios", "criar"))):
     """Cria novo papel customizado"""
     if current_user.get("papel") != "admin":
         raise HTTPException(status_code=403, detail="Apenas administradores")
@@ -2142,7 +2142,7 @@ async def duplicate_role(role_id: str, novo_nome: str, current_user: dict = Depe
 # --- PERMISSIONS (Permissões) ---
 
 @api_router.get("/permissions", response_model=List[Permission])
-async def get_permissions(current_user: dict = Depends(get_current_user)):
+async def get_permissions(current_user: dict = Depends(require_permission("usuarios", "visualizar"))):
     """Lista todas as permissões do sistema"""
     if current_user.get("papel") != "admin":
         raise HTTPException(status_code=403, detail="Apenas administradores")
@@ -2169,7 +2169,7 @@ async def get_permissions_by_module(current_user: dict = Depends(get_current_use
     return by_module
 
 @api_router.get("/users/{user_id}/permissions")
-async def get_user_all_permissions(user_id: str, current_user: dict = Depends(get_current_user)):
+async def get_user_all_permissions(user_id: str, current_user: dict = Depends(require_permission("usuarios", "visualizar"))):
     """Retorna todas as permissões efetivas de um usuário"""
     if current_user.get("papel") != "admin" and current_user["id"] != user_id:
         raise HTTPException(status_code=403, detail="Acesso negado")
@@ -2194,7 +2194,7 @@ async def get_user_all_permissions(user_id: str, current_user: dict = Depends(ge
 # --- USER GROUPS (Grupos) ---
 
 @api_router.get("/user-groups", response_model=List[UserGroup])
-async def get_user_groups(current_user: dict = Depends(get_current_user)):
+async def get_user_groups(current_user: dict = Depends(require_permission("usuarios", "visualizar"))):
     """Lista todos os grupos"""
     if current_user.get("papel") != "admin":
         raise HTTPException(status_code=403, detail="Apenas administradores")
@@ -2203,7 +2203,7 @@ async def get_user_groups(current_user: dict = Depends(get_current_user)):
     return groups
 
 @api_router.post("/user-groups")
-async def create_user_group(group_data: UserGroupCreate, current_user: dict = Depends(get_current_user)):
+async def create_user_group(group_data: UserGroupCreate, current_user: dict = Depends(require_permission("usuarios", "criar"))):
     """Cria novo grupo de usuários"""
     if current_user.get("papel") != "admin":
         raise HTTPException(status_code=403, detail="Apenas administradores")
@@ -2292,7 +2292,7 @@ async def delete_user_group(group_id: str, current_user: dict = Depends(get_curr
 async def get_permission_history(
     limit: int = 100,
     offset: int = 0,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("logs", "visualizar"))
 ):
     """Lista histórico de mudanças de permissões"""
     if current_user.get("papel") != "admin":
@@ -2317,7 +2317,7 @@ async def grant_temporary_permission(
     valid_from: str,
     valid_until: str,
     motivo: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("usuarios", "criar"))
 ):
     """Concede permissão temporária a usuário"""
     if current_user.get("papel") != "admin":
@@ -2350,7 +2350,7 @@ async def grant_temporary_permission(
     return {"message": "Permissão temporária concedida", "id": temp_perm.id}
 
 @api_router.get("/users/{user_id}/temporary-permissions")
-async def get_user_temporary_permissions(user_id: str, current_user: dict = Depends(get_current_user)):
+async def get_user_temporary_permissions(user_id: str, current_user: dict = Depends(require_permission("usuarios", "visualizar"))):
     """Lista permissões temporárias de um usuário"""
     if current_user.get("papel") != "admin" and current_user["id"] != user_id:
         raise HTTPException(status_code=403, detail="Acesso negado")
@@ -2361,7 +2361,7 @@ async def get_user_temporary_permissions(user_id: str, current_user: dict = Depe
 # --- INITIALIZATION ---
 
 @api_router.post("/rbac/initialize")
-async def initialize_rbac(current_user: dict = Depends(get_current_user)):
+async def initialize_rbac(current_user: dict = Depends(require_permission("usuarios", "criar"))):
     """Inicializa sistema RBAC com papéis e permissões padrão"""
     if current_user.get("papel") != "admin":
         raise HTTPException(status_code=403, detail="Apenas administradores")
@@ -3446,7 +3446,7 @@ VALOR_MINIMO_APROVACAO = 5000.00
 async def get_notas_fiscais(
     status: str = None,
     fornecedor_id: str = None,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("notas_fiscais", "visualizar"))
 ):
     """Lista notas fiscais com filtros opcionais"""
     filtro = {}
@@ -3459,7 +3459,7 @@ async def get_notas_fiscais(
     return notas
 
 @api_router.post("/notas-fiscais", response_model=NotaFiscal)
-async def create_nota_fiscal(nota_data: NotaFiscalCreate, current_user: dict = Depends(get_current_user)):
+async def create_nota_fiscal(nota_data: NotaFiscalCreate, current_user: dict = Depends(require_permission("notas_fiscais", "criar"))):
     """
     Cria uma nova nota fiscal com validações robustas
     """
@@ -3951,7 +3951,7 @@ async def relatorio_notas_fiscais(
     data_fim: str = None,
     fornecedor_id: str = None,
     status: str = None,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("notas_fiscais", "visualizar"))
 ):
     """
     Relatório de notas fiscais com filtros
@@ -4041,7 +4041,7 @@ def calcular_margem_lucro(itens: List[dict], produtos_db) -> float:
 async def get_orcamentos(
     status: str = None,
     cliente_id: str = None,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("orcamentos", "visualizar"))
 ):
     """Lista orçamentos com filtros"""
     filtro = {}
@@ -4054,7 +4054,7 @@ async def get_orcamentos(
     return orcamentos
 
 @api_router.post("/orcamentos", response_model=Orcamento)
-async def create_orcamento(orcamento_data: OrcamentoCreate, current_user: dict = Depends(get_current_user)):
+async def create_orcamento(orcamento_data: OrcamentoCreate, current_user: dict = Depends(require_permission("orcamentos", "criar"))):
     """
     Cria orçamento com validações robustas
     """
@@ -4596,8 +4596,9 @@ async def verificar_orcamentos_expirados(current_user: dict = Depends(get_curren
     Job para verificar e marcar orçamentos expirados
     (Apenas admin pode executar manualmente, mas pode ser agendado)
     """
-    if current_user["papel"] != "admin":
-        raise HTTPException(status_code=403, detail="Apenas administradores podem executar esta ação")
+    # RBAC: Verificação manual removida - agora usa Depends(require_permission)
+    #     if current_user["papel"] != "admin":
+    #         raise HTTPException(status_code=403, detail="Apenas administradores podem executar esta ação")
     
     # Buscar orçamentos abertos ou aprovados
     orcamentos = await db.orcamentos.find(
@@ -4779,7 +4780,7 @@ async def get_vendas(
     status_venda: str = None,
     status_entrega: str = None,
     cliente_id: str = None,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("vendas", "visualizar"))
 ):
     """Lista vendas com filtros"""
     filtro = {}
@@ -4794,7 +4795,7 @@ async def get_vendas(
     return vendas
 
 @api_router.post("/vendas", response_model=Venda)
-async def create_venda(venda_data: VendaCreate, current_user: dict = Depends(get_current_user)):
+async def create_venda(venda_data: VendaCreate, current_user: dict = Depends(require_permission("vendas", "criar"))):
     """
     Cria venda com validações completas e controle de pagamento
     """
@@ -5763,7 +5764,7 @@ Seja específico, use números e forneça recomendações práticas e acionávei
 # ========== RELATÓRIOS ==========
 
 @api_router.get("/relatorios/dashboard")
-async def get_dashboard(current_user: dict = Depends(get_current_user)):
+async def get_dashboard(current_user: dict = Depends(require_permission("relatorios", "visualizar"))):
     total_clientes = await db.clientes.count_documents({})
     total_produtos = await db.produtos.count_documents({})
     total_vendas = await db.vendas.count_documents({})
@@ -5783,7 +5784,7 @@ async def get_dashboard(current_user: dict = Depends(get_current_user)):
     }
 
 @api_router.get("/relatorios/vendas-por-periodo")
-async def vendas_por_periodo(current_user: dict = Depends(get_current_user)):
+async def vendas_por_periodo(current_user: dict = Depends(require_permission("relatorios", "visualizar"))):
     vendas = await db.vendas.find({}, {"_id": 0}).to_list(1000)
     
     # Agrupar por data
@@ -5815,14 +5816,15 @@ async def get_logs(
     metodo_http: str = None,
     limit: int = 50,
     offset: int = 0,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("logs", "visualizar"))
 ):
     """
     Lista logs com filtros avançados e paginação
     """
     # Apenas admin pode ver todos os logs
-    if current_user["papel"] != "admin":
-        raise HTTPException(status_code=403, detail="Apenas administradores podem acessar logs")
+    # RBAC: Verificação manual removida - agora usa Depends(require_permission)
+    #     if current_user["papel"] != "admin":
+    #         raise HTTPException(status_code=403, detail="Apenas administradores podem acessar logs")
     
     filtro = {"arquivado": False}
     
@@ -5868,8 +5870,9 @@ async def get_estatisticas_logs(
     """
     Estatísticas avançadas de logs
     """
-    if current_user["papel"] != "admin":
-        raise HTTPException(status_code=403, detail="Apenas administradores podem acessar estatísticas")
+    # RBAC: Verificação manual removida - agora usa Depends(require_permission)
+    #     if current_user["papel"] != "admin":
+    #         raise HTTPException(status_code=403, detail="Apenas administradores podem acessar estatísticas")
     
     filtro = {"arquivado": False}
     if data_inicio and data_fim:
@@ -5958,8 +5961,9 @@ async def get_dashboard_logs(current_user: dict = Depends(get_current_user)):
     """
     Dashboard resumido de logs para os últimos 7 dias
     """
-    if current_user["papel"] != "admin":
-        raise HTTPException(status_code=403, detail="Apenas administradores podem acessar o dashboard")
+    # RBAC: Verificação manual removida - agora usa Depends(require_permission)
+    #     if current_user["papel"] != "admin":
+    #         raise HTTPException(status_code=403, detail="Apenas administradores podem acessar o dashboard")
     
     # Últimos 7 dias
     data_inicio = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
@@ -6010,8 +6014,9 @@ async def get_logs_seguranca(
     """
     Lista logs de segurança específicos
     """
-    if current_user["papel"] != "admin":
-        raise HTTPException(status_code=403, detail="Apenas administradores podem acessar logs de segurança")
+    # RBAC: Verificação manual removida - agora usa Depends(require_permission)
+    #     if current_user["papel"] != "admin":
+    #         raise HTTPException(status_code=403, detail="Apenas administradores podem acessar logs de segurança")
     
     total = await db.logs_seguranca.count_documents({})
     
@@ -6034,8 +6039,9 @@ async def exportar_logs(
     """
     Exporta logs em diferentes formatos
     """
-    if current_user["papel"] != "admin":
-        raise HTTPException(status_code=403, detail="Apenas administradores podem exportar logs")
+    # RBAC: Verificação manual removida - agora usa Depends(require_permission)
+    #     if current_user["papel"] != "admin":
+    #         raise HTTPException(status_code=403, detail="Apenas administradores podem exportar logs")
     
     filtro = {"arquivado": False}
     if data_inicio and data_fim:
@@ -6069,8 +6075,9 @@ async def arquivar_logs_antigos(current_user: dict = Depends(get_current_user)):
     """
     Arquiva logs com mais de X dias (apenas admin)
     """
-    if current_user["papel"] != "admin":
-        raise HTTPException(status_code=403, detail="Apenas administradores podem arquivar logs")
+    # RBAC: Verificação manual removida - agora usa Depends(require_permission)
+    #     if current_user["papel"] != "admin":
+    #         raise HTTPException(status_code=403, detail="Apenas administradores podem arquivar logs")
     
     # Data limite
     data_limite = (datetime.now(timezone.utc) - timedelta(days=DIAS_RETENCAO_LOGS)).isoformat()
@@ -6104,8 +6111,9 @@ async def verificar_atividade_suspeita(current_user: dict = Depends(get_current_
     """
     Verifica atividades suspeitas no sistema
     """
-    if current_user["papel"] != "admin":
-        raise HTTPException(status_code=403, detail="Apenas administradores podem verificar atividades suspeitas")
+    # RBAC: Verificação manual removida - agora usa Depends(require_permission)
+    #     if current_user["papel"] != "admin":
+    #         raise HTTPException(status_code=403, detail="Apenas administradores podem verificar atividades suspeitas")
     
     # Últimas 24 horas
     data_inicio = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
@@ -6154,8 +6162,9 @@ async def criar_indices_logs(current_user: dict = Depends(get_current_user)):
     """
     Cria índices no MongoDB para otimização de queries (apenas admin)
     """
-    if current_user["papel"] != "admin":
-        raise HTTPException(status_code=403, detail="Apenas administradores podem criar índices")
+    # RBAC: Verificação manual removida - agora usa Depends(require_permission)
+    #     if current_user["papel"] != "admin":
+    #         raise HTTPException(status_code=403, detail="Apenas administradores podem criar índices")
     
     try:
         # Criar índices
@@ -6178,7 +6187,7 @@ async def criar_indices_logs(current_user: dict = Depends(get_current_user)):
 # ========== RELATÓRIOS AVANÇADOS ==========
 
 @api_router.get("/relatorios/dashboard/kpis")
-async def get_kpis_dashboard(data_inicio: str = None, data_fim: str = None, current_user: dict = Depends(get_current_user)):
+async def get_kpis_dashboard(data_inicio: str = None, data_fim: str = None, current_user: dict = Depends(require_permission("relatorios", "visualizar"))):
     """
     Retorna KPIs principais do dashboard executivo
     """
@@ -6267,7 +6276,7 @@ async def relatorio_vendas_periodo(
     data_inicio: str, 
     data_fim: str,
     agrupamento: str = "dia",  # dia, semana, mes
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("relatorios", "visualizar"))
 ):
     """
     Relatório de vendas agrupadas por período com comparação
@@ -6315,7 +6324,7 @@ async def relatorio_vendas_periodo(
 async def relatorio_vendas_vendedor(
     data_inicio: str = None,
     data_fim: str = None,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("relatorios", "visualizar"))
 ):
     """
     Relatório de vendas por vendedor/usuário
@@ -6359,7 +6368,7 @@ async def relatorio_vendas_vendedor(
 async def relatorio_dre(
     data_inicio: str,
     data_fim: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("relatorios", "visualizar"))
 ):
     """
     DRE Simplificado - Demonstrativo de Resultado
@@ -6407,7 +6416,7 @@ async def relatorio_dre(
     }
 
 @api_router.get("/relatorios/estoque/curva-abc")
-async def relatorio_curva_abc(current_user: dict = Depends(get_current_user)):
+async def relatorio_curva_abc(current_user: dict = Depends(require_permission("relatorios", "visualizar"))):
     """
     Curva ABC de produtos baseada em faturamento
     """
@@ -6470,7 +6479,7 @@ async def relatorio_curva_abc(current_user: dict = Depends(get_current_user)):
     }
 
 @api_router.get("/relatorios/clientes/rfm")
-async def relatorio_rfm(current_user: dict = Depends(get_current_user)):
+async def relatorio_rfm(current_user: dict = Depends(require_permission("relatorios", "visualizar"))):
     """
     Análise RFM (Recência, Frequência, Valor Monetário) dos clientes
     """
@@ -6586,7 +6595,7 @@ async def relatorio_rfm(current_user: dict = Depends(get_current_user)):
 async def relatorio_conversao_orcamentos(
     data_inicio: str = None,
     data_fim: str = None,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("relatorios", "visualizar"))
 ):
     """
     Análise de conversão de orçamentos em vendas
@@ -6632,7 +6641,7 @@ async def relatorio_auditoria(
     data_fim: str = None,
     user_id: str = None,
     acao: str = None,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("relatorios", "visualizar"))
 ):
     """
     Relatório de auditoria - logs de ações do sistema
