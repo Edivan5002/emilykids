@@ -33,10 +33,10 @@ const Produtos = () => {
   // Filtros
   const [filtros, setFiltros] = useState({
     termo: '',
-    marca_id: '',
-    categoria_id: '',
-    subcategoria_id: '',
-    ativo: '',
+    marca_id: 'todas',
+    categoria_id: 'todas',
+    subcategoria_id: 'todas',
+    ativo: 'todos',
     com_estoque: '',
     estoque_baixo: false,
     em_destaque: false
