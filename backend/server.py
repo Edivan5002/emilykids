@@ -36,7 +36,7 @@ api_router = APIRouter(prefix="/api")
 
 class UserRole(BaseModel):
     nome: str
-    permissoes: dict  # {"tela": ["ler", "criar", "editar", "excluir"]}
+    permissoes: dict  # {"tela": ["ler", "criar", "editar", "deletar"]}
 
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -2456,7 +2456,7 @@ async def update_cliente(cliente_id: str, cliente_data: ClienteCreate, current_u
     return Cliente(**updated_data)
 
 @api_router.delete("/clientes/{cliente_id}")
-async def delete_cliente(cliente_id: str, current_user: dict = Depends(require_permission("clientes", "excluir"))):
+async def delete_cliente(cliente_id: str, current_user: dict = Depends(require_permission("clientes", "deletar"))):
     # Verificar se o cliente existe
     cliente = await db.clientes.find_one({"id": cliente_id}, {"_id": 0})
     if not cliente:
@@ -2485,7 +2485,7 @@ async def delete_cliente(cliente_id: str, current_user: dict = Depends(require_p
         user_id=current_user["id"],
         user_nome=current_user["nome"],
         tela="clientes",
-        acao="excluir",
+        acao="deletar",
         detalhes={"cliente_id": cliente_id, "nome": cliente["nome"]}
     )
     return {"message": "Cliente excluído com sucesso"}
@@ -2563,7 +2563,7 @@ async def update_fornecedor(fornecedor_id: str, fornecedor_data: FornecedorCreat
     return Fornecedor(**updated_data)
 
 @api_router.delete("/fornecedores/{fornecedor_id}")
-async def delete_fornecedor(fornecedor_id: str, current_user: dict = Depends(require_permission("fornecedores", "excluir"))):
+async def delete_fornecedor(fornecedor_id: str, current_user: dict = Depends(require_permission("fornecedores", "deletar"))):
     # Verificar se o fornecedor existe
     fornecedor = await db.fornecedores.find_one({"id": fornecedor_id}, {"_id": 0})
     if not fornecedor:
@@ -2584,7 +2584,7 @@ async def delete_fornecedor(fornecedor_id: str, current_user: dict = Depends(req
         user_id=current_user["id"],
         user_nome=current_user["nome"],
         tela="fornecedores",
-        acao="excluir",
+        acao="deletar",
         detalhes={"fornecedor_id": fornecedor_id, "nome": fornecedor["nome"]}
     )
     return {"message": "Fornecedor excluído com sucesso"}
@@ -2662,7 +2662,7 @@ async def update_marca(marca_id: str, marca_data: MarcaCreate, current_user: dic
     return Marca(**updated_data)
 
 @api_router.delete("/marcas/{marca_id}")
-async def delete_marca(marca_id: str, current_user: dict = Depends(require_permission("marcas", "excluir"))):
+async def delete_marca(marca_id: str, current_user: dict = Depends(require_permission("marcas", "deletar"))):
     # Verificar se a marca existe
     marca = await db.marcas.find_one({"id": marca_id}, {"_id": 0})
     if not marca:
@@ -2683,7 +2683,7 @@ async def delete_marca(marca_id: str, current_user: dict = Depends(require_permi
         user_id=current_user["id"],
         user_nome=current_user["nome"],
         tela="marcas",
-        acao="excluir",
+        acao="deletar",
         detalhes={"marca_id": marca_id, "nome": marca["nome"]}
     )
     return {"message": "Marca excluída com sucesso"}
@@ -2797,7 +2797,7 @@ async def update_categoria(categoria_id: str, categoria_data: CategoriaCreate, c
     return Categoria(**updated_data)
 
 @api_router.delete("/categorias/{categoria_id}")
-async def delete_categoria(categoria_id: str, current_user: dict = Depends(require_permission("categorias", "excluir"))):
+async def delete_categoria(categoria_id: str, current_user: dict = Depends(require_permission("categorias", "deletar"))):
     # Verificar se a categoria existe
     categoria = await db.categorias.find_one({"id": categoria_id}, {"_id": 0})
     if not categoria:
@@ -2826,7 +2826,7 @@ async def delete_categoria(categoria_id: str, current_user: dict = Depends(requi
         user_id=current_user["id"],
         user_nome=current_user["nome"],
         tela="categorias",
-        acao="excluir",
+        acao="deletar",
         detalhes={"categoria_id": categoria_id, "nome": categoria["nome"]}
     )
     return {"message": "Categoria excluída com sucesso"}
@@ -2950,7 +2950,7 @@ async def update_subcategoria(subcategoria_id: str, subcategoria_data: Subcatego
     return Subcategoria(**updated_data)
 
 @api_router.delete("/subcategorias/{subcategoria_id}")
-async def delete_subcategoria(subcategoria_id: str, current_user: dict = Depends(require_permission("subcategorias", "excluir"))):
+async def delete_subcategoria(subcategoria_id: str, current_user: dict = Depends(require_permission("subcategorias", "deletar"))):
     # Verificar se a subcategoria existe
     subcategoria = await db.subcategorias.find_one({"id": subcategoria_id}, {"_id": 0})
     if not subcategoria:
@@ -2971,7 +2971,7 @@ async def delete_subcategoria(subcategoria_id: str, current_user: dict = Depends
         user_id=current_user["id"],
         user_nome=current_user["nome"],
         tela="subcategorias",
-        acao="excluir",
+        acao="deletar",
         detalhes={"subcategoria_id": subcategoria_id, "nome": subcategoria["nome"]}
     )
     return {"message": "Subcategoria excluída com sucesso"}
@@ -3102,7 +3102,7 @@ async def update_produto(produto_id: str, produto_data: ProdutoCreate, current_u
     return Produto(**updated_data)
 
 @api_router.delete("/produtos/{produto_id}")
-async def delete_produto(produto_id: str, current_user: dict = Depends(require_permission("produtos", "excluir"))):
+async def delete_produto(produto_id: str, current_user: dict = Depends(require_permission("produtos", "deletar"))):
     # Verificar se o produto existe
     produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
     if not produto:
@@ -3139,7 +3139,7 @@ async def delete_produto(produto_id: str, current_user: dict = Depends(require_p
         user_id=current_user["id"],
         user_nome=current_user["nome"],
         tela="produtos",
-        acao="excluir",
+        acao="deletar",
         detalhes={"produto_id": produto_id, "nome": produto["nome"]}
     )
     return {"message": "Produto excluído com sucesso"}
