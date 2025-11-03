@@ -3022,7 +3022,7 @@ async def toggle_subcategoria_status(subcategoria_id: str, current_user: dict = 
 # ========== PRODUTOS ==========
 
 @api_router.get("/produtos", response_model=List[Produto])
-async def get_produtos(current_user: dict = Depends(get_current_user)):
+async def get_produtos(current_user: dict = Depends(require_permission("produtos", "visualizar"))):
     produtos = await db.produtos.find({}, {"_id": 0}).to_list(1000)
     return produtos
 
