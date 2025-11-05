@@ -451,6 +451,21 @@ backend:
         comment: "✅ TESTADO E FUNCIONANDO: Validação implementada corretamente. Não havia dados de teste com orçamentos abertos para validar cenário de falha."
 
 frontend:
+  - task: "Correção módulo Clientes - Erro ao Cadastrar (Bug EmailStr)"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Clientes.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "PROBLEMA REPORTADO: 'erro ao cadastrar clientes no módulo cadastro' - Usuário reporta erro ao tentar cadastrar novos clientes."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ CORREÇÃO IMPLEMENTADA: Identificado mesmo bug do módulo Fornecedores - frontend enviava strings vazias para campos opcionais (telefone, email, observacoes) mas backend espera null. Adicionada sanitização de dados no handleSubmit (/app/frontend/src/pages/Clientes.js): (1) Campos opcionais com strings vazias convertidos para null usando .trim() || null; (2) Campo endereco validado e convertido para null se vazio; (3) Correção aplicada em POST (criar) e PUT (editar). Elimina erro 422 causado pela validação EmailStr do Pydantic."
+
   - task: "Correção Campo ativo nos modelos Cliente e Fornecedor"
     implemented: true
     working: true
