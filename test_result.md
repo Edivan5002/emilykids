@@ -541,6 +541,21 @@ frontend:
         agent: "testing"
         comment: "✅ TESTADO E FUNCIONANDO: Validações de dependência funcionando corretamente - Cliente impedido de inativação com orçamento aberto, Fornecedor impedido de inativação com nota fiscal pendente. Mensagens claras e informativas"
 
+  - task: "Correção visibilidade menus admin (Usuários e Papéis & Permissões)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py, /app/frontend/src/components/Layout.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "PROBLEMA REPORTADO: Usuário Edivan Santos Celestino (edivancelestino@yahoo.com.br) com papel administrador não consegue ver os módulos 'Usuários' e 'Papéis & Permissões' no menu lateral."
+      - working: true
+        agent: "main"
+        comment: "✅ PROBLEMA RESOLVIDO: (1) Identificado que o usuário tinha campo 'papel: vendedor' no banco de dados mesmo tendo role_id de admin; (2) Atualizado campo 'papel' para 'admin' no banco; (3) Implementada sincronização automática do campo 'papel' com 'role_id' nos endpoints de CREATE e UPDATE de usuários para prevenir inconsistências futuras; (4) Backend reiniciado; (5) Verificado via screenshot que os menus 'Usuários' e 'Papéis & Permissões' agora aparecem corretamente para o usuário admin."
+
 frontend:
   - task: "Validação de estoque ao adicionar item em Orçamento"
     implemented: true
