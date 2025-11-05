@@ -2776,8 +2776,9 @@ async def toggle_marca_status(marca_id: str, current_user: dict = Depends(requir
     
     novo_status = not marca.get("ativo", True)
     
-    # Se estiver inativando, verificar se tem categorias ativas vinculadas
+    # Se estiver inativando, verificar dependências ativas
     if not novo_status:
+        # Verificar categorias ativas vinculadas
         categorias_ativas = await db.categorias.count_documents({
             "marca_id": marca_id,
             "ativo": True
@@ -2786,6 +2787,17 @@ async def toggle_marca_status(marca_id: str, current_user: dict = Depends(requir
             raise HTTPException(
                 status_code=400,
                 detail=f"Não é possível inativar a marca '{marca['nome']}' pois existem {categorias_ativas} categoria(s) ativa(s) vinculada(s). Inative as categorias primeiro."
+            )
+        
+        # Verificar produtos ativos vinculados
+        produtos_ativos = await db.produtos.count_documents({
+            "marca_id": marca_id,
+            "ativo": True
+        })
+        if produtos_ativos > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Não é possível inativar a marca '{marca['nome']}' pois existem {produtos_ativos} produto(s) ativo(s) vinculado(s) a ela. Inative os produtos primeiro."
             )
     
     # Atualizar status
