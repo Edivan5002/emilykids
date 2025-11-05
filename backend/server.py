@@ -1782,18 +1782,29 @@ async def create_usuario(user_data: dict, current_user: dict = Depends(require_p
     if not user_data.get("senha") or len(user_data["senha"]) < 6:
         raise HTTPException(status_code=400, detail="Senha deve ter pelo menos 6 caracteres")
     
-    # Validar role_id
+    # Validar role_id e sincronizar campo papel
+    papel_default = "vendedor"
     if user_data.get("role_id"):
         role = await db.roles.find_one({"id": user_data["role_id"]}, {"_id": 0})
         if not role:
             raise HTTPException(status_code=400, detail="Papel não encontrado")
+        # Sincronizar campo papel baseado no nome do role
+        role_name = role.get("nome", "").lower()
+        if "admin" in role_name:
+            papel_default = "admin"
+        elif "gerente" in role_name:
+            papel_default = "gerente"
+        elif "vendedor" in role_name:
+            papel_default = "vendedor"
+        else:
+            papel_default = "visualizador"
     
     # Criar usuário
     user = User(
         email=user_data["email"],
         nome=user_data["nome"],
         senha_hash=hash_password(user_data["senha"]),
-        papel=user_data.get("papel", "vendedor"),  # Compatibilidade
+        papel=user_data.get("papel", papel_default),  # Sincroniza com role ou usa valor fornecido
         ativo=user_data.get("ativo", True)
     )
     
