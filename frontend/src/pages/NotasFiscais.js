@@ -21,8 +21,6 @@ const NotasFiscais = () => {
   const [produtos, setProdutos] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showAutorizacao, setShowAutorizacao] = useState(false);
-  const [notaParaExcluir, setNotaParaExcluir] = useState(null);
   
   const [formData, setFormData] = useState({
     numero: '',
