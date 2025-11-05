@@ -275,13 +275,17 @@ class FornecedoresBackendTester:
         # Use the first created supplier for editing
         supplier_id = self.created_supplier_ids[0]
         
-        # Get current supplier data first
+        # Get current supplier data from the list
         try:
-            response = requests.get(f"{self.base_url}/fornecedores/{supplier_id}", headers=self.get_headers())
+            response = requests.get(f"{self.base_url}/fornecedores?incluir_inativos=true", headers=self.get_headers())
             if response.status_code != 200:
-                self.log_test("Editar Fornecedor - Get Original", False, f"Failed to get supplier: {response.status_code}")
+                self.log_test("Editar Fornecedor - Get Original", False, f"Failed to get suppliers list: {response.status_code}")
                 return
-            original_supplier = response.json()
+            suppliers = response.json()
+            original_supplier = next((s for s in suppliers if s["id"] == supplier_id), None)
+            if not original_supplier:
+                self.log_test("Editar Fornecedor - Get Original", False, f"Supplier {supplier_id} not found in list")
+                return
             original_ativo = original_supplier.get("ativo")
         except Exception as e:
             self.log_test("Editar Fornecedor - Get Original", False, f"Error getting supplier: {str(e)}")
