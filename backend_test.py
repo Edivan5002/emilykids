@@ -40,30 +40,14 @@ class FornecedoresBackendTester:
             print(f"   Details: {details}")
     
     def authenticate(self):
-        """Authenticate and get JWT token"""
+        """Authenticate and get JWT token using credentials from review request"""
         print("\n=== AUTHENTICATION TEST ===")
         
-        # First try to register admin user as specified in review request
-        register_data = {
-            "email": "admin@emilykids.com",
-            "nome": "Admin Emily Kids",
-            "senha": "admin123",
-            "papel": "admin"
-        }
-        
-        try:
-            response = requests.post(f"{self.base_url}/auth/register", json=register_data)
-            if response.status_code == 400 and "já cadastrado" in response.text:
-                print("Admin user already exists, proceeding to login...")
-            elif response.status_code == 200:
-                print("Admin user registered successfully")
-        except Exception as e:
-            print(f"Registration attempt: {e}")
-        
         # Login with admin credentials as specified in review request
+        # Email: admin@emilykids.com, Senha: Admin@123
         login_data = {
             "email": "admin@emilykids.com",
-            "senha": "admin123"
+            "senha": "Admin@123"
         }
         
         try:
@@ -72,7 +56,7 @@ class FornecedoresBackendTester:
                 data = response.json()
                 self.token = data["access_token"]
                 self.user_id = data["user"]["id"]
-                self.log_test("Authentication", True, "Admin login successful")
+                self.log_test("Authentication", True, "Admin login successful with review request credentials")
                 return True
             else:
                 self.log_test("Authentication", False, f"Login failed: {response.status_code} - {response.text}")
