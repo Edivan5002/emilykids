@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, FileText, Check, Upload, AlertCircle, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
-import AutorizacaoModal from '../components/AutorizacaoModal';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
