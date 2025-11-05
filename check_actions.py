@@ -6,7 +6,7 @@ Check what actions are being used in endpoints vs permissions
 import requests
 import re
 
-BACKEND_URL = "https://client-dependency.preview.emergentagent.com/api"
+BACKEND_URL = "https://inactive-supplier-ui.preview.emergentagent.com/api"
 
 def check_actions():
     # Login as admin

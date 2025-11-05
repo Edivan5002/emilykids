@@ -12,7 +12,7 @@ import sys
 import os
 
 # Backend URL from environment
-BACKEND_URL = "https://client-dependency.preview.emergentagent.com/api"
+BACKEND_URL = "https://inactive-supplier-ui.preview.emergentagent.com/api"
 
 class ComprehensiveTester:
     def __init__(self):

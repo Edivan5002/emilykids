@@ -5,7 +5,7 @@ Quick RBAC test after fixing action names
 
 import requests
 
-BACKEND_URL = "https://client-dependency.preview.emergentagent.com/api"
+BACKEND_URL = "https://inactive-supplier-ui.preview.emergentagent.com/api"
 
 def quick_test():
     # Login users
