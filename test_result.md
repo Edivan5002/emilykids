@@ -483,6 +483,9 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "✅ CORREÇÃO IMPLEMENTADA: Identificado mesmo bug do módulo Fornecedores - frontend enviava strings vazias para campos opcionais (telefone, email, observacoes) mas backend espera null. Adicionada sanitização de dados no handleSubmit (/app/frontend/src/pages/Clientes.js): (1) Campos opcionais com strings vazias convertidos para null usando .trim() || null; (2) Campo endereco validado e convertido para null se vazio; (3) Correção aplicada em POST (criar) e PUT (editar). Elimina erro 422 causado pela validação EmailStr do Pydantic."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO PERFEITAMENTE: Executei os 5 TESTES OBRIGATÓRIOS do módulo Clientes com 100% SUCCESS RATE. BUG CRÍTICO TOTALMENTE CORRIGIDO: (1) Cenário Completo - 200 OK com todos os campos ✅; (2) Cenário Mínimo CRÍTICO - 200 OK, campos opcionais null no backend (BUG FIXED!) ✅; (3) Cenário Parcial - 200 OK com alguns campos opcionais ✅; (4) Editar Cliente - 200 OK, campo ativo preservado ✅; (5) Listar com Inativos - Lista completa retornada (15 total: 13 ativos, 2 inativos) ✅. CONFIRMADO: NÃO ocorre mais erro 422 ao cadastrar com campos opcionais vazios, backend aceita null para campos opcionais (telefone, email, observacoes, endereco), EmailStr não rejeita mais strings vazias. CORREÇÃO 100% FUNCIONAL."
 
   - task: "Correção Campo ativo nos modelos Cliente e Fornecedor"
     implemented: true
