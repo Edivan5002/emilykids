@@ -1852,12 +1852,25 @@ async def update_usuario(user_id: str, user_data: dict, current_user: dict = Dep
     if user_data.get("ativo") is not None:
         update_fields["ativo"] = user_data["ativo"]
     if user_data.get("role_id") is not None:
-        # Validar role existe
+        # Validar role existe e sincronizar campo papel
         if user_data["role_id"]:
             role = await db.roles.find_one({"id": user_data["role_id"]}, {"_id": 0})
             if not role:
                 raise HTTPException(status_code=400, detail="Papel não encontrado")
+            # Sincronizar campo papel (compatibilidade) baseado no nome do role
+            role_name = role.get("nome", "").lower()
+            if "admin" in role_name:
+                update_fields["papel"] = "admin"
+            elif "gerente" in role_name:
+                update_fields["papel"] = "gerente"
+            elif "vendedor" in role_name:
+                update_fields["papel"] = "vendedor"
+            else:
+                update_fields["papel"] = "visualizador"
         update_fields["role_id"] = user_data["role_id"]
+    # Permitir atualização direta do campo papel (compatibilidade)
+    if user_data.get("papel"):
+        update_fields["papel"] = user_data["papel"]
     if user_data.get("require_2fa") is not None:
         update_fields["require_2fa"] = user_data["require_2fa"]
     
