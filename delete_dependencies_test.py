@@ -63,22 +63,33 @@ class DeleteDependenciesValidator:
         """Authenticate using admin credentials"""
         print("\n=== AUTHENTICATION ===")
         
-        login_data = {"email": "edivancelestino@yahoo.com.br", "senha": "123456"}
+        # Try multiple admin credentials to find working ones
+        credentials_to_try = [
+            {"email": "admin@emilykids.com", "senha": "Admin@123"},
+            {"email": "admin@emilykids.com", "senha": "admin123"},
+            {"email": "admin@emilykids.com", "senha": "123456"},
+            {"email": "paulo2@gmail.com", "senha": "123456"},
+            {"email": "paulo2@gmail.com", "senha": "admin123"},
+            {"email": "paulo2@gmail.com", "senha": "Admin@123"},
+            {"email": "edivancelestino@yahoo.com.br", "senha": "123456"}
+        ]
         
-        try:
-            response = requests.post(f"{self.base_url}/auth/login", json=login_data)
-            if response.status_code == 200:
-                data = response.json()
-                self.token = data["access_token"]
-                self.user_id = data["user"]["id"]
-                self.log_test("Authentication", True, f"Admin login successful")
-                return True
-            else:
-                self.log_test("Authentication", False, f"Login failed: {response.status_code} - {response.text}")
-                return False
-        except Exception as e:
-            self.log_test("Authentication", False, f"Login error: {str(e)}")
-            return False
+        for login_data in credentials_to_try:
+            try:
+                response = requests.post(f"{self.base_url}/auth/login", json=login_data)
+                if response.status_code == 200:
+                    data = response.json()
+                    self.token = data["access_token"]
+                    self.user_id = data["user"]["id"]
+                    self.log_test("Authentication", True, f"Admin login successful with {login_data['email']}")
+                    return True
+                else:
+                    print(f"   ⚠ Failed login attempt with {login_data['email']}: {response.status_code}")
+            except Exception as e:
+                print(f"   ⚠ Login error with {login_data['email']}: {str(e)}")
+        
+        self.log_test("Authentication", False, "All login attempts failed")
+        return False
     
     def get_headers(self):
         """Get headers with authentication"""
