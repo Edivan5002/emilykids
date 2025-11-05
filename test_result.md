@@ -569,6 +569,18 @@ frontend:
         agent: "main"
         comment: "Atualizada função handleAddItem para chamar endpoint de verificação de estoque antes de adicionar item. Mostra mensagem de erro detalhada se estoque insuficiente"
 
+  - task: "Exibir clientes inativos na listagem de gerenciamento"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Clientes.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTADO: Modificado fetchClientes() para incluir parâmetro incluir_inativos=true na chamada do endpoint GET /clientes. Agora a listagem exibe TODOS os clientes (ativos e inativos). Backend já tinha validações de dependências implementadas (orçamentos abertos e vendas pendentes). Interface já exibe badge visual indicando status ativo/inativo."
+
 metadata:
   created_by: "main_agent"
   version: "5.0"
