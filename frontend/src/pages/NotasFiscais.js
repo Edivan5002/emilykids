@@ -197,10 +197,11 @@ const NotasFiscais = () => {
   };
 
   // Estatísticas
-  const notasConfirmadas = notasFiscais.filter(nf => nf.confirmado).length;
-  const notasPendentes = notasFiscais.filter(nf => !nf.confirmado).length;
+  const notasConfirmadas = notasFiscais.filter(nf => nf.confirmado && !nf.cancelada && nf.status !== 'cancelada').length;
+  const notasPendentes = notasFiscais.filter(nf => !nf.confirmado && !nf.cancelada && nf.status !== 'cancelada').length;
+  const notasCanceladas = notasFiscais.filter(nf => nf.cancelada || nf.status === 'cancelada').length;
   const valorTotalConfirmado = notasFiscais
-    .filter(nf => nf.confirmado)
+    .filter(nf => nf.confirmado && !nf.cancelada && nf.status !== 'cancelada')
     .reduce((sum, nf) => sum + nf.valor_total, 0);
 
   return (
