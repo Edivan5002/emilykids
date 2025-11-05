@@ -622,7 +622,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Exibir clientes inativos na listagem de gerenciamento"
+    - "Correção módulo Fornecedores - Cadastro e Edição"
+    - "Exibir fornecedores inativos na listagem"
+    - "Validação dependências ao inativar Fornecedor"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
