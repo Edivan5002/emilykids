@@ -12,7 +12,7 @@ import sys
 import os
 
 # Backend URL from environment
-BACKEND_URL = "https://kidstore-admin.preview.emergentagent.com/api"
+BACKEND_URL = "https://admin-menu-fix-4.preview.emergentagent.com/api"
 
 class FinalValidationTester:
     def __init__(self):
