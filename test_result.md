@@ -690,7 +690,8 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Correção módulo Marcas - Inativos não aparecem e validações incompletas"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
