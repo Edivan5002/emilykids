@@ -51,11 +51,22 @@ const Fornecedores = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Sanitizar dados: converter strings vazias para null
+      const sanitizedData = {
+        ...formData,
+        ie: formData.ie?.trim() || null,
+        telefone: formData.telefone?.trim() || null,
+        email: formData.email?.trim() || null,
+        endereco: formData.endereco && Object.values(formData.endereco).some(v => v?.trim()) 
+          ? formData.endereco 
+          : null
+      };
+
       if (isEditing) {
-        await axios.put(`${API}/fornecedores/${editingId}`, formData);
+        await axios.put(`${API}/fornecedores/${editingId}`, sanitizedData);
         toast.success('Fornecedor atualizado com sucesso!');
       } else {
-        await axios.post(`${API}/fornecedores`, formData);
+        await axios.post(`${API}/fornecedores`, sanitizedData);
         toast.success('Fornecedor cadastrado com sucesso!');
       }
       fetchFornecedores();
