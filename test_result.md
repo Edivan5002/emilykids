@@ -451,6 +451,21 @@ backend:
         comment: "✅ TESTADO E FUNCIONANDO: Validação implementada corretamente. Não havia dados de teste com orçamentos abertos para validar cenário de falha."
 
 frontend:
+  - task: "Correção módulo Marcas - Inativos não aparecem e validações incompletas"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Marcas.js, /app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "PROBLEMAS REPORTADOS: (1) Marcas inativas não estão aparecendo na listagem (devem aparecer); (2) Só deve ser permitido inativar ou excluir uma marca se ela não tiver dependências em outros módulos como produtos, orçamentos, vendas etc."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ CORREÇÕES IMPLEMENTADAS: (1) FRONTEND: Adicionado parâmetro incluir_inativos=true no fetchMarcas() para exibir marcas inativas na listagem; (2) BACKEND DELETE: Adicionada validação de produtos vinculados (verificava apenas categorias, faltava produtos); (3) BACKEND TOGGLE-STATUS: Adicionada validação de produtos ATIVOS vinculados (além das categorias ativas já existentes). Agora marca só pode ser inativada/excluída se não tiver categorias nem produtos vinculados (ativos para inativação, qualquer status para exclusão)."
+
   - task: "Validação completa de dependências ao EXCLUIR Fornecedor"
     implemented: true
     working: true
