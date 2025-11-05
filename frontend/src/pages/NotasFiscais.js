@@ -487,8 +487,18 @@ const NotasFiscais = () => {
                 <CardTitle className="text-lg">
                   NF-e {nota.numero} / Série {nota.serie}
                 </CardTitle>
-                <span className={`badge ${nota.confirmado ? 'badge-success' : 'badge-warning'}`}>
-                  {nota.confirmado ? 'CONFIRMADA' : 'PENDENTE'}
+                <span className={`badge ${
+                  nota.status === 'cancelada' || nota.cancelada 
+                    ? 'badge-danger' 
+                    : nota.confirmado 
+                      ? 'badge-success' 
+                      : 'badge-warning'
+                }`}>
+                  {nota.status === 'cancelada' || nota.cancelada 
+                    ? 'CANCELADA' 
+                    : nota.confirmado 
+                      ? 'CONFIRMADA' 
+                      : 'PENDENTE'}
                 </span>
               </div>
             </CardHeader>
