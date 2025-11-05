@@ -72,124 +72,420 @@ class FornecedoresBackendTester:
             "Content-Type": "application/json"
         }
     
-    def setup_test_data(self):
-        """Create test data for stock validation tests"""
-        print("\n=== SETTING UP TEST DATA ===")
+    def test_fornecedores_cadastro(self):
+        """Test Fornecedores CADASTRO (POST /fornecedores) - Priority 1"""
+        print("\n=== TESTING FORNECEDORES CADASTRO ===")
         
-        # Create test client
-        client_data = {
-            "nome": "Maria Silva - Mãe da Ana",
-            "cpf_cnpj": "123.456.789-00",
-            "telefone": "(11) 99999-9999",
-            "email": "maria.silva@email.com"
+        # Test 1: Create supplier with complete data including razao_social, cnpj, ie, telefone, email
+        supplier_complete = {
+            "razao_social": "Distribuidora Infantil Ltda",
+            "cnpj": "12.345.678/0001-90",
+            "ie": "123.456.789.012",
+            "telefone": "(11) 3333-4444",
+            "email": "contato@distribuidorainfantil.com.br"
         }
         
         try:
-            response = requests.post(f"{self.base_url}/clientes", json=client_data, headers=self.get_headers())
+            response = requests.post(f"{self.base_url}/fornecedores", json=supplier_complete, headers=self.get_headers())
             if response.status_code == 200:
-                self.test_client_id = response.json()["id"]
-                self.log_test("Create Test Client", True, "Test client created successfully")
+                supplier_data = response.json()
+                # Verify all fields are present and ativo=true by default
+                if (supplier_data.get("razao_social") == supplier_complete["razao_social"] and
+                    supplier_data.get("cnpj") == supplier_complete["cnpj"] and
+                    supplier_data.get("ie") == supplier_complete["ie"] and
+                    supplier_data.get("telefone") == supplier_complete["telefone"] and
+                    supplier_data.get("email") == supplier_complete["email"] and
+                    supplier_data.get("ativo") == True):
+                    
+                    self.test_suppliers.append(supplier_data)
+                    self.log_test("Fornecedor Cadastro - Complete Data", True, f"Supplier created with all fields, ativo=True by default")
+                else:
+                    self.log_test("Fornecedor Cadastro - Complete Data", False, f"Missing or incorrect fields: {supplier_data}")
             else:
-                self.log_test("Create Test Client", False, f"Failed to create client: {response.text}")
-                return False
+                self.log_test("Fornecedor Cadastro - Complete Data", False, f"HTTP {response.status_code}: {response.text}")
         except Exception as e:
-            self.log_test("Create Test Client", False, f"Error creating client: {str(e)}")
-            return False
+            self.log_test("Fornecedor Cadastro - Complete Data", False, f"Error: {str(e)}")
         
-        # Create test products with stock
-        products = [
-            {
-                "sku": "VEST-PRIN-001",
-                "nome": "Vestido Princesa Rosa - Tamanho 4",
-                "unidade": "UN",
-                "preco_custo": 25.00,
-                "preco_venda": 45.90,
-                "estoque_minimo": 5,
-                "estoque_maximo": 50,
-                "descricao": "Vestido infantil princesa cor rosa com detalhes em renda"
-            },
-            {
-                "sku": "TENIS-SPORT-002", 
-                "nome": "Tênis Esportivo Azul - Tamanho 28",
-                "unidade": "PAR",
-                "preco_custo": 35.00,
-                "preco_venda": 65.90,
-                "estoque_minimo": 3,
-                "estoque_maximo": 30,
-                "descricao": "Tênis esportivo infantil azul com velcro"
-            },
-            {
-                "sku": "BONECA-BABY-003",
-                "nome": "Boneca Baby Alive - Loira",
-                "unidade": "UN", 
-                "preco_custo": 45.00,
-                "preco_venda": 89.90,
-                "estoque_minimo": 2,
-                "estoque_maximo": 20,
-                "descricao": "Boneca interativa que fala e chora"
+        # Test 2: Create supplier with structured endereco (object)
+        supplier_with_address = {
+            "razao_social": "Brinquedos e Cia Ltda",
+            "cnpj": "98.765.432/0001-10",
+            "ie": "987.654.321.098",
+            "telefone": "(11) 2222-3333",
+            "email": "vendas@brinquedosecia.com.br",
+            "endereco": {
+                "logradouro": "Rua das Crianças",
+                "numero": "123",
+                "complemento": "Sala 45",
+                "bairro": "Vila Infantil",
+                "cidade": "São Paulo",
+                "estado": "SP",
+                "cep": "01234-567"
             }
-        ]
+        }
         
-        self.test_products = []
-        for product in products:
-            try:
-                response = requests.post(f"{self.base_url}/produtos", json=product, headers=self.get_headers())
-                if response.status_code == 200:
-                    product_data = response.json()
-                    self.test_products.append(product_data)
-                    self.log_test(f"Create Product {product['nome']}", True, "Product created successfully")
+        try:
+            response = requests.post(f"{self.base_url}/fornecedores", json=supplier_with_address, headers=self.get_headers())
+            if response.status_code == 200:
+                supplier_data = response.json()
+                # Verify endereco is stored as object with all fields
+                endereco = supplier_data.get("endereco", {})
+                expected_endereco = supplier_with_address["endereco"]
+                
+                if (isinstance(endereco, dict) and
+                    endereco.get("logradouro") == expected_endereco["logradouro"] and
+                    endereco.get("numero") == expected_endereco["numero"] and
+                    endereco.get("bairro") == expected_endereco["bairro"] and
+                    endereco.get("cidade") == expected_endereco["cidade"] and
+                    endereco.get("estado") == expected_endereco["estado"] and
+                    endereco.get("cep") == expected_endereco["cep"] and
+                    supplier_data.get("ativo") == True):
+                    
+                    self.test_suppliers.append(supplier_data)
+                    self.log_test("Fornecedor Cadastro - Structured Address", True, f"Supplier created with structured endereco object")
                 else:
-                    self.log_test(f"Create Product {product['nome']}", False, f"Failed: {response.text}")
-            except Exception as e:
-                self.log_test(f"Create Product {product['nome']}", False, f"Error: {str(e)}")
+                    self.log_test("Fornecedor Cadastro - Structured Address", False, f"Endereco structure incorrect: {endereco}")
+            else:
+                self.log_test("Fornecedor Cadastro - Structured Address", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Fornecedor Cadastro - Structured Address", False, f"Error: {str(e)}")
         
-        # Add stock to products by creating and confirming a fiscal note
-        if self.test_products:
-            # Create a supplier first
-            supplier_data = {
-                "razao_social": "Fornecedor Teste Ltda",
-                "cnpj": "12.345.678/0001-90",
-                "telefone": "(11) 3333-4444"
-            }
-            
-            try:
-                response = requests.post(f"{self.base_url}/fornecedores", json=supplier_data, headers=self.get_headers())
+        # Test 3: Verify ativo=true by default (minimal data)
+        supplier_minimal = {
+            "razao_social": "Fornecedor Mínimo Ltda",
+            "cnpj": "11.222.333/0001-44"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/fornecedores", json=supplier_minimal, headers=self.get_headers())
+            if response.status_code == 200:
+                supplier_data = response.json()
+                if supplier_data.get("ativo") == True:
+                    self.test_suppliers.append(supplier_data)
+                    self.log_test("Fornecedor Cadastro - Default Ativo", True, f"Minimal supplier created with ativo=True by default")
+                else:
+                    self.log_test("Fornecedor Cadastro - Default Ativo", False, f"ativo field not True by default: {supplier_data.get('ativo')}")
+            else:
+                self.log_test("Fornecedor Cadastro - Default Ativo", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Fornecedor Cadastro - Default Ativo", False, f"Error: {str(e)}")
+    
+    def test_fornecedores_listagem(self):
+        """Test Fornecedores LISTAGEM (GET /fornecedores?incluir_inativos=true) - Priority 2"""
+        print("\n=== TESTING FORNECEDORES LISTAGEM ===")
+        
+        # First, create an inactive supplier for testing
+        inactive_supplier = {
+            "razao_social": "Fornecedor Inativo Teste Ltda",
+            "cnpj": "55.666.777/0001-88"
+        }
+        
+        inactive_supplier_id = None
+        try:
+            response = requests.post(f"{self.base_url}/fornecedores", json=inactive_supplier, headers=self.get_headers())
+            if response.status_code == 200:
+                inactive_supplier_id = response.json()["id"]
+                # Deactivate the supplier
+                response = requests.put(f"{self.base_url}/fornecedores/{inactive_supplier_id}/toggle-status", headers=self.get_headers())
                 if response.status_code == 200:
-                    supplier_id = response.json()["id"]
+                    self.log_test("Setup Inactive Supplier", True, "Inactive supplier created for testing")
+                else:
+                    self.log_test("Setup Inactive Supplier", False, f"Failed to deactivate: {response.text}")
+            else:
+                self.log_test("Setup Inactive Supplier", False, f"Failed to create: {response.text}")
+        except Exception as e:
+            self.log_test("Setup Inactive Supplier", False, f"Error: {str(e)}")
+        
+        # Test 1: Fetch ALL suppliers (incluir_inativos=true)
+        try:
+            response = requests.get(f"{self.base_url}/fornecedores?incluir_inativos=true", headers=self.get_headers())
+            if response.status_code == 200:
+                all_suppliers = response.json()
+                
+                # Verify we have both active and inactive suppliers
+                active_count = sum(1 for s in all_suppliers if s.get("ativo") == True)
+                inactive_count = sum(1 for s in all_suppliers if s.get("ativo") == False)
+                
+                if len(all_suppliers) > 0 and inactive_count > 0:
+                    self.log_test("Fornecedores Listagem - All Suppliers", True, f"Retrieved {len(all_suppliers)} suppliers: {active_count} active, {inactive_count} inactive")
+                else:
+                    self.log_test("Fornecedores Listagem - All Suppliers", False, f"Expected active and inactive suppliers, got: {active_count} active, {inactive_count} inactive")
+                
+                # Verify required fields are present
+                if all_suppliers:
+                    sample_supplier = all_suppliers[0]
+                    required_fields = ["razao_social", "cnpj", "ativo"]
+                    missing_fields = [field for field in required_fields if field not in sample_supplier]
                     
-                    # Create fiscal note to add stock - FIX CALCULATION
-                    # 20 * 25.00 + 15 * 35.00 + 10 * 45.00 = 500 + 525 + 450 = 1475.00
-                    nota_data = {
-                        "numero": "000001",
-                        "serie": "1",
-                        "fornecedor_id": supplier_id,
-                        "data_emissao": datetime.now().isoformat(),
-                        "valor_total": 1475.00,  # Correct calculation
-                        "itens": [
-                            {"produto_id": self.test_products[0]["id"], "quantidade": 20, "preco_unitario": 25.00},
-                            {"produto_id": self.test_products[1]["id"], "quantidade": 15, "preco_unitario": 35.00},
-                            {"produto_id": self.test_products[2]["id"], "quantidade": 10, "preco_unitario": 45.00}
-                        ]
-                    }
-                    
-                    response = requests.post(f"{self.base_url}/notas-fiscais", json=nota_data, headers=self.get_headers())
-                    if response.status_code == 200:
-                        nota_id = response.json()["id"]
-                        
-                        # Confirm the fiscal note to add stock
-                        response = requests.post(f"{self.base_url}/notas-fiscais/{nota_id}/confirmar", headers=self.get_headers())
-                        if response.status_code == 200:
-                            self.log_test("Add Stock via Fiscal Note", True, "Stock added successfully")
+                    if not missing_fields:
+                        # Check if ie field is present (optional but should be in response)
+                        if "ie" in sample_supplier:
+                            self.log_test("Fornecedores Listagem - Required Fields", True, f"All required fields present: razao_social, cnpj, ie, ativo")
                         else:
-                            self.log_test("Add Stock via Fiscal Note", False, f"Failed to confirm note: {response.text}")
+                            self.log_test("Fornecedores Listagem - Required Fields", True, f"Required fields present: razao_social, cnpj, ativo (ie optional)")
                     else:
-                        self.log_test("Create Fiscal Note", False, f"Failed: {response.text}")
-                else:
-                    self.log_test("Create Supplier", False, f"Failed: {response.text}")
-            except Exception as e:
-                self.log_test("Setup Stock", False, f"Error: {str(e)}")
+                        self.log_test("Fornecedores Listagem - Required Fields", False, f"Missing fields: {missing_fields}")
+                
+            else:
+                self.log_test("Fornecedores Listagem - All Suppliers", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Fornecedores Listagem - All Suppliers", False, f"Error: {str(e)}")
         
-        return len(self.test_products) > 0
+        # Test 2: Fetch only active suppliers (default behavior)
+        try:
+            response = requests.get(f"{self.base_url}/fornecedores", headers=self.get_headers())
+            if response.status_code == 200:
+                active_suppliers = response.json()
+                
+                # Verify all returned suppliers are active
+                all_active = all(s.get("ativo") == True for s in active_suppliers)
+                
+                if all_active:
+                    self.log_test("Fornecedores Listagem - Active Only", True, f"Retrieved {len(active_suppliers)} active suppliers only")
+                else:
+                    inactive_in_active = [s for s in active_suppliers if s.get("ativo") != True]
+                    self.log_test("Fornecedores Listagem - Active Only", False, f"Found inactive suppliers in active list: {len(inactive_in_active)}")
+            else:
+                self.log_test("Fornecedores Listagem - Active Only", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Fornecedores Listagem - Active Only", False, f"Error: {str(e)}")
+    
+    def test_fornecedores_edicao(self):
+        """Test Fornecedores EDIÇÃO (PUT /fornecedores/{id}) - Priority 3"""
+        print("\n=== TESTING FORNECEDORES EDIÇÃO ===")
+        
+        if not self.test_suppliers:
+            self.log_test("Fornecedores Edição Tests", False, "No test suppliers available")
+            return
+        
+        # Use the first test supplier for editing
+        supplier = self.test_suppliers[0]
+        supplier_id = supplier["id"]
+        original_ativo = supplier.get("ativo")
+        
+        # Test 1: Edit supplier fields
+        update_data = {
+            "razao_social": "Distribuidora Infantil Atualizada Ltda",
+            "cnpj": supplier["cnpj"],  # Keep same CNPJ
+            "ie": "999.888.777.666",
+            "telefone": "(11) 9999-8888",
+            "email": "novo.contato@distribuidorainfantil.com.br",
+            "endereco": {
+                "logradouro": "Avenida das Crianças Felizes",
+                "numero": "456",
+                "complemento": "Andar 2",
+                "bairro": "Centro Infantil",
+                "cidade": "São Paulo",
+                "estado": "SP",
+                "cep": "09876-543"
+            }
+        }
+        
+        try:
+            response = requests.put(f"{self.base_url}/fornecedores/{supplier_id}", json=update_data, headers=self.get_headers())
+            if response.status_code == 200:
+                updated_supplier = response.json()
+                
+                # Verify fields are updated correctly
+                fields_correct = (
+                    updated_supplier.get("razao_social") == update_data["razao_social"] and
+                    updated_supplier.get("ie") == update_data["ie"] and
+                    updated_supplier.get("telefone") == update_data["telefone"] and
+                    updated_supplier.get("email") == update_data["email"]
+                )
+                
+                # Verify endereco is updated
+                endereco_correct = False
+                if isinstance(updated_supplier.get("endereco"), dict):
+                    endereco = updated_supplier["endereco"]
+                    endereco_correct = (
+                        endereco.get("logradouro") == update_data["endereco"]["logradouro"] and
+                        endereco.get("numero") == update_data["endereco"]["numero"] and
+                        endereco.get("cidade") == update_data["endereco"]["cidade"]
+                    )
+                
+                # Verify ativo field is preserved
+                ativo_preserved = updated_supplier.get("ativo") == original_ativo
+                
+                if fields_correct and endereco_correct and ativo_preserved:
+                    self.log_test("Fornecedores Edição - Update Fields", True, f"All fields updated correctly, ativo preserved: {original_ativo}")
+                else:
+                    issues = []
+                    if not fields_correct:
+                        issues.append("basic fields")
+                    if not endereco_correct:
+                        issues.append("endereco")
+                    if not ativo_preserved:
+                        issues.append(f"ativo changed from {original_ativo} to {updated_supplier.get('ativo')}")
+                    self.log_test("Fornecedores Edição - Update Fields", False, f"Issues with: {', '.join(issues)}")
+            else:
+                self.log_test("Fornecedores Edição - Update Fields", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Fornecedores Edição - Update Fields", False, f"Error: {str(e)}")
+        
+        # Test 2: Partial update (only some fields)
+        partial_update = {
+            "telefone": "(11) 7777-6666",
+            "email": "parcial@distribuidorainfantil.com.br"
+        }
+        
+        try:
+            response = requests.put(f"{self.base_url}/fornecedores/{supplier_id}", json=partial_update, headers=self.get_headers())
+            if response.status_code == 200:
+                updated_supplier = response.json()
+                
+                # Verify only updated fields changed
+                if (updated_supplier.get("telefone") == partial_update["telefone"] and
+                    updated_supplier.get("email") == partial_update["email"] and
+                    updated_supplier.get("ativo") == original_ativo):
+                    self.log_test("Fornecedores Edição - Partial Update", True, f"Partial update successful, ativo preserved")
+                else:
+                    self.log_test("Fornecedores Edição - Partial Update", False, f"Partial update failed: {updated_supplier}")
+            else:
+                self.log_test("Fornecedores Edição - Partial Update", False, f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Fornecedores Edição - Partial Update", False, f"Error: {str(e)}")
+    
+    def test_fornecedores_toggle_status(self):
+        """Test Fornecedores VALIDAÇÃO TOGGLE-STATUS (PUT /fornecedores/{id}/toggle-status) - Priority 4"""
+        print("\n=== TESTING FORNECEDORES TOGGLE-STATUS VALIDATION ===")
+        
+        # Create test data for dependency validation
+        self.setup_dependency_test_data()
+        
+        if not self.test_suppliers:
+            self.log_test("Toggle-Status Tests", False, "No test suppliers available")
+            return
+        
+        # Test 1: Try to deactivate supplier with active products linked (should FAIL)
+        if hasattr(self, 'supplier_with_products_id'):
+            try:
+                response = requests.put(f"{self.base_url}/fornecedores/{self.supplier_with_products_id}/toggle-status", headers=self.get_headers())
+                if response.status_code == 400:
+                    error_msg = response.json().get("detail", response.text)
+                    if "produto" in error_msg.lower() and "ativo" in error_msg.lower():
+                        self.log_test("Toggle-Status - Products Dependency", True, f"Correctly blocked deactivation: {error_msg}")
+                    else:
+                        self.log_test("Toggle-Status - Products Dependency", False, f"Wrong error message: {error_msg}")
+                else:
+                    self.log_test("Toggle-Status - Products Dependency", False, f"Expected 400 but got {response.status_code}: {response.text}")
+            except Exception as e:
+                self.log_test("Toggle-Status - Products Dependency", False, f"Error: {str(e)}")
+        
+        # Test 2: Try to deactivate supplier with pending fiscal notes (should FAIL)
+        if hasattr(self, 'supplier_with_notes_id'):
+            try:
+                response = requests.put(f"{self.base_url}/fornecedores/{self.supplier_with_notes_id}/toggle-status", headers=self.get_headers())
+                if response.status_code == 400:
+                    error_msg = response.json().get("detail", response.text)
+                    if "nota" in error_msg.lower() and ("pendente" in error_msg.lower() or "rascunho" in error_msg.lower()):
+                        self.log_test("Toggle-Status - Fiscal Notes Dependency", True, f"Correctly blocked deactivation: {error_msg}")
+                    else:
+                        self.log_test("Toggle-Status - Fiscal Notes Dependency", False, f"Wrong error message: {error_msg}")
+                else:
+                    self.log_test("Toggle-Status - Fiscal Notes Dependency", False, f"Expected 400 but got {response.status_code}: {response.text}")
+            except Exception as e:
+                self.log_test("Toggle-Status - Fiscal Notes Dependency", False, f"Error: {str(e)}")
+        
+        # Test 3: Deactivate supplier WITHOUT dependencies (should SUCCEED)
+        clean_supplier_id = None
+        if len(self.test_suppliers) > 2:
+            clean_supplier_id = self.test_suppliers[2]["id"]  # Use third supplier (should be clean)
+        
+        if clean_supplier_id:
+            try:
+                response = requests.put(f"{self.base_url}/fornecedores/{clean_supplier_id}/toggle-status", headers=self.get_headers())
+                if response.status_code == 200:
+                    result = response.json()
+                    if result.get("ativo") == False:
+                        self.log_test("Toggle-Status - Deactivate Clean Supplier", True, f"Successfully deactivated supplier without dependencies")
+                        self.deactivated_supplier_id = clean_supplier_id
+                    else:
+                        self.log_test("Toggle-Status - Deactivate Clean Supplier", False, f"Supplier not deactivated: {result}")
+                else:
+                    self.log_test("Toggle-Status - Deactivate Clean Supplier", False, f"HTTP {response.status_code}: {response.text}")
+            except Exception as e:
+                self.log_test("Toggle-Status - Deactivate Clean Supplier", False, f"Error: {str(e)}")
+        
+        # Test 4: Reactivate inactive supplier (should SUCCEED)
+        if hasattr(self, 'deactivated_supplier_id'):
+            try:
+                response = requests.put(f"{self.base_url}/fornecedores/{self.deactivated_supplier_id}/toggle-status", headers=self.get_headers())
+                if response.status_code == 200:
+                    result = response.json()
+                    if result.get("ativo") == True:
+                        self.log_test("Toggle-Status - Reactivate Supplier", True, f"Successfully reactivated inactive supplier")
+                    else:
+                        self.log_test("Toggle-Status - Reactivate Supplier", False, f"Supplier not reactivated: {result}")
+                else:
+                    self.log_test("Toggle-Status - Reactivate Supplier", False, f"HTTP {response.status_code}: {response.text}")
+            except Exception as e:
+                self.log_test("Toggle-Status - Reactivate Supplier", False, f"Error: {str(e)}")
+    
+    def setup_dependency_test_data(self):
+        """Create test data for dependency validation tests"""
+        print("\n--- Setting up dependency test data ---")
+        
+        # Create supplier for products dependency test
+        supplier_for_products = {
+            "razao_social": "Fornecedor com Produtos Ativos Ltda",
+            "cnpj": "77.888.999/0001-11"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/fornecedores", json=supplier_for_products, headers=self.get_headers())
+            if response.status_code == 200:
+                self.supplier_with_products_id = response.json()["id"]
+                
+                # Create a product linked to this supplier
+                product_data = {
+                    "sku": "TEST-PROD-001",
+                    "nome": "Produto Teste Dependência",
+                    "preco_custo": 10.00,
+                    "preco_venda": 20.00,
+                    "fornecedor_preferencial_id": self.supplier_with_products_id
+                }
+                
+                response = requests.post(f"{self.base_url}/produtos", json=product_data, headers=self.get_headers())
+                if response.status_code == 200:
+                    self.log_test("Setup Products Dependency", True, "Created supplier with linked active product")
+                else:
+                    self.log_test("Setup Products Dependency", False, f"Failed to create product: {response.text}")
+            else:
+                self.log_test("Setup Products Dependency", False, f"Failed to create supplier: {response.text}")
+        except Exception as e:
+            self.log_test("Setup Products Dependency", False, f"Error: {str(e)}")
+        
+        # Create supplier for fiscal notes dependency test
+        supplier_for_notes = {
+            "razao_social": "Fornecedor com Notas Pendentes Ltda",
+            "cnpj": "33.444.555/0001-22"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/fornecedores", json=supplier_for_notes, headers=self.get_headers())
+            if response.status_code == 200:
+                self.supplier_with_notes_id = response.json()["id"]
+                
+                # Create a pending fiscal note for this supplier
+                nota_data = {
+                    "numero": "NF-TEST-001",
+                    "serie": "1",
+                    "fornecedor_id": self.supplier_with_notes_id,
+                    "data_emissao": datetime.now().isoformat(),
+                    "valor_total": 100.00,
+                    "itens": []
+                }
+                
+                response = requests.post(f"{self.base_url}/notas-fiscais", json=nota_data, headers=self.get_headers())
+                if response.status_code == 200:
+                    self.log_test("Setup Fiscal Notes Dependency", True, "Created supplier with pending fiscal note")
+                else:
+                    self.log_test("Setup Fiscal Notes Dependency", False, f"Failed to create fiscal note: {response.text}")
+            else:
+                self.log_test("Setup Fiscal Notes Dependency", False, f"Failed to create supplier: {response.text}")
+        except Exception as e:
+            self.log_test("Setup Fiscal Notes Dependency", False, f"Error: {str(e)}")
     
     def test_stock_check_endpoint(self):
         """Test the stock availability check endpoint"""
