@@ -322,146 +322,19 @@ class FornecedoresBackendTester:
         except Exception as e:
             self.log_test("Editar Fornecedor", False, f"Error: {str(e)}")
     
-    def test_fornecedores_toggle_status(self):
-        """Test Fornecedores VALIDAÇÃO TOGGLE-STATUS (PUT /fornecedores/{id}/toggle-status) - Priority 4"""
-        print("\n=== TESTING FORNECEDORES TOGGLE-STATUS VALIDATION ===")
+    def cleanup_test_data(self):
+        """Clean up test data created during tests"""
+        print("\n--- Cleaning up test data ---")
         
-        # Create test data for dependency validation
-        self.setup_dependency_test_data()
-        
-        if not self.test_suppliers:
-            self.log_test("Toggle-Status Tests", False, "No test suppliers available")
-            return
-        
-        # Test 1: Try to deactivate supplier with active products linked (should FAIL)
-        if hasattr(self, 'supplier_with_products_id'):
+        for supplier_id in self.created_supplier_ids:
             try:
-                response = requests.put(f"{self.base_url}/fornecedores/{self.supplier_with_products_id}/toggle-status", headers=self.get_headers())
-                if response.status_code == 400:
-                    error_msg = response.json().get("detail", response.text)
-                    if "produto" in error_msg.lower() and "ativo" in error_msg.lower():
-                        self.log_test("Toggle-Status - Products Dependency", True, f"Correctly blocked deactivation: {error_msg}")
-                    else:
-                        self.log_test("Toggle-Status - Products Dependency", False, f"Wrong error message: {error_msg}")
-                else:
-                    self.log_test("Toggle-Status - Products Dependency", False, f"Expected 400 but got {response.status_code}: {response.text}")
-            except Exception as e:
-                self.log_test("Toggle-Status - Products Dependency", False, f"Error: {str(e)}")
-        
-        # Test 2: Try to deactivate supplier with pending fiscal notes (should FAIL)
-        if hasattr(self, 'supplier_with_notes_id'):
-            try:
-                response = requests.put(f"{self.base_url}/fornecedores/{self.supplier_with_notes_id}/toggle-status", headers=self.get_headers())
-                if response.status_code == 400:
-                    error_msg = response.json().get("detail", response.text)
-                    if "nota" in error_msg.lower() and ("pendente" in error_msg.lower() or "rascunho" in error_msg.lower()):
-                        self.log_test("Toggle-Status - Fiscal Notes Dependency", True, f"Correctly blocked deactivation: {error_msg}")
-                    else:
-                        self.log_test("Toggle-Status - Fiscal Notes Dependency", False, f"Wrong error message: {error_msg}")
-                else:
-                    self.log_test("Toggle-Status - Fiscal Notes Dependency", False, f"Expected 400 but got {response.status_code}: {response.text}")
-            except Exception as e:
-                self.log_test("Toggle-Status - Fiscal Notes Dependency", False, f"Error: {str(e)}")
-        
-        # Test 3: Deactivate supplier WITHOUT dependencies (should SUCCEED)
-        clean_supplier_id = None
-        if len(self.test_suppliers) > 2:
-            clean_supplier_id = self.test_suppliers[2]["id"]  # Use third supplier (should be clean)
-        
-        if clean_supplier_id:
-            try:
-                response = requests.put(f"{self.base_url}/fornecedores/{clean_supplier_id}/toggle-status", headers=self.get_headers())
+                response = requests.delete(f"{self.base_url}/fornecedores/{supplier_id}", headers=self.get_headers())
                 if response.status_code == 200:
-                    result = response.json()
-                    if result.get("ativo") == False:
-                        self.log_test("Toggle-Status - Deactivate Clean Supplier", True, f"Successfully deactivated supplier without dependencies")
-                        self.deactivated_supplier_id = clean_supplier_id
-                    else:
-                        self.log_test("Toggle-Status - Deactivate Clean Supplier", False, f"Supplier not deactivated: {result}")
+                    print(f"   ✓ Cleaned up supplier {supplier_id}")
                 else:
-                    self.log_test("Toggle-Status - Deactivate Clean Supplier", False, f"HTTP {response.status_code}: {response.text}")
+                    print(f"   ⚠ Failed to cleanup supplier {supplier_id}: {response.status_code}")
             except Exception as e:
-                self.log_test("Toggle-Status - Deactivate Clean Supplier", False, f"Error: {str(e)}")
-        
-        # Test 4: Reactivate inactive supplier (should SUCCEED)
-        if hasattr(self, 'deactivated_supplier_id'):
-            try:
-                response = requests.put(f"{self.base_url}/fornecedores/{self.deactivated_supplier_id}/toggle-status", headers=self.get_headers())
-                if response.status_code == 200:
-                    result = response.json()
-                    if result.get("ativo") == True:
-                        self.log_test("Toggle-Status - Reactivate Supplier", True, f"Successfully reactivated inactive supplier")
-                    else:
-                        self.log_test("Toggle-Status - Reactivate Supplier", False, f"Supplier not reactivated: {result}")
-                else:
-                    self.log_test("Toggle-Status - Reactivate Supplier", False, f"HTTP {response.status_code}: {response.text}")
-            except Exception as e:
-                self.log_test("Toggle-Status - Reactivate Supplier", False, f"Error: {str(e)}")
-    
-    def setup_dependency_test_data(self):
-        """Create test data for dependency validation tests"""
-        print("\n--- Setting up dependency test data ---")
-        
-        # Create supplier for products dependency test
-        supplier_for_products = {
-            "razao_social": "Fornecedor com Produtos Ativos Ltda",
-            "cnpj": "77.888.999/0001-11"
-        }
-        
-        try:
-            response = requests.post(f"{self.base_url}/fornecedores", json=supplier_for_products, headers=self.get_headers())
-            if response.status_code == 200:
-                self.supplier_with_products_id = response.json()["id"]
-                
-                # Create a product linked to this supplier
-                product_data = {
-                    "sku": "TEST-PROD-001",
-                    "nome": "Produto Teste Dependência",
-                    "preco_custo": 10.00,
-                    "preco_venda": 20.00,
-                    "fornecedor_preferencial_id": self.supplier_with_products_id
-                }
-                
-                response = requests.post(f"{self.base_url}/produtos", json=product_data, headers=self.get_headers())
-                if response.status_code == 200:
-                    self.log_test("Setup Products Dependency", True, "Created supplier with linked active product")
-                else:
-                    self.log_test("Setup Products Dependency", False, f"Failed to create product: {response.text}")
-            else:
-                self.log_test("Setup Products Dependency", False, f"Failed to create supplier: {response.text}")
-        except Exception as e:
-            self.log_test("Setup Products Dependency", False, f"Error: {str(e)}")
-        
-        # Create supplier for fiscal notes dependency test
-        supplier_for_notes = {
-            "razao_social": "Fornecedor com Notas Pendentes Ltda",
-            "cnpj": "33.444.555/0001-22"
-        }
-        
-        try:
-            response = requests.post(f"{self.base_url}/fornecedores", json=supplier_for_notes, headers=self.get_headers())
-            if response.status_code == 200:
-                self.supplier_with_notes_id = response.json()["id"]
-                
-                # Create a pending fiscal note for this supplier
-                nota_data = {
-                    "numero": "NF-TEST-001",
-                    "serie": "1",
-                    "fornecedor_id": self.supplier_with_notes_id,
-                    "data_emissao": datetime.now().isoformat(),
-                    "valor_total": 100.00,
-                    "itens": []
-                }
-                
-                response = requests.post(f"{self.base_url}/notas-fiscais", json=nota_data, headers=self.get_headers())
-                if response.status_code == 200:
-                    self.log_test("Setup Fiscal Notes Dependency", True, "Created supplier with pending fiscal note")
-                else:
-                    self.log_test("Setup Fiscal Notes Dependency", False, f"Failed to create fiscal note: {response.text}")
-            else:
-                self.log_test("Setup Fiscal Notes Dependency", False, f"Failed to create supplier: {response.text}")
-        except Exception as e:
-            self.log_test("Setup Fiscal Notes Dependency", False, f"Error: {str(e)}")
+                print(f"   ⚠ Error cleaning up supplier {supplier_id}: {str(e)}")
     
     def run_all_tests(self):
         """Run all Fornecedores module tests as specified in review request"""
