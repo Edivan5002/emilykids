@@ -5,7 +5,7 @@ Quick RBAC test after fixing action names
 
 import requests
 
-BACKEND_URL = "https://kids-retail-dash.preview.emergentagent.com/api"
+BACKEND_URL = "https://kidstore-admin.preview.emergentagent.com/api"
 
 def quick_test():
     # Login users

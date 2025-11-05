@@ -12,7 +12,7 @@ import sys
 import os
 
 # Backend URL from environment
-BACKEND_URL = "https://kids-retail-dash.preview.emergentagent.com/api"
+BACKEND_URL = "https://kidstore-admin.preview.emergentagent.com/api"
 
 class ComprehensiveTester:
     def __init__(self):

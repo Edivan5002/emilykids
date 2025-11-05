@@ -6,7 +6,7 @@ Focused RBAC Test - Test the corrected endpoints
 import requests
 import json
 
-BACKEND_URL = "https://kids-retail-dash.preview.emergentagent.com/api"
+BACKEND_URL = "https://kidstore-admin.preview.emergentagent.com/api"
 
 def test_corrected_endpoints():
     """Test the endpoints that were just corrected"""
