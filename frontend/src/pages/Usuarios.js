@@ -363,21 +363,23 @@ const Usuarios = () => {
                         )}
                       </div>
                       
-                      <p className="text-sm text-gray-600 mb-3">{usuario.email}</p>
+                      <p className="text-sm text-gray-600">{usuario.email}</p>
                       
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 mt-1">
                         <Shield size={14} className="text-gray-400" />
-                        {userRole ? (
+                        <span className="text-sm text-gray-500">Papel:</span>
+                        {usuario.papel ? (
+                          <span className="text-sm font-medium capitalize">{usuario.papel}</span>
+                        ) : userRole ? (
                           <div className="flex items-center gap-2">
                             <div 
                               className="w-2 h-2 rounded-full" 
                               style={{ backgroundColor: userRole.cor }}
                             />
                             <span className="text-sm font-medium">{userRole.nome}</span>
-                            <span className="text-sm text-gray-500">({userRole.permissoes.length} permissões)</span>
                           </div>
                         ) : (
-                          <span className="text-sm text-gray-400">Sem papel RBAC</span>
+                          <span className="text-sm text-gray-400">Não definido</span>
                         )}
                       </div>
                     </div>
