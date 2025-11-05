@@ -2639,8 +2639,9 @@ async def toggle_fornecedor_status(fornecedor_id: str, current_user: dict = Depe
     
     novo_status = not fornecedor.get("ativo", True)
     
-    # Se estiver inativando, verificar notas fiscais pendentes
+    # Se estiver inativando, verificar dependências
     if not novo_status:
+        # Verificar notas fiscais pendentes
         notas_pendentes = await db.notas_fiscais.count_documents({
             "fornecedor_id": fornecedor_id,
             "status": {"$in": ["rascunho", "aguardando_aprovacao", "aprovada"]}
@@ -2649,6 +2650,17 @@ async def toggle_fornecedor_status(fornecedor_id: str, current_user: dict = Depe
             raise HTTPException(
                 status_code=400,
                 detail=f"Não é possível inativar o fornecedor '{fornecedor['razao_social']}' pois existem {notas_pendentes} nota(s) fiscal(is) pendente(s). Confirme ou cancele as notas primeiro."
+            )
+        
+        # Verificar produtos ativos que usam este fornecedor
+        produtos_ativos = await db.produtos.count_documents({
+            "fornecedor_preferencial_id": fornecedor_id,
+            "ativo": True
+        })
+        if produtos_ativos > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Não é possível inativar o fornecedor '{fornecedor['razao_social']}' pois existem {produtos_ativos} produto(s) ativo(s) vinculado(s) a ele. Inative os produtos ou altere o fornecedor preferencial primeiro."
             )
     
     # Atualizar status
