@@ -451,6 +451,21 @@ backend:
         comment: "✅ TESTADO E FUNCIONANDO: Validação implementada corretamente. Não havia dados de teste com orçamentos abertos para validar cenário de falha."
 
 frontend:
+  - task: "Correção módulo Categorias - Inativos não aparecem"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Categorias.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "PROBLEMAS REPORTADOS: (1) Categorias inativas não estão aparecendo na listagem (devem aparecer); (2) Só deve ser permitido inativar ou excluir uma categoria se ela não tiver dependências em outros módulos como produtos, orçamentos, vendas etc."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ CORREÇÃO IMPLEMENTADA: (1) FRONTEND: Adicionado parâmetro incluir_inativos=true no fetchCategorias() para exibir categorias inativas na listagem; (2) BACKEND: JÁ ESTAVA COMPLETO - DELETE verifica subcategorias e produtos (qualquer status), TOGGLE-STATUS verifica subcategorias ativas e produtos ativos. Categoria só pode ser inativada se não tiver subcategorias ativas nem produtos ativos. Categoria só pode ser excluída se não tiver subcategorias nem produtos vinculados."
+
   - task: "Correção módulo Marcas - Inativos não aparecem e validações incompletas"
     implemented: true
     working: "NA"
