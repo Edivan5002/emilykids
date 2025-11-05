@@ -533,9 +533,9 @@ const Produtos = () => {
                     <div>
                       <Label>Fornecedor Preferencial</Label>
                       <Select value={formData.fornecedor_preferencial_id} onValueChange={(value) => setFormData({ ...formData, fornecedor_preferencial_id: value })}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectTrigger className="text-black"><SelectValue placeholder="Selecione" className="text-black" /></SelectTrigger>
                         <SelectContent>
-                          {fornecedores.map(f => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}
+                          {fornecedores.map(f => <SelectItem key={f.id} value={f.id} className="text-black">{f.razao_social}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
