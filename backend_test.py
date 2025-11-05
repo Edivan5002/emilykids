@@ -488,9 +488,9 @@ class FornecedoresBackendTester:
     
     def print_summary(self):
         """Print test results summary"""
-        print("\n" + "=" * 60)
-        print("📊 FORNECEDORES MODULE TEST RESULTS SUMMARY")
-        print("=" * 60)
+        print("\n" + "=" * 80)
+        print("📊 FORNECEDORES MODULE - CORREÇÃO CRÍTICA - TEST RESULTS")
+        print("=" * 80)
         
         passed = sum(1 for result in self.test_results if result["success"])
         failed = len(self.test_results) - passed
@@ -499,13 +499,20 @@ class FornecedoresBackendTester:
         print(f"❌ FAILED: {failed}")
         print(f"📈 SUCCESS RATE: {(passed/len(self.test_results)*100):.1f}%")
         
+        print(f"\n🎯 FOCO DO TESTE:")
+        print(f"   - Verificar que NÃO ocorre mais erro 422 ao cadastrar com campos opcionais vazios")
+        print(f"   - Confirmar que backend aceita null para campos opcionais (ie, telefone, email, endereco)")
+        print(f"   - Validar que EmailStr não rejeita mais strings vazias")
+        
         if failed > 0:
             print(f"\n🔍 FAILED TESTS:")
             for result in self.test_results:
                 if not result["success"]:
                     print(f"   ❌ {result['test']}: {result['message']}")
+        else:
+            print(f"\n🎉 ALL TESTS PASSED! Bug fix is working correctly.")
         
-        print("\n" + "=" * 60)
+        print("\n" + "=" * 80)
     
     def test_budget_stock_validation(self):
         """Test stock validation in budget creation"""
