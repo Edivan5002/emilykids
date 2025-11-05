@@ -757,6 +757,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Refatoração módulo Notas Fiscais - Cancelamento ao invés de Exclusão"
     - "Correção módulo Produtos - Erros ao cadastrar e dropdown vazio"
     - "Correção módulo Subcategorias - Inativos não aparecem"
     - "Correção módulo Categorias - Inativos não aparecem"
