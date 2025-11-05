@@ -42,7 +42,7 @@ const Clientes = () => {
 
   const fetchClientes = async () => {
     try {
-      const response = await axios.get(`${API}/clientes`);
+      const response = await axios.get(`${API}/clientes?incluir_inativos=true`);
       setClientes(response.data);
       setFilteredClientes(response.data);
     } catch (error) {
