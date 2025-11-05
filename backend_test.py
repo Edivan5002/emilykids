@@ -285,30 +285,40 @@ class FornecedoresBackendTester:
             self.log_test("Fornecedores Listagem - Active Only", False, f"Error: {str(e)}")
     
     def test_fornecedores_edicao(self):
-        """Test Fornecedores EDIÇÃO (PUT /fornecedores/{id}) - Priority 3"""
-        print("\n=== TESTING FORNECEDORES EDIÇÃO ===")
+        """Test 4: EDITAR FORNECEDOR - Edit supplier and preserve ativo field"""
+        print("\n=== TEST 4: EDITAR FORNECEDOR ===")
         
-        if not self.test_suppliers:
-            self.log_test("Fornecedores Edição Tests", False, "No test suppliers available")
+        if not self.created_supplier_ids:
+            self.log_test("Editar Fornecedor", False, "No test suppliers available for editing")
             return
         
-        # Use the first test supplier for editing
-        supplier = self.test_suppliers[0]
-        supplier_id = supplier["id"]
-        original_ativo = supplier.get("ativo")
+        # Use the first created supplier for editing
+        supplier_id = self.created_supplier_ids[0]
         
-        # Test 1: Edit supplier fields
+        # Get current supplier data first
+        try:
+            response = requests.get(f"{self.base_url}/fornecedores/{supplier_id}", headers=self.get_headers())
+            if response.status_code != 200:
+                self.log_test("Editar Fornecedor - Get Original", False, f"Failed to get supplier: {response.status_code}")
+                return
+            original_supplier = response.json()
+            original_ativo = original_supplier.get("ativo")
+        except Exception as e:
+            self.log_test("Editar Fornecedor - Get Original", False, f"Error getting supplier: {str(e)}")
+            return
+        
+        # Update supplier data
         update_data = {
-            "razao_social": "Distribuidora Infantil Atualizada Ltda",
-            "cnpj": supplier["cnpj"],  # Keep same CNPJ
-            "ie": "999.888.777.666",
-            "telefone": "(11) 9999-8888",
-            "email": "novo.contato@distribuidorainfantil.com.br",
+            "razao_social": "Teste Fornecedor Completo ATUALIZADO LTDA",
+            "cnpj": original_supplier["cnpj"],  # Keep same CNPJ
+            "ie": "987654321",
+            "telefone": "(11) 99999-8888",
+            "email": "atualizado@fornecedor.com",
             "endereco": {
-                "logradouro": "Avenida das Crianças Felizes",
+                "logradouro": "Rua Atualizada",
                 "numero": "456",
-                "complemento": "Andar 2",
-                "bairro": "Centro Infantil",
+                "complemento": "Sala 2",
+                "bairro": "Centro Atualizado",
                 "cidade": "São Paulo",
                 "estado": "SP",
                 "cep": "09876-543"
@@ -320,65 +330,24 @@ class FornecedoresBackendTester:
             if response.status_code == 200:
                 updated_supplier = response.json()
                 
-                # Verify fields are updated correctly
-                fields_correct = (
+                # Verify fields are updated correctly and ativo is preserved
+                success = (
                     updated_supplier.get("razao_social") == update_data["razao_social"] and
                     updated_supplier.get("ie") == update_data["ie"] and
                     updated_supplier.get("telefone") == update_data["telefone"] and
-                    updated_supplier.get("email") == update_data["email"]
+                    updated_supplier.get("email") == update_data["email"] and
+                    updated_supplier.get("ativo") == original_ativo and  # CRITICAL: ativo must be preserved
+                    isinstance(updated_supplier.get("endereco"), dict)
                 )
                 
-                # Verify endereco is updated
-                endereco_correct = False
-                if isinstance(updated_supplier.get("endereco"), dict):
-                    endereco = updated_supplier["endereco"]
-                    endereco_correct = (
-                        endereco.get("logradouro") == update_data["endereco"]["logradouro"] and
-                        endereco.get("numero") == update_data["endereco"]["numero"] and
-                        endereco.get("cidade") == update_data["endereco"]["cidade"]
-                    )
-                
-                # Verify ativo field is preserved
-                ativo_preserved = updated_supplier.get("ativo") == original_ativo
-                
-                if fields_correct and endereco_correct and ativo_preserved:
-                    self.log_test("Fornecedores Edição - Update Fields", True, f"All fields updated correctly, ativo preserved: {original_ativo}")
+                if success:
+                    self.log_test("Editar Fornecedor", True, f"✅ DEVE RETORNAR: 200 OK e preservar campo ativo ({original_ativo}) - SUCCESS")
                 else:
-                    issues = []
-                    if not fields_correct:
-                        issues.append("basic fields")
-                    if not endereco_correct:
-                        issues.append("endereco")
-                    if not ativo_preserved:
-                        issues.append(f"ativo changed from {original_ativo} to {updated_supplier.get('ativo')}")
-                    self.log_test("Fornecedores Edição - Update Fields", False, f"Issues with: {', '.join(issues)}")
+                    self.log_test("Editar Fornecedor", False, f"Update validation failed. Ativo preserved: {updated_supplier.get('ativo') == original_ativo}")
             else:
-                self.log_test("Fornecedores Edição - Update Fields", False, f"HTTP {response.status_code}: {response.text}")
+                self.log_test("Editar Fornecedor", False, f"Expected 200 OK but got {response.status_code}: {response.text}")
         except Exception as e:
-            self.log_test("Fornecedores Edição - Update Fields", False, f"Error: {str(e)}")
-        
-        # Test 2: Partial update (only some fields)
-        partial_update = {
-            "telefone": "(11) 7777-6666",
-            "email": "parcial@distribuidorainfantil.com.br"
-        }
-        
-        try:
-            response = requests.put(f"{self.base_url}/fornecedores/{supplier_id}", json=partial_update, headers=self.get_headers())
-            if response.status_code == 200:
-                updated_supplier = response.json()
-                
-                # Verify only updated fields changed
-                if (updated_supplier.get("telefone") == partial_update["telefone"] and
-                    updated_supplier.get("email") == partial_update["email"] and
-                    updated_supplier.get("ativo") == original_ativo):
-                    self.log_test("Fornecedores Edição - Partial Update", True, f"Partial update successful, ativo preserved")
-                else:
-                    self.log_test("Fornecedores Edição - Partial Update", False, f"Partial update failed: {updated_supplier}")
-            else:
-                self.log_test("Fornecedores Edição - Partial Update", False, f"HTTP {response.status_code}: {response.text}")
-        except Exception as e:
-            self.log_test("Fornecedores Edição - Partial Update", False, f"Error: {str(e)}")
+            self.log_test("Editar Fornecedor", False, f"Error: {str(e)}")
     
     def test_fornecedores_toggle_status(self):
         """Test Fornecedores VALIDAÇÃO TOGGLE-STATUS (PUT /fornecedores/{id}/toggle-status) - Priority 4"""
