@@ -118,11 +118,20 @@ const Fornecedores = () => {
     setIsEditing(false);
     setEditingId(null);
     setFormData({
-      nome: '',
+      razao_social: '',
       cnpj: '',
+      ie: '',
       telefone: '',
       email: '',
-      endereco: '',
+      endereco: {
+        logradouro: '',
+        numero: '',
+        complemento: '',
+        bairro: '',
+        cidade: '',
+        estado: '',
+        cep: ''
+      },
       ativo: true
     });
   };
