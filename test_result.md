@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "NOVA TAREFA: Módulo Clientes - (1) Clientes INATIVOS devem aparecer na listagem de gerenciamento, (2) Validação já existe: só permite inativar cliente se não houver orçamentos abertos ou vendas pendentes."
+user_problem_statement: "NOVA TAREFA: Módulo Fornecedores - (1) ERRO ao cadastrar fornecedor, (2) ERRO ao editar fornecedor, (3) Fornecedores INATIVOS não aparecem na listagem (devem aparecer), (4) Validação: só permite inativar fornecedor se não houver associações com outros módulos (notas fiscais, produtos ativos, orçamentos, vendas)."
 
 backend:
   - task: "Correção RBAC - Módulo Produtos (9 endpoints CRUD)"
