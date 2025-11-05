@@ -147,11 +147,11 @@ const Fornecedores = () => {
           <DialogTrigger asChild>
             <Button data-testid="add-fornecedor-btn"><Plus className="mr-2" size={18} />Novo Fornecedor</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{isEditing ? 'Editar Fornecedor' : 'Novo Fornecedor'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+            <form onSubmit={handleSubmit} className="space-y-4 pr-2">
               <div>
                 <Label>Razão Social *</Label>
                 <Input value={formData.razao_social} onChange={(e) => setFormData({ ...formData, razao_social: e.target.value })} required />
