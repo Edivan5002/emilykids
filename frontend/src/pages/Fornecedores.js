@@ -41,7 +41,7 @@ const Fornecedores = () => {
 
   const fetchFornecedores = async () => {
     try {
-      const response = await axios.get(`${API}/fornecedores`);
+      const response = await axios.get(`${API}/fornecedores?incluir_inativos=true`);
       setFornecedores(response.data);
     } catch (error) {
       toast.error('Erro ao carregar fornecedores');
