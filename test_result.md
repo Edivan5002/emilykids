@@ -569,17 +569,50 @@ frontend:
         agent: "main"
         comment: "Atualizada função handleAddItem para chamar endpoint de verificação de estoque antes de adicionar item. Mostra mensagem de erro detalhada se estoque insuficiente"
 
-  - task: "Exibir clientes inativos na listagem de gerenciamento"
+  - task: "Correção módulo Fornecedores - Cadastro e Edição"
     implemented: true
     working: "NA"
-    file: "/app/frontend/src/pages/Clientes.js"
+    file: "/app/frontend/src/pages/Fornecedores.js, /app/backend/server.py"
     stuck_count: 0
     priority: "high"
     needs_retesting: true
     status_history:
+      - working: false
+        agent: "user"
+        comment: "PROBLEMA REPORTADO: Erro ao cadastrar fornecedor, erro ao editar fornecedor. Frontend estava usando campo 'nome' mas backend espera 'razao_social'."
       - working: "NA"
         agent: "main"
-        comment: "✅ IMPLEMENTADO: Modificado fetchClientes() para incluir parâmetro incluir_inativos=true na chamada do endpoint GET /clientes. Agora a listagem exibe TODOS os clientes (ativos e inativos). Backend já tinha validações de dependências implementadas (orçamentos abertos e vendas pendentes). Interface já exibe badge visual indicando status ativo/inativo."
+        comment: "✅ IMPLEMENTADO: (1) Corrigido frontend para usar 'razao_social' ao invés de 'nome'; (2) Adicionado campo 'ie' (Inscrição Estadual) no formulário; (3) Corrigida estrutura do campo 'endereco' (agora é objeto com logradouro, numero, complemento, bairro, cidade, estado, cep); (4) Atualizada tabela para exibir razao_social e ie; (5) Formulário reorganizado com grid layout para melhor UX; (6) Adicionado scroll no formulário para campos de endereço completos."
+
+  - task: "Exibir fornecedores inativos na listagem"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Fornecedores.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "PROBLEMA REPORTADO: Fornecedores inativos não aparecem na listagem de gerenciamento."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTADO: Modificado fetchFornecedores() para incluir parâmetro incluir_inativos=true na chamada do endpoint GET /fornecedores. Agora a listagem exibe TODOS os fornecedores (ativos e inativos). Interface já exibe badge visual indicando status ativo/inativo."
+
+  - task: "Validação dependências ao inativar Fornecedor"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "PROBLEMA REPORTADO: Falta validação de dependências - fornecedor só deve ser inativado se não tiver associações com outros módulos."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTADO: Adicionadas validações no endpoint PUT /fornecedores/{id}/toggle-status: (1) Verifica notas fiscais pendentes (rascunho, aguardando_aprovacao, aprovada); (2) Verifica produtos ATIVOS que usam este fornecedor como fornecedor_preferencial_id. Mensagens de erro claras indicam tipo e quantidade de dependências que impedem a inativação."
 
 metadata:
   created_by: "main_agent"
