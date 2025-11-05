@@ -29,7 +29,7 @@ const Subcategorias = () => {
   const fetchData = async () => {
     try {
       const [subRes, catRes, marcasRes] = await Promise.all([
-        axios.get(`${API}/subcategorias`),
+        axios.get(`${API}/subcategorias?incluir_inativos=true`),
         axios.get(`${API}/categorias`),
         axios.get(`${API}/marcas`)
       ]);
