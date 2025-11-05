@@ -464,20 +464,25 @@ class FornecedoresBackendTester:
             self.log_test("Setup Fiscal Notes Dependency", False, f"Error: {str(e)}")
     
     def run_all_tests(self):
-        """Run all Fornecedores module tests"""
-        print("🎯 STARTING FORNECEDORES MODULE TESTING")
-        print("=" * 60)
+        """Run all Fornecedores module tests as specified in review request"""
+        print("🎯 TESTAR MÓDULO FORNECEDORES - CORREÇÃO CRÍTICA DE CADASTRO")
+        print("=" * 80)
+        print("CONTEXTO: Usuário reportou erro no cadastro de fornecedor.")
+        print("ROOT CAUSE: Frontend enviava strings vazias, backend esperava null.")
+        print("CORREÇÃO: Sanitização de dados no frontend.")
+        print("=" * 80)
         
         # Authenticate first
         if not self.authenticate():
             print("❌ Authentication failed. Cannot proceed with tests.")
             return False
         
-        # Run all test suites in priority order
-        self.test_fornecedores_cadastro()      # Priority 1
-        self.test_fornecedores_listagem()      # Priority 2  
-        self.test_fornecedores_edicao()        # Priority 3
-        self.test_fornecedores_toggle_status() # Priority 4
+        # Run the 5 mandatory tests from review request
+        self.test_fornecedores_cadastro_completo()      # Test 1: Complete scenario
+        self.test_fornecedores_cadastro_minimo_critico() # Test 2: Minimal scenario (CRITICAL)
+        self.test_fornecedores_cadastro_parcial()       # Test 3: Partial scenario
+        self.test_fornecedores_edicao()                 # Test 4: Edit supplier
+        self.test_fornecedores_listagem_com_inativos()  # Test 5: List with inactive
         
         return True
     
