@@ -244,8 +244,9 @@ const Fornecedores = () => {
         <table>
           <thead>
             <tr>
-              <th>Nome</th>
+              <th>Razão Social</th>
               <th>CNPJ</th>
+              <th>IE</th>
               <th>Telefone</th>
               <th>Email</th>
               <th>Status</th>
@@ -255,8 +256,9 @@ const Fornecedores = () => {
           <tbody>
             {fornecedores.map((f) => (
               <tr key={f.id}>
-                <td className="font-medium">{f.nome}</td>
+                <td className="font-medium">{f.razao_social}</td>
                 <td>{f.cnpj}</td>
+                <td>{f.ie || '-'}</td>
                 <td>{f.telefone || '-'}</td>
                 <td>{f.email || '-'}</td>
                 <td>
@@ -272,12 +274,12 @@ const Fornecedores = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setToggleDialog({ open: true, id: f.id, nome: f.nome, ativo: f.ativo })}
+                      onClick={() => setToggleDialog({ open: true, id: f.id, nome: f.razao_social, ativo: f.ativo })}
                       title={f.ativo ? 'Inativar' : 'Ativar'}
                     >
                       <Power size={16} className={f.ativo ? 'text-orange-500' : 'text-green-500'} />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setDeleteDialog({ open: true, id: f.id, nome: f.nome })} title="Excluir">
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteDialog({ open: true, id: f.id, nome: f.razao_social })} title="Excluir">
                       <Trash2 size={16} className="text-red-500" />
                     </Button>
                   </div>
