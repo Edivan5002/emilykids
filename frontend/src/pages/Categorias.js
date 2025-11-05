@@ -28,7 +28,7 @@ const Categorias = () => {
 
   const fetchCategorias = async () => {
     try {
-      const response = await axios.get(`${API}/categorias`);
+      const response = await axios.get(`${API}/categorias?incluir_inativos=true`);
       setCategorias(response.data);
     } catch (error) {
       toast.error('Erro ao carregar categorias');
