@@ -25,7 +25,7 @@ const Marcas = () => {
 
   const fetchMarcas = async () => {
     try {
-      const response = await axios.get(`${API}/marcas`);
+      const response = await axios.get(`${API}/marcas?incluir_inativos=true`);
       setMarcas(response.data);
     } catch (error) {
       toast.error('Erro ao carregar marcas');
