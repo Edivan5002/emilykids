@@ -396,7 +396,6 @@ if __name__ == "__main__":
     # tester.cleanup_test_data()
     
     sys.exit(0 if success else 1)
-        """Test stock validation in budget creation"""
         print("\n=== TESTING BUDGET STOCK VALIDATION ===")
         
         if not self.test_products or not hasattr(self, 'test_client_id'):
