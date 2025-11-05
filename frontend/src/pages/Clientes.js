@@ -53,11 +53,22 @@ const Clientes = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Sanitizar dados: converter strings vazias para null
+      const sanitizedData = {
+        ...formData,
+        telefone: formData.telefone?.trim() || null,
+        email: formData.email?.trim() || null,
+        observacoes: formData.observacoes?.trim() || null,
+        endereco: formData.endereco && Object.values(formData.endereco).some(v => v?.trim()) 
+          ? formData.endereco 
+          : null
+      };
+
       if (isEditing) {
-        await axios.put(`${API}/clientes/${editingId}`, formData);
+        await axios.put(`${API}/clientes/${editingId}`, sanitizedData);
         toast.success('Cliente atualizado com sucesso!');
       } else {
-        await axios.post(`${API}/clientes`, formData);
+        await axios.post(`${API}/clientes`, sanitizedData);
         toast.success('Cliente cadastrado com sucesso!');
       }
       fetchClientes();
