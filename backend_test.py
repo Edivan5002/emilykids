@@ -487,73 +487,44 @@ class FornecedoresBackendTester:
         except Exception as e:
             self.log_test("Setup Fiscal Notes Dependency", False, f"Error: {str(e)}")
     
-    def test_stock_check_endpoint(self):
-        """Test the stock availability check endpoint"""
-        print("\n=== TESTING STOCK CHECK ENDPOINT ===")
+    def run_all_tests(self):
+        """Run all Fornecedores module tests"""
+        print("🎯 STARTING FORNECEDORES MODULE TESTING")
+        print("=" * 60)
         
-        if not self.test_products:
-            self.log_test("Stock Check Tests", False, "No test products available")
-            return
+        # Authenticate first
+        if not self.authenticate():
+            print("❌ Authentication failed. Cannot proceed with tests.")
+            return False
         
-        product = self.test_products[0]  # Vestido Princesa
+        # Run all test suites in priority order
+        self.test_fornecedores_cadastro()      # Priority 1
+        self.test_fornecedores_listagem()      # Priority 2  
+        self.test_fornecedores_edicao()        # Priority 3
+        self.test_fornecedores_toggle_status() # Priority 4
         
-        # Test 1: Check stock with sufficient quantity
-        test_data = {
-            "produto_id": product["id"],
-            "quantidade": 5
-        }
+        return True
+    
+    def print_summary(self):
+        """Print test results summary"""
+        print("\n" + "=" * 60)
+        print("📊 FORNECEDORES MODULE TEST RESULTS SUMMARY")
+        print("=" * 60)
         
-        try:
-            response = requests.post(f"{self.base_url}/estoque/check-disponibilidade", json=test_data, headers=self.get_headers())
-            if response.status_code == 200:
-                data = response.json()
-                expected_fields = ["disponivel", "estoque_atual", "estoque_reservado", "estoque_disponivel", "mensagem"]
-                
-                if all(field in data for field in expected_fields):
-                    if data["disponivel"] and data["estoque_disponivel"] >= 5:
-                        self.log_test("Stock Check - Sufficient Stock", True, f"Stock available: {data['estoque_disponivel']} units")
-                    else:
-                        self.log_test("Stock Check - Sufficient Stock", False, f"Expected available stock but got: {data}")
-                else:
-                    self.log_test("Stock Check - Response Format", False, f"Missing fields in response: {data}")
-            else:
-                self.log_test("Stock Check - Sufficient Stock", False, f"HTTP {response.status_code}: {response.text}")
-        except Exception as e:
-            self.log_test("Stock Check - Sufficient Stock", False, f"Error: {str(e)}")
+        passed = sum(1 for result in self.test_results if result["success"])
+        failed = len(self.test_results) - passed
         
-        # Test 2: Check stock with excessive quantity
-        test_data = {
-            "produto_id": product["id"],
-            "quantidade": 100  # More than available
-        }
+        print(f"✅ PASSED: {passed}")
+        print(f"❌ FAILED: {failed}")
+        print(f"📈 SUCCESS RATE: {(passed/len(self.test_results)*100):.1f}%")
         
-        try:
-            response = requests.post(f"{self.base_url}/estoque/check-disponibilidade", json=test_data, headers=self.get_headers())
-            if response.status_code == 200:
-                data = response.json()
-                if not data["disponivel"]:
-                    self.log_test("Stock Check - Insufficient Stock", True, f"Correctly identified insufficient stock: {data['mensagem']}")
-                else:
-                    self.log_test("Stock Check - Insufficient Stock", False, f"Should have insufficient stock but got: {data}")
-            else:
-                self.log_test("Stock Check - Insufficient Stock", False, f"HTTP {response.status_code}: {response.text}")
-        except Exception as e:
-            self.log_test("Stock Check - Insufficient Stock", False, f"Error: {str(e)}")
+        if failed > 0:
+            print(f"\n🔍 FAILED TESTS:")
+            for result in self.test_results:
+                if not result["success"]:
+                    print(f"   ❌ {result['test']}: {result['message']}")
         
-        # Test 3: Check with invalid product ID
-        test_data = {
-            "produto_id": "invalid-product-id",
-            "quantidade": 1
-        }
-        
-        try:
-            response = requests.post(f"{self.base_url}/estoque/check-disponibilidade", json=test_data, headers=self.get_headers())
-            if response.status_code == 404:
-                self.log_test("Stock Check - Invalid Product", True, "Correctly returned 404 for invalid product")
-            else:
-                self.log_test("Stock Check - Invalid Product", False, f"Expected 404 but got {response.status_code}: {response.text}")
-        except Exception as e:
-            self.log_test("Stock Check - Invalid Product", False, f"Error: {str(e)}")
+        print("\n" + "=" * 60)
     
     def test_budget_stock_validation(self):
         """Test stock validation in budget creation"""
