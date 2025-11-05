@@ -2618,6 +2618,14 @@ async def delete_fornecedor(fornecedor_id: str, current_user: dict = Depends(req
             detail=f"Não é possível excluir o fornecedor '{fornecedor['razao_social']}' pois existem {notas_count} nota(s) fiscal(is) vinculada(s). Exclua as notas fiscais primeiro."
         )
     
+    # Verificar dependências - Produtos
+    produtos_count = await db.produtos.count_documents({"fornecedor_preferencial_id": fornecedor_id})
+    if produtos_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível excluir o fornecedor '{fornecedor['razao_social']}' pois existem {produtos_count} produto(s) vinculado(s) a ele. Exclua ou altere o fornecedor dos produtos primeiro."
+        )
+    
     # Excluir fornecedor
     await db.fornecedores.delete_one({"id": fornecedor_id})
     await log_action(
