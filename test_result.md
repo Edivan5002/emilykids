@@ -455,7 +455,7 @@ frontend:
     implemented: true
     working: "NA"
     file: "/app/frontend/src/pages/Produtos.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
@@ -465,6 +465,12 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "✅ CORREÇÕES IMPLEMENTADAS: (1) ERRO AO CADASTRAR: Sanitização incompleta de campos opcionais - expandida para incluir TODOS os campos opcionais (marca_id, categoria_id, subcategoria_id, código_barras, peso, dimensões, fornecedor_preferencial_id, comissão, descrição, arrays vazios). Strings vazias agora são convertidas para null antes do POST/PUT; (2) DROPDOWN VAZIO: fetchData() não buscava fornecedores com incluir_inativos=true - CORRIGIDO para GET /fornecedores?incluir_inativos=true. Agora o dropdown de fornecedor preferencial exibe todos os fornecedores ativos corretamente."
+      - working: false
+        agent: "user"
+        comment: "NOVOS PROBLEMAS REPORTADOS: (1) 'fornecedor preferencial não está aparecendo com letras negras' - problema visual no dropdown; (2) 'na listagem não está aparecendo os produtos inativos' - produtos inativos devem aparecer; (3) 'só deve ser permitido inativar ou excluir produtos se não tiver dependências de outros módulos'."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ CORREÇÕES ADICIONAIS IMPLEMENTADAS: (1) TEXTO PRETO: Adicionado className='text-black' no Select de fornecedor preferencial + corrigido campo de f.nome para f.razao_social; (2) INATIVOS NA LISTAGEM: Adicionado incluir_inativos=true no GET /produtos; (3) VALIDAÇÕES: BACKEND JÁ ESTAVA COMPLETO - DELETE verifica orçamentos, vendas e movimentações de estoque; TOGGLE-STATUS verifica orçamentos abertos. Produto só pode ser inativado se não estiver em orçamentos abertos, e só pode ser excluído se não tiver orçamentos, vendas ou movimentações de estoque."
 
   - task: "Correção módulo Subcategorias - Inativos não aparecem"
     implemented: true
