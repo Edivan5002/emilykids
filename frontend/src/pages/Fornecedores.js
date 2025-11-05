@@ -16,11 +16,20 @@ const Fornecedores = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
-    nome: '',
+    razao_social: '',
     cnpj: '',
+    ie: '',
     telefone: '',
     email: '',
-    endereco: '',
+    endereco: {
+      logradouro: '',
+      numero: '',
+      complemento: '',
+      bairro: '',
+      cidade: '',
+      estado: '',
+      cep: ''
+    },
     ativo: true
   });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, nome: '' });
