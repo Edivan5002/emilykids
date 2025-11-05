@@ -594,16 +594,6 @@ const NotasFiscais = () => {
           </Card>
         )}
       </div>
-
-      <AutorizacaoModal
-        isOpen={showAutorizacao}
-        onClose={() => {
-          setShowAutorizacao(false);
-          setNotaParaExcluir(null);
-        }}
-        onAutorizado={handleAutorizacaoSucesso}
-        acao="excluir esta nota fiscal"
-      />
     </div>
   );
 };
