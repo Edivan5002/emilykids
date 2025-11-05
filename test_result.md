@@ -455,7 +455,7 @@ frontend:
     implemented: true
     working: "NA"
     file: "/app/frontend/src/pages/NotasFiscais.js, /app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
@@ -465,6 +465,12 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "✅ REFATORAÇÃO COMPLETA IMPLEMENTADA: (1) FRONTEND: Removido botão 'Excluir' e sistema de autorização associado; Adicionado botão 'Cancelar' com prompt para motivo obrigatório; UI atualizada para exibir status 'cancelada' com mensagem visual; Botões de confirmação/cancelamento não aparecem se nota já está cancelada; (2) BACKEND: JÁ EXISTIA endpoint /notas-fiscais/{id}/cancelar com lógica COMPLETA - verifica se nota foi confirmada e reverte estoque se necessário, registra movimentação de cancelamento, adiciona ao histórico, muda status para 'cancelada'. Sistema agora usa cancelamento ao invés de exclusão, preservando histórico e integridade dos dados."
+      - working: false
+        agent: "user"
+        comment: "BUG VISUAL REPORTADO: 'a nota fiscal cancelada no frontend deve ficar com status cancelada e não pendente' - Badge de status exibindo incorretamente após cancelamento."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ BUG VISUAL CORRIGIDO: (1) BADGE DE STATUS: Corrigido lógica condicional para verificar status='cancelada' ou cancelada=true ANTES de verificar confirmado - agora exibe 'CANCELADA' em vermelho (badge-danger) corretamente; (2) ESTATÍSTICAS: Adicionada variável notasCanceladas e card visual nas estatísticas; Corrigidas contagens de notasConfirmadas e notasPendentes para EXCLUIR notas canceladas; Mudado grid de 3 para 4 colunas para incluir card de Canceladas; (3) FILTROS: Todas as contagens agora verificam !nf.cancelada && nf.status !== 'cancelada'. RESULTADO: Status visual correto, estatísticas precisas, notas canceladas têm card dedicado."
 
   - task: "Correção módulo Produtos - Erros ao cadastrar e dropdown vazio"
     implemented: true
