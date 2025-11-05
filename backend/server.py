@@ -2747,6 +2747,14 @@ async def delete_marca(marca_id: str, current_user: dict = Depends(require_permi
             detail=f"Não é possível excluir a marca '{marca['nome']}' pois existem {categorias_count} categoria(s) vinculada(s). Exclua ou reatribua as categorias primeiro."
         )
     
+    # Verificar dependências - Produtos vinculados
+    produtos_count = await db.produtos.count_documents({"marca_id": marca_id})
+    if produtos_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível excluir a marca '{marca['nome']}' pois existem {produtos_count} produto(s) vinculado(s) a ela. Exclua ou reatribua os produtos primeiro."
+        )
+    
     # Excluir marca
     await db.marcas.delete_one({"id": marca_id})
     await log_action(
