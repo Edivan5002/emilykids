@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Backend Test Suite for Emily Kids ERP - Clientes e Fornecedores Testing
-Tests corrections applied to Clientes and Fornecedores modules as per review request
-Focus: CRUD operations, ativo field preservation, dependency validations, error messages
+Backend Test Suite for Emily Kids ERP - Fornecedores Module Testing
+Tests Fornecedores module corrections as per review request
+Focus: CRUD operations, incluir_inativos filter, dependency validations, toggle-status
 """
 
 import requests
@@ -15,12 +15,14 @@ import os
 # Backend URL from environment
 BACKEND_URL = "https://client-dependency.preview.emergentagent.com/api"
 
-class EmilyKidsBackendTester:
+class FornecedoresBackendTester:
     def __init__(self):
         self.base_url = BACKEND_URL
         self.token = None
         self.user_id = None
         self.test_results = []
+        self.test_suppliers = []
+        self.test_products = []
         
     def log_test(self, test_name, success, message, details=None):
         """Log test results"""
