@@ -95,7 +95,7 @@ const Produtos = () => {
         axios.get(`${API}/marcas`),
         axios.get(`${API}/categorias`),
         axios.get(`${API}/subcategorias`),
-        axios.get(`${API}/fornecedores`)
+        axios.get(`${API}/fornecedores?incluir_inativos=true`)
       ]);
       setProdutos(prodRes.data);
       setProdutosFiltrados(prodRes.data);
