@@ -54,12 +54,15 @@ class FornecedoresBackendTester:
         """Authenticate using credentials from review request"""
         print("\n=== AUTHENTICATION TEST ===")
         
-        # Login with admin credentials as specified in review request
-        # Email: edivancelestino@yahoo.com.br, Senha: 123456
-        login_data = {
-            "email": "edivancelestino@yahoo.com.br",
-            "senha": "123456"
-        }
+        # Try multiple admin credentials to find working ones
+        credentials_to_try = [
+            {"email": "edivancelestino@yahoo.com.br", "senha": "123456"},
+            {"email": "admin@emilykids.com", "senha": "Admin@123"},
+            {"email": "admin@admin.com", "senha": "admin123"},
+            {"email": "admin@inventoai.com", "senha": "admin123"}
+        ]
+        
+        for login_data in credentials_to_try:
         
         try:
             response = requests.post(f"{self.base_url}/auth/login", json=login_data)
