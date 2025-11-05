@@ -706,6 +706,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Correção módulo Categorias - Inativos não aparecem"
     - "Correção módulo Marcas - Inativos não aparecem e validações incompletas"
   stuck_tasks: []
   test_all: false
