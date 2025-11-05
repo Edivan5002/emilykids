@@ -453,11 +453,11 @@ backend:
 frontend:
   - task: "Validação completa de dependências ao EXCLUIR Fornecedor"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "user"
@@ -465,14 +465,17 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "✅ ANÁLISE E CORREÇÃO: (1) DELETE /clientes/{id} - JÁ VALIDAVA: orçamentos e vendas ✅; (2) DELETE /fornecedores/{id} - FALTAVA VALIDAÇÃO: verificava apenas notas fiscais, MAS NÃO verificava produtos vinculados ❌. IMPLEMENTADO: Adicionada verificação de produtos no DELETE de fornecedores (verifica se há produtos com fornecedor_preferencial_id). Agora ambos endpoints têm validação completa de dependências antes de permitir exclusão."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO PERFEITAMENTE: Executei os 6 TESTES OBRIGATÓRIOS especificados na review_request com 100% SUCCESS RATE. VALIDAÇÕES CONFIRMADAS: (1) DELETE Cliente com Orçamentos - BLOQUEIA corretamente (400 Bad Request) ✅; (2) DELETE Cliente com Vendas - BLOQUEIA corretamente (400 Bad Request) ✅; (3) DELETE Cliente sem Dependências - PERMITE corretamente (200 OK) ✅; (4) DELETE Fornecedor com Notas Fiscais - BLOQUEIA corretamente (400 Bad Request) ✅; (5) DELETE Fornecedor com Produtos - BLOQUEIA corretamente (400 Bad Request) ✅ [CRÍTICO - NOVA VALIDAÇÃO FUNCIONANDO!]; (6) DELETE Fornecedor sem Dependências - PERMITE corretamente (200 OK) ✅. RESULTADO: TODAS as dependências são verificadas antes de permitir DELETE, mensagens de erro são claras e informativas. A NOVA VALIDAÇÃO de produtos vinculados em fornecedores está funcionando perfeitamente."
 
   - task: "Correção módulo Clientes - Erro ao Cadastrar (Bug EmailStr)"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/pages/Clientes.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "user"
