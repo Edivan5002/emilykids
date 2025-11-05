@@ -70,11 +70,20 @@ const Fornecedores = () => {
     setIsEditing(true);
     setEditingId(fornecedor.id);
     setFormData({
-      nome: fornecedor.nome,
+      razao_social: fornecedor.razao_social,
       cnpj: fornecedor.cnpj,
+      ie: fornecedor.ie || '',
       telefone: fornecedor.telefone || '',
       email: fornecedor.email || '',
-      endereco: fornecedor.endereco || '',
+      endereco: fornecedor.endereco || {
+        logradouro: '',
+        numero: '',
+        complemento: '',
+        bairro: '',
+        cidade: '',
+        estado: '',
+        cep: ''
+      },
       ativo: fornecedor.ativo
     });
     setIsOpen(true);
