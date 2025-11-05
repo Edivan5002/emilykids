@@ -64,20 +64,21 @@ class FornecedoresBackendTester:
         
         for login_data in credentials_to_try:
         
-        try:
-            response = requests.post(f"{self.base_url}/auth/login", json=login_data)
-            if response.status_code == 200:
-                data = response.json()
-                self.token = data["access_token"]
-                self.user_id = data["user"]["id"]
-                self.log_test("Authentication", True, "Admin login successful with review request credentials")
-                return True
-            else:
-                self.log_test("Authentication", False, f"Login failed: {response.status_code} - {response.text}")
-                return False
-        except Exception as e:
-            self.log_test("Authentication", False, f"Login error: {str(e)}")
-            return False
+            try:
+                response = requests.post(f"{self.base_url}/auth/login", json=login_data)
+                if response.status_code == 200:
+                    data = response.json()
+                    self.token = data["access_token"]
+                    self.user_id = data["user"]["id"]
+                    self.log_test("Authentication", True, f"Admin login successful with {login_data['email']}")
+                    return True
+                else:
+                    print(f"   ⚠ Failed login attempt with {login_data['email']}: {response.status_code}")
+            except Exception as e:
+                print(f"   ⚠ Login error with {login_data['email']}: {str(e)}")
+        
+        self.log_test("Authentication", False, "All login attempts failed")
+        return False
     
     def get_headers(self):
         """Get headers with authentication"""
