@@ -573,7 +573,7 @@ frontend:
     implemented: true
     working: "NA"
     file: "/app/frontend/src/pages/Fornecedores.js, /app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
@@ -583,6 +583,15 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "✅ IMPLEMENTADO: (1) Corrigido frontend para usar 'razao_social' ao invés de 'nome'; (2) Adicionado campo 'ie' (Inscrição Estadual) no formulário; (3) Corrigida estrutura do campo 'endereco' (agora é objeto com logradouro, numero, complemento, bairro, cidade, estado, cep); (4) Atualizada tabela para exibir razao_social e ie; (5) Formulário reorganizado com grid layout para melhor UX; (6) Adicionado scroll no formulário para campos de endereço completos."
+      - working: false
+        agent: "user"
+        comment: "PROBLEMA PERSISTENTE: Usuário reporta que cadastro de fornecedor continua apresentando erro após correções anteriores."
+      - working: "NA"
+        agent: "troubleshoot"
+        comment: "🔍 ROOT CAUSE IDENTIFICADO: Erro 422 Unprocessable Entity ao cadastrar fornecedor. Frontend estava enviando strings vazias ('') para campos opcionais (ie, telefone, email) mas backend esperava null. A validação EmailStr do Pydantic rejeita string vazia como email inválido."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ CORREÇÃO IMPLEMENTADA: Adicionada sanitização de dados no handleSubmit: (1) Campos opcionais vazios (ie, telefone, email) agora são convertidos para null antes do envio; (2) Campo endereco é convertido para null se todos os subcampos estiverem vazios; (3) Usado .trim() para remover espaços em branco. Isso resolve o erro 422 causado pela validação do EmailStr no backend."
 
   - task: "Exibir fornecedores inativos na listagem"
     implemented: true
