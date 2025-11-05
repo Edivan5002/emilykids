@@ -195,10 +195,25 @@ const Produtos = () => {
     try {
       const dados = { ...formData };
       
-      // Converter strings vazias em null
-      if (!dados.preco_promocional) dados.preco_promocional = null;
-      if (!dados.data_inicio_promo) dados.data_inicio_promo = null;
-      if (!dados.data_fim_promo) dados.data_fim_promo = null;
+      // Sanitizar campos opcionais: converter strings vazias em null
+      const camposOpcionais = [
+        'marca_id', 'categoria_id', 'subcategoria_id',
+        'preco_promocional', 'data_inicio_promo', 'data_fim_promo',
+        'codigo_barras', 'peso', 'altura', 'largura', 'profundidade',
+        'fornecedor_preferencial_id', 'comissao_vendedor', 'descricao'
+      ];
+      
+      camposOpcionais.forEach(campo => {
+        if (dados[campo] === '' || dados[campo] === undefined) {
+          dados[campo] = null;
+        }
+      });
+      
+      // Arrays vazios devem ser null
+      if (dados.tags && dados.tags.length === 0) dados.tags = null;
+      if (dados.variacoes && dados.variacoes.length === 0) dados.variacoes = null;
+      if (dados.componentes_kit && dados.componentes_kit.length === 0) dados.componentes_kit = null;
+      if (dados.fotos && dados.fotos.length === 0) dados.fotos = null;
       
       if (isEditing) {
         await axios.put(`${API}/produtos/${editingId}`, dados);
