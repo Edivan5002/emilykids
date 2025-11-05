@@ -83,52 +83,21 @@ class FornecedoresBackendTester:
             "Content-Type": "application/json"
         }
     
-    def test_fornecedores_cadastro(self):
-        """Test Fornecedores CADASTRO (POST /fornecedores) - Priority 1"""
-        print("\n=== TESTING FORNECEDORES CADASTRO ===")
+    def test_fornecedores_cadastro_completo(self):
+        """Test 1: CRIAR FORNECEDOR (Cenário Completo) - All fields filled"""
+        print("\n=== TEST 1: CRIAR FORNECEDOR (Cenário Completo) ===")
         
-        # Test 1: Create supplier with complete data including razao_social, cnpj, ie, telefone, email
         supplier_complete = {
-            "razao_social": "Distribuidora Infantil Ltda",
-            "cnpj": "12.345.678/0001-90",
-            "ie": "123.456.789.012",
-            "telefone": "(11) 3333-4444",
-            "email": "contato@distribuidorainfantil.com.br"
-        }
-        
-        try:
-            response = requests.post(f"{self.base_url}/fornecedores", json=supplier_complete, headers=self.get_headers())
-            if response.status_code == 200:
-                supplier_data = response.json()
-                # Verify all fields are present and ativo=true by default
-                if (supplier_data.get("razao_social") == supplier_complete["razao_social"] and
-                    supplier_data.get("cnpj") == supplier_complete["cnpj"] and
-                    supplier_data.get("ie") == supplier_complete["ie"] and
-                    supplier_data.get("telefone") == supplier_complete["telefone"] and
-                    supplier_data.get("email") == supplier_complete["email"] and
-                    supplier_data.get("ativo") == True):
-                    
-                    self.test_suppliers.append(supplier_data)
-                    self.log_test("Fornecedor Cadastro - Complete Data", True, f"Supplier created with all fields, ativo=True by default")
-                else:
-                    self.log_test("Fornecedor Cadastro - Complete Data", False, f"Missing or incorrect fields: {supplier_data}")
-            else:
-                self.log_test("Fornecedor Cadastro - Complete Data", False, f"HTTP {response.status_code}: {response.text}")
-        except Exception as e:
-            self.log_test("Fornecedor Cadastro - Complete Data", False, f"Error: {str(e)}")
-        
-        # Test 2: Create supplier with structured endereco (object)
-        supplier_with_address = {
-            "razao_social": "Brinquedos e Cia Ltda",
-            "cnpj": "98.765.432/0001-10",
-            "ie": "987.654.321.098",
-            "telefone": "(11) 2222-3333",
-            "email": "vendas@brinquedosecia.com.br",
+            "razao_social": "Teste Fornecedor Completo LTDA",
+            "cnpj": "12345678000190",
+            "ie": "123456789",
+            "telefone": "(11) 98765-4321",
+            "email": "teste@fornecedor.com",
             "endereco": {
-                "logradouro": "Rua das Crianças",
+                "logradouro": "Rua Teste",
                 "numero": "123",
-                "complemento": "Sala 45",
-                "bairro": "Vila Infantil",
+                "complemento": "Sala 1",
+                "bairro": "Centro",
                 "cidade": "São Paulo",
                 "estado": "SP",
                 "cep": "01234-567"
@@ -136,50 +105,104 @@ class FornecedoresBackendTester:
         }
         
         try:
-            response = requests.post(f"{self.base_url}/fornecedores", json=supplier_with_address, headers=self.get_headers())
+            response = requests.post(f"{self.base_url}/fornecedores", json=supplier_complete, headers=self.get_headers())
             if response.status_code == 200:
                 supplier_data = response.json()
-                # Verify endereco is stored as object with all fields
-                endereco = supplier_data.get("endereco", {})
-                expected_endereco = supplier_with_address["endereco"]
+                self.created_supplier_ids.append(supplier_data["id"])
                 
-                if (isinstance(endereco, dict) and
-                    endereco.get("logradouro") == expected_endereco["logradouro"] and
-                    endereco.get("numero") == expected_endereco["numero"] and
-                    endereco.get("bairro") == expected_endereco["bairro"] and
-                    endereco.get("cidade") == expected_endereco["cidade"] and
-                    endereco.get("estado") == expected_endereco["estado"] and
-                    endereco.get("cep") == expected_endereco["cep"] and
-                    supplier_data.get("ativo") == True):
-                    
-                    self.test_suppliers.append(supplier_data)
-                    self.log_test("Fornecedor Cadastro - Structured Address", True, f"Supplier created with structured endereco object")
+                # Verify all fields are correctly stored
+                success = (
+                    supplier_data.get("razao_social") == supplier_complete["razao_social"] and
+                    supplier_data.get("cnpj") == supplier_complete["cnpj"] and
+                    supplier_data.get("ie") == supplier_complete["ie"] and
+                    supplier_data.get("telefone") == supplier_complete["telefone"] and
+                    supplier_data.get("email") == supplier_complete["email"] and
+                    supplier_data.get("ativo") == True and
+                    isinstance(supplier_data.get("endereco"), dict)
+                )
+                
+                if success:
+                    self.log_test("Cenário Completo", True, "✅ DEVE RETORNAR: 200 OK com fornecedor criado - SUCCESS")
                 else:
-                    self.log_test("Fornecedor Cadastro - Structured Address", False, f"Endereco structure incorrect: {endereco}")
+                    self.log_test("Cenário Completo", False, f"Fields validation failed: {supplier_data}")
             else:
-                self.log_test("Fornecedor Cadastro - Structured Address", False, f"HTTP {response.status_code}: {response.text}")
+                self.log_test("Cenário Completo", False, f"❌ Expected 200 OK but got {response.status_code}: {response.text}")
         except Exception as e:
-            self.log_test("Fornecedor Cadastro - Structured Address", False, f"Error: {str(e)}")
+            self.log_test("Cenário Completo", False, f"Error: {str(e)}")
+    
+    def test_fornecedores_cadastro_minimo_critico(self):
+        """Test 2: CRIAR FORNECEDOR (Cenário Mínimo - CRÍTICO) - Only required fields"""
+        print("\n=== TEST 2: CRIAR FORNECEDOR (Cenário Mínimo - CRÍTICO) ===")
+        print("🎯 CRITICAL TEST: This was the main bug - empty strings vs null for optional fields")
         
-        # Test 3: Verify ativo=true by default (minimal data)
         supplier_minimal = {
-            "razao_social": "Fornecedor Mínimo Ltda",
-            "cnpj": "11.222.333/0001-44"
+            "razao_social": "Teste Fornecedor Mínimo LTDA",
+            "cnpj": "98765432000199"
         }
         
         try:
             response = requests.post(f"{self.base_url}/fornecedores", json=supplier_minimal, headers=self.get_headers())
             if response.status_code == 200:
                 supplier_data = response.json()
-                if supplier_data.get("ativo") == True:
-                    self.test_suppliers.append(supplier_data)
-                    self.log_test("Fornecedor Cadastro - Default Ativo", True, f"Minimal supplier created with ativo=True by default")
+                self.created_supplier_ids.append(supplier_data["id"])
+                
+                # Verify required fields and optional fields are null
+                success = (
+                    supplier_data.get("razao_social") == supplier_minimal["razao_social"] and
+                    supplier_data.get("cnpj") == supplier_minimal["cnpj"] and
+                    supplier_data.get("ativo") == True and
+                    supplier_data.get("ie") is None and
+                    supplier_data.get("telefone") is None and
+                    supplier_data.get("email") is None and
+                    supplier_data.get("endereco") is None
+                )
+                
+                if success:
+                    self.log_test("Cenário Mínimo - CRÍTICO", True, "✅ DEVE RETORNAR: 200 OK (campos opcionais são null no backend) - BUG FIXED!")
                 else:
-                    self.log_test("Fornecedor Cadastro - Default Ativo", False, f"ativo field not True by default: {supplier_data.get('ativo')}")
+                    self.log_test("Cenário Mínimo - CRÍTICO", False, f"Optional fields not null as expected: {supplier_data}")
+            elif response.status_code == 422:
+                self.log_test("Cenário Mínimo - CRÍTICO", False, f"❌ NÃO DEVE RETORNAR: 422 Unprocessable Entity - BUG STILL EXISTS! {response.text}")
             else:
-                self.log_test("Fornecedor Cadastro - Default Ativo", False, f"HTTP {response.status_code}: {response.text}")
+                self.log_test("Cenário Mínimo - CRÍTICO", False, f"Unexpected status {response.status_code}: {response.text}")
         except Exception as e:
-            self.log_test("Fornecedor Cadastro - Default Ativo", False, f"Error: {str(e)}")
+            self.log_test("Cenário Mínimo - CRÍTICO", False, f"Error: {str(e)}")
+    
+    def test_fornecedores_cadastro_parcial(self):
+        """Test 3: CRIAR FORNECEDOR (Cenário Parcial) - Some optional fields filled"""
+        print("\n=== TEST 3: CRIAR FORNECEDOR (Cenário Parcial) ===")
+        
+        supplier_partial = {
+            "razao_social": "Teste Fornecedor Parcial LTDA",
+            "cnpj": "11122233000144",
+            "telefone": "(11) 91234-5678"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/fornecedores", json=supplier_partial, headers=self.get_headers())
+            if response.status_code == 200:
+                supplier_data = response.json()
+                self.created_supplier_ids.append(supplier_data["id"])
+                
+                # Verify partial fields are correctly stored
+                success = (
+                    supplier_data.get("razao_social") == supplier_partial["razao_social"] and
+                    supplier_data.get("cnpj") == supplier_partial["cnpj"] and
+                    supplier_data.get("telefone") == supplier_partial["telefone"] and
+                    supplier_data.get("ativo") == True and
+                    supplier_data.get("ie") is None and
+                    supplier_data.get("email") is None and
+                    supplier_data.get("endereco") is None
+                )
+                
+                if success:
+                    self.log_test("Cenário Parcial", True, "✅ DEVE RETORNAR: 200 OK - Partial data handled correctly")
+                else:
+                    self.log_test("Cenário Parcial", False, f"Partial fields validation failed: {supplier_data}")
+            else:
+                self.log_test("Cenário Parcial", False, f"Expected 200 OK but got {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Cenário Parcial", False, f"Error: {str(e)}")
     
     def test_fornecedores_listagem(self):
         """Test Fornecedores LISTAGEM (GET /fornecedores?incluir_inativos=true) - Priority 2"""
