@@ -571,11 +571,11 @@ frontend:
 
   - task: "Correção módulo Fornecedores - Cadastro e Edição"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/pages/Fornecedores.js, /app/backend/server.py"
     stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "user"
@@ -592,14 +592,17 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "✅ CORREÇÃO IMPLEMENTADA: Adicionada sanitização de dados no handleSubmit: (1) Campos opcionais vazios (ie, telefone, email) agora são convertidos para null antes do envio; (2) Campo endereco é convertido para null se todos os subcampos estiverem vazios; (3) Usado .trim() para remover espaços em branco. Isso resolve o erro 422 causado pela validação do EmailStr no backend."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO: BUG CRÍTICO CORRIGIDO COM SUCESSO! Executei os 5 testes obrigatórios especificados na review_request: (1) Cenário Completo - 200 OK ✅; (2) Cenário Mínimo CRÍTICO - 200 OK, campos opcionais null no backend ✅; (3) Cenário Parcial - 200 OK ✅; (4) Editar Fornecedor - 200 OK, campo ativo preservado ✅; (5) Listar com Inativos - Lista completa retornada ✅. RESULTADO: NÃO ocorre mais erro 422 ao cadastrar com campos opcionais vazios, backend aceita null para campos opcionais (ie, telefone, email, endereco), EmailStr não rejeita mais strings vazias. Taxa de sucesso: 100%."
 
   - task: "Exibir fornecedores inativos na listagem"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/pages/Fornecedores.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "user"
@@ -607,14 +610,17 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "✅ IMPLEMENTADO: Modificado fetchFornecedores() para incluir parâmetro incluir_inativos=true na chamada do endpoint GET /fornecedores. Agora a listagem exibe TODOS os fornecedores (ativos e inativos). Interface já exibe badge visual indicando status ativo/inativo."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO: Listagem de fornecedores com inativos funcionando corretamente. Teste confirmou que GET /fornecedores?incluir_inativos=true retorna todos os fornecedores (ativos e inativos). Durante o teste: 24 total (21 ativos, 3 inativos). Parâmetro incluir_inativos=true funciona perfeitamente."
 
   - task: "Validação dependências ao inativar Fornecedor"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "user"
@@ -622,6 +628,9 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "✅ IMPLEMENTADO: Adicionadas validações no endpoint PUT /fornecedores/{id}/toggle-status: (1) Verifica notas fiscais pendentes (rascunho, aguardando_aprovacao, aprovada); (2) Verifica produtos ATIVOS que usam este fornecedor como fornecedor_preferencial_id. Mensagens de erro claras indicam tipo e quantidade de dependências que impedem a inativação."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO: Validações de dependência implementadas corretamente no backend. Fornecedor só pode ser inativado se não tiver notas fiscais pendentes ou produtos ativos vinculados. Endpoint PUT /fornecedores/{id}/toggle-status funciona corretamente com validações apropriadas."
 
 metadata:
   created_by: "main_agent"
