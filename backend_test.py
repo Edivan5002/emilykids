@@ -1,8 +1,19 @@
 #!/usr/bin/env python3
 """
-Backend Test Suite for Emily Kids ERP - Fornecedores Module Testing
-Tests Fornecedores module corrections as per review request
-Focus: CRUD operations, incluir_inativos filter, dependency validations, toggle-status
+Backend Test Suite for Fornecedores Module - Critical Bug Fix Testing
+Tests the critical supplier registration bug fix as per review request
+
+FOCUS: Testing the fix for empty string vs null validation in Pydantic models
+- Frontend was sending empty strings for optional fields
+- Backend Pydantic expected null for optional fields
+- This caused 422 Unprocessable Entity errors
+
+CRITICAL TESTS:
+1. Create supplier with complete data (all fields)
+2. Create supplier with minimal data (only required fields) - THE CRITICAL TEST
+3. Create supplier with partial data (some optional fields)
+4. Edit supplier functionality
+5. List suppliers with inactive ones
 """
 
 import requests
@@ -22,7 +33,7 @@ class FornecedoresBackendTester:
         self.user_id = None
         self.test_results = []
         self.test_suppliers = []
-        self.test_products = []
+        self.created_supplier_ids = []
         
     def log_test(self, test_name, success, message, details=None):
         """Log test results"""
@@ -40,14 +51,14 @@ class FornecedoresBackendTester:
             print(f"   Details: {details}")
     
     def authenticate(self):
-        """Authenticate and get JWT token using credentials from review request"""
+        """Authenticate using credentials from review request"""
         print("\n=== AUTHENTICATION TEST ===")
         
         # Login with admin credentials as specified in review request
-        # Email: admin@emilykids.com, Senha: Admin@123
+        # Email: edivancelestino@yahoo.com.br, Senha: 123456
         login_data = {
-            "email": "admin@emilykids.com",
-            "senha": "Admin@123"
+            "email": "edivancelestino@yahoo.com.br",
+            "senha": "123456"
         }
         
         try:
