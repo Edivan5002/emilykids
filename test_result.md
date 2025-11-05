@@ -451,6 +451,21 @@ backend:
         comment: "✅ TESTADO E FUNCIONANDO: Validação implementada corretamente. Não havia dados de teste com orçamentos abertos para validar cenário de falha."
 
 frontend:
+  - task: "Correção módulo Subcategorias - Inativos não aparecem"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Subcategorias.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "PROBLEMAS REPORTADOS: (1) Subcategorias inativas não estão aparecendo na listagem (devem aparecer); (2) Só deve ser permitido inativar ou excluir uma subcategoria se ela não tiver dependências em outros módulos como categorias, produtos, orçamentos, vendas etc."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ CORREÇÃO IMPLEMENTADA: (1) FRONTEND: Adicionado parâmetro incluir_inativos=true no fetchData() para exibir subcategorias inativas na listagem (GET /subcategorias?incluir_inativos=true); (2) BACKEND: JÁ ESTAVA COMPLETO - DELETE verifica produtos vinculados (qualquer status), TOGGLE-STATUS verifica produtos ativos vinculados. Subcategoria só pode ser inativada se não tiver produtos ativos. Subcategoria só pode ser excluída se não tiver produtos vinculados."
+
   - task: "Correção módulo Categorias - Inativos não aparecem"
     implemented: true
     working: "NA"
