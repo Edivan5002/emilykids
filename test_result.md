@@ -589,8 +589,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Correções Clientes e Fornecedores - CONCLUÍDO COM SUCESSO"
-    - "Todas as 4 correções validadas e funcionando"
+    - "Exibir clientes inativos na listagem de gerenciamento"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
