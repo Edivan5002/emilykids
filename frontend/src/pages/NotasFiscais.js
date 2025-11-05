@@ -527,46 +527,60 @@ const NotasFiscais = () => {
                 </div>
               </div>
 
-              {!nota.confirmado && (
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => handleConfirmar(nota.id)}
-                    style={{backgroundColor: '#2C9AA1'}}
-                    data-testid={`confirmar-nf-${nota.id}`}
-                  >
-                    <Check className="mr-2" size={16} />
-                    Confirmar e Atualizar Estoque
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => handleExcluir(nota.id, nota.confirmado)}
-                    data-testid={`excluir-nf-${nota.id}`}
-                  >
-                    <Trash2 className="mr-2 text-red-500" size={16} />
-                    Excluir
-                    {user?.papel === 'vendedor' && <Shield className="ml-1" size={12} style={{color: '#E76F51'}} />}
-                  </Button>
+              {nota.status === 'cancelada' || nota.cancelada ? (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-800 flex items-center gap-2">
+                    <AlertCircle size={16} />
+                    Nota fiscal cancelada
+                    {nota.motivo_cancelamento && (
+                      <span className="text-xs ml-2">- {nota.motivo_cancelamento}</span>
+                    )}
+                  </p>
                 </div>
-              )}
+              ) : (
+                <>
+                  {!nota.confirmado && (
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleConfirmar(nota.id)}
+                        style={{backgroundColor: '#2C9AA1'}}
+                        data-testid={`confirmar-nf-${nota.id}`}
+                      >
+                        <Check className="mr-2" size={16} />
+                        Confirmar e Atualizar Estoque
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleCancelar(nota.id, nota.confirmado)}
+                        className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                        data-testid={`cancelar-nf-${nota.id}`}
+                      >
+                        <AlertCircle className="mr-2" size={16} />
+                        Cancelar
+                      </Button>
+                    </div>
+                  )}
 
-              {nota.confirmado && (
-                <div className="space-y-3">
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-sm text-green-800 flex items-center gap-2">
-                      <Check size={16} />
-                      Nota confirmada - Estoque atualizado
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => handleExcluir(nota.id, nota.confirmado)}
-                    data-testid={`excluir-nf-confirmada-${nota.id}`}
-                  >
-                    <Trash2 className="mr-2 text-red-500" size={16} />
-                    Excluir Nota Fiscal
-                    {user?.papel === 'vendedor' && <Shield className="ml-1" size={12} style={{color: '#E76F51'}} />}
-                  </Button>
-                </div>
+                  {nota.confirmado && (
+                    <div className="space-y-3">
+                      <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <p className="text-sm text-green-800 flex items-center gap-2">
+                          <Check size={16} />
+                          Nota confirmada - Estoque atualizado
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleCancelar(nota.id, nota.confirmado)}
+                        className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                        data-testid={`cancelar-nf-confirmada-${nota.id}`}
+                      >
+                        <AlertCircle className="mr-2" size={16} />
+                        Cancelar Nota Fiscal (Reverter Estoque)
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
