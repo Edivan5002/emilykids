@@ -451,6 +451,21 @@ backend:
         comment: "✅ TESTADO E FUNCIONANDO: Validação implementada corretamente. Não havia dados de teste com orçamentos abertos para validar cenário de falha."
 
 frontend:
+  - task: "Correção módulo Produtos - Erros ao cadastrar e dropdown vazio"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Produtos.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "PROBLEMAS REPORTADOS: (1) Módulo produto apresenta erros ao tentar cadastrar novo produto; (2) Ao tentar cadastrar o produto em fornecedor preferencial está aparecendo listagem vazia e deve trazer todos os fornecedores ativos."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ CORREÇÕES IMPLEMENTADAS: (1) ERRO AO CADASTRAR: Sanitização incompleta de campos opcionais - expandida para incluir TODOS os campos opcionais (marca_id, categoria_id, subcategoria_id, código_barras, peso, dimensões, fornecedor_preferencial_id, comissão, descrição, arrays vazios). Strings vazias agora são convertidas para null antes do POST/PUT; (2) DROPDOWN VAZIO: fetchData() não buscava fornecedores com incluir_inativos=true - CORRIGIDO para GET /fornecedores?incluir_inativos=true. Agora o dropdown de fornecedor preferencial exibe todos os fornecedores ativos corretamente."
+
   - task: "Correção módulo Subcategorias - Inativos não aparecem"
     implemented: true
     working: "NA"
