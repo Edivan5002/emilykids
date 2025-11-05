@@ -451,6 +451,21 @@ backend:
         comment: "✅ TESTADO E FUNCIONANDO: Validação implementada corretamente. Não havia dados de teste com orçamentos abertos para validar cenário de falha."
 
 frontend:
+  - task: "Validação completa de dependências ao EXCLUIR Fornecedor"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "SOLICITAÇÃO: Verificar se ao tentar excluir (DELETE) um cliente ou fornecedor, o sistema checa TODAS as dependências dos outros módulos (orçamentos, vendas, notas fiscais, produtos, etc)."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ ANÁLISE E CORREÇÃO: (1) DELETE /clientes/{id} - JÁ VALIDAVA: orçamentos e vendas ✅; (2) DELETE /fornecedores/{id} - FALTAVA VALIDAÇÃO: verificava apenas notas fiscais, MAS NÃO verificava produtos vinculados ❌. IMPLEMENTADO: Adicionada verificação de produtos no DELETE de fornecedores (verifica se há produtos com fornecedor_preferencial_id). Agora ambos endpoints têm validação completa de dependências antes de permitir exclusão."
+
   - task: "Correção módulo Clientes - Erro ao Cadastrar (Bug EmailStr)"
     implemented: true
     working: "NA"
