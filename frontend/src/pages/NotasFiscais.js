@@ -146,43 +146,28 @@ const NotasFiscais = () => {
     }
   };
 
-  const handleExcluir = async (notaId, confirmada) => {
-    // Se for admin ou gerente, pode excluir direto
-    if (user?.papel === 'admin' || user?.papel === 'gerente') {
-      handleExcluirDireto(notaId, confirmada);
-    } else {
-      // Vendedor precisa de autorização
-      setNotaParaExcluir({ id: notaId, confirmada });
-      setShowAutorizacao(true);
-    }
-  };
-
-  const handleExcluirDireto = async (notaId, confirmada) => {
-    const mensagem = confirmada 
-      ? 'Tem certeza que deseja excluir esta nota fiscal? O estoque será revertido.'
-      : 'Tem certeza que deseja excluir esta nota fiscal?';
+  const handleCancelar = async (notaId, confirmada) => {
+    const motivo = window.prompt(
+      confirmada 
+        ? 'Esta nota foi confirmada. Ao cancelar, o estoque será revertido.\n\nDigite o motivo do cancelamento:'
+        : 'Digite o motivo do cancelamento:'
+    );
     
-    if (!window.confirm(mensagem)) return;
+    if (!motivo || motivo.trim() === '') {
+      toast.error('Motivo do cancelamento é obrigatório');
+      return;
+    }
 
     try {
-      await axios.delete(`${API}/notas-fiscais/${notaId}`);
-      toast.success('Nota fiscal excluída com sucesso!');
+      await axios.post(`${API}/notas-fiscais/${notaId}/cancelar`, { motivo: motivo.trim() });
+      toast.success(
+        confirmada 
+          ? 'Nota fiscal cancelada e estoque revertido com sucesso!' 
+          : 'Nota fiscal cancelada com sucesso!'
+      );
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao excluir nota fiscal');
-    }
-  };
-
-  const handleAutorizacaoSucesso = async (autorizador) => {
-    if (notaParaExcluir) {
-      try {
-        await axios.delete(`${API}/notas-fiscais/${notaParaExcluir.id}`);
-        toast.success(`Nota fiscal excluída com autorização de ${autorizador.nome}!`);
-        fetchData();
-        setNotaParaExcluir(null);
-      } catch (error) {
-        toast.error(error.response?.data?.detail || 'Erro ao excluir nota fiscal');
-      }
+      toast.error(error.response?.data?.detail || 'Erro ao cancelar nota fiscal');
     }
   };
 
