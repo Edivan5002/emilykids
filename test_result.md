@@ -670,6 +670,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Validação completa de dependências ao EXCLUIR Fornecedor"
     - "Correção módulo Clientes - Erro ao Cadastrar (Bug EmailStr)"
   stuck_tasks: []
   test_all: false
