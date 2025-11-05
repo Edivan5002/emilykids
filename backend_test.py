@@ -58,8 +58,11 @@ class FornecedoresBackendTester:
         credentials_to_try = [
             {"email": "edivancelestino@yahoo.com.br", "senha": "123456"},
             {"email": "admin@emilykids.com", "senha": "Admin@123"},
-            {"email": "admin@admin.com", "senha": "admin123"},
-            {"email": "admin@inventoai.com", "senha": "admin123"}
+            {"email": "admin@emilykids.com", "senha": "admin123"},
+            {"email": "admin@emilykids.com", "senha": "123456"},
+            {"email": "paulo2@gmail.com", "senha": "123456"},
+            {"email": "paulo2@gmail.com", "senha": "admin123"},
+            {"email": "paulo2@gmail.com", "senha": "Admin@123"}
         ]
         
         for login_data in credentials_to_try:
