@@ -151,26 +151,89 @@ const Fornecedores = () => {
             <DialogHeader>
               <DialogTitle>{isEditing ? 'Editar Fornecedor' : 'Novo Fornecedor'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
               <div>
-                <Label>Nome *</Label>
-                <Input value={formData.nome} onChange={(e) => setFormData({ ...formData, nome: e.target.value })} required />
+                <Label>Razão Social *</Label>
+                <Input value={formData.razao_social} onChange={(e) => setFormData({ ...formData, razao_social: e.target.value })} required />
               </div>
-              <div>
-                <Label>CNPJ *</Label>
-                <Input value={formData.cnpj} onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })} required />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>CNPJ *</Label>
+                  <Input value={formData.cnpj} onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })} required />
+                </div>
+                <div>
+                  <Label>Inscrição Estadual</Label>
+                  <Input value={formData.ie} onChange={(e) => setFormData({ ...formData, ie: e.target.value })} />
+                </div>
               </div>
-              <div>
-                <Label>Telefone</Label>
-                <Input value={formData.telefone} onChange={(e) => setFormData({ ...formData, telefone: e.target.value })} />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Telefone</Label>
+                  <Input value={formData.telefone} onChange={(e) => setFormData({ ...formData, telefone: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                </div>
               </div>
-              <div>
-                <Label>Email</Label>
-                <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-              </div>
-              <div>
-                <Label>Endereço</Label>
-                <Input value={formData.endereco} onChange={(e) => setFormData({ ...formData, endereco: e.target.value })} />
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">Endereço</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2">
+                    <Label>Logradouro</Label>
+                    <Input 
+                      value={formData.endereco.logradouro} 
+                      onChange={(e) => setFormData({ ...formData, endereco: { ...formData.endereco, logradouro: e.target.value }})} 
+                    />
+                  </div>
+                  <div>
+                    <Label>Número</Label>
+                    <Input 
+                      value={formData.endereco.numero} 
+                      onChange={(e) => setFormData({ ...formData, endereco: { ...formData.endereco, numero: e.target.value }})} 
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Complemento</Label>
+                    <Input 
+                      value={formData.endereco.complemento} 
+                      onChange={(e) => setFormData({ ...formData, endereco: { ...formData.endereco, complemento: e.target.value }})} 
+                    />
+                  </div>
+                  <div>
+                    <Label>Bairro</Label>
+                    <Input 
+                      value={formData.endereco.bairro} 
+                      onChange={(e) => setFormData({ ...formData, endereco: { ...formData.endereco, bairro: e.target.value }})} 
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <Label>Cidade</Label>
+                    <Input 
+                      value={formData.endereco.cidade} 
+                      onChange={(e) => setFormData({ ...formData, endereco: { ...formData.endereco, cidade: e.target.value }})} 
+                    />
+                  </div>
+                  <div>
+                    <Label>Estado</Label>
+                    <Input 
+                      value={formData.endereco.estado} 
+                      onChange={(e) => setFormData({ ...formData, endereco: { ...formData.endereco, estado: e.target.value }})}
+                      maxLength={2}
+                    />
+                  </div>
+                  <div>
+                    <Label>CEP</Label>
+                    <Input 
+                      value={formData.endereco.cep} 
+                      onChange={(e) => setFormData({ ...formData, endereco: { ...formData.endereco, cep: e.target.value }})} 
+                    />
+                  </div>
+                </div>
               </div>
               <Button type="submit" className="w-full">{isEditing ? 'Atualizar' : 'Salvar'}</Button>
             </form>
