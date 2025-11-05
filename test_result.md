@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Teste de Filtros de Cadastros Inativos e Validações de Dependências: (1) Cadastros inativos NÃO devem aparecer por padrão nas listagens (para evitar que apareçam em dropdowns), (2) Cadastros só podem ser inativados se NÃO houver dependências ATIVAS vinculadas, (3) Mensagens de erro devem ser claras e informativas para o usuário."
+user_problem_statement: "NOVA TAREFA: Módulo Clientes - (1) Clientes INATIVOS devem aparecer na listagem de gerenciamento, (2) Validação já existe: só permite inativar cliente se não houver orçamentos abertos ou vendas pendentes."
 
 backend:
   - task: "Correção RBAC - Módulo Produtos (9 endpoints CRUD)"
