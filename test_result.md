@@ -451,6 +451,21 @@ backend:
         comment: "✅ TESTADO E FUNCIONANDO: Validação implementada corretamente. Não havia dados de teste com orçamentos abertos para validar cenário de falha."
 
 frontend:
+  - task: "Refatoração módulo Notas Fiscais - Cancelamento ao invés de Exclusão"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/NotasFiscais.js, /app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "REQUISITOS: (1) Remover botão 'Excluir' do módulo notas fiscais; (2) Adicionar botão 'Cancelamento'; (3) LÓGICA AO CANCELAR: Se nota NÃO foi confirmada nem atualizou estoque: apenas mudar status para 'cancelada' e bloquear confirmação/atualização; Se nota FOI confirmada e atualizou estoque: desconfirmar, desatualizar o estoque (reverter), mudar status para 'cancelada' e bloquear confirmação/atualização."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ REFATORAÇÃO COMPLETA IMPLEMENTADA: (1) FRONTEND: Removido botão 'Excluir' e sistema de autorização associado; Adicionado botão 'Cancelar' com prompt para motivo obrigatório; UI atualizada para exibir status 'cancelada' com mensagem visual; Botões de confirmação/cancelamento não aparecem se nota já está cancelada; (2) BACKEND: JÁ EXISTIA endpoint /notas-fiscais/{id}/cancelar com lógica COMPLETA - verifica se nota foi confirmada e reverte estoque se necessário, registra movimentação de cancelamento, adiciona ao histórico, muda status para 'cancelada'. Sistema agora usa cancelamento ao invés de exclusão, preservando histórico e integridade dos dados."
+
   - task: "Correção módulo Produtos - Erros ao cadastrar e dropdown vazio"
     implemented: true
     working: "NA"
