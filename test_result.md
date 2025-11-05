@@ -736,6 +736,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Correção módulo Produtos - Erros ao cadastrar e dropdown vazio"
     - "Correção módulo Subcategorias - Inativos não aparecem"
     - "Correção módulo Categorias - Inativos não aparecem"
     - "Correção módulo Marcas - Inativos não aparecem e validações incompletas"
