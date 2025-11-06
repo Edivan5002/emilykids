@@ -147,10 +147,14 @@ const IAInsights = () => {
       </div>
 
       <Tabs defaultValue="previsao" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="previsao" data-testid="tab-previsao">
             <TrendingUp className="mr-2" size={16} />
             Previsão de Demanda
+          </TabsTrigger>
+          <TabsTrigger value="precificacao" data-testid="tab-precificacao">
+            <DollarSign className="mr-2" size={16} />
+            Precificação
           </TabsTrigger>
           <TabsTrigger value="recomendacoes" data-testid="tab-recomendacoes">
             <ShoppingCart className="mr-2" size={16} />
