@@ -33,6 +33,7 @@ const Estoque = () => {
   const [inventarioAtivo, setInventarioAtivo] = useState(null);
   const [contagemDialog, setContagemDialog] = useState({ open: false, item: null, quantidade: 0, observacao: '' });
   const [cancelarDialog, setCancelarDialog] = useState({ open: false, motivo: '' });
+  const [detalhesInventarioDialog, setDetalhesInventarioDialog] = useState({ open: false, inventario: null });
 
   // Filtros
   const [filtros, setFiltros] = useState({
