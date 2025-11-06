@@ -451,6 +451,21 @@ backend:
         comment: "✅ TESTADO E FUNCIONANDO: Validação implementada corretamente. Não havia dados de teste com orçamentos abertos para validar cenário de falha."
 
 frontend:
+  - task: "Melhoria módulo Estoque - Visualização de Detalhes Profissional"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Estoque.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "REQUISITOS: (1) 'no histórico de movimentações deve possibilitar ver os detalhes com visual profissional'; (2) 'em ajuste manual deve possibilitar ver os detalhes dos ajustes realizados com visual profissional'."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ VISUALIZAÇÃO DE DETALHES IMPLEMENTADA: (1) BOTÃO VER DETALHES: Adicionado ícone Eye em cada movimentação do histórico; (2) MODAL PROFISSIONAL: Criado Dialog com layout estruturado incluindo: Informações principais (produto, SKU, tipo, quantidade) em cards com bg-gray-50; Seção 'Origem da Movimentação' com ícones descritivos e tipo de referência; Card especial azul para ajustes manuais exibindo motivo; Seção 'Informações Adicionais' com data/hora formatada e usuário responsável; (3) VISUAL: Uso de ícones (FileText, Calendar, User, AlertCircle), cores contextuais (entrada/saída), badges, grid layouts; (4) AJUSTES MANUAIS: Destaque especial para motivo do ajuste em card azul destacado. Sistema agora tem visualização completa e profissional de todas as movimentações."
+
   - task: "Refatoração módulo Notas Fiscais - Cancelamento ao invés de Exclusão"
     implemented: true
     working: "NA"
