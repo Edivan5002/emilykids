@@ -13,8 +13,13 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const Subcategorias = () => {
   const [subcategorias, setSubcategorias] = useState([]);
+  const [filteredSubcategorias, setFilteredSubcategorias] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [marcas, setMarcas] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoriaFilter, setCategoriaFilter] = useState('todas');
+  const [marcaFilter, setMarcaFilter] = useState('todas');
+  const [statusFilter, setStatusFilter] = useState('todos');
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
