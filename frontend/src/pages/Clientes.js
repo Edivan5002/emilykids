@@ -57,12 +57,15 @@ const Clientes = () => {
   }, [searchTerm, statusFilter, clientes]);
 
   const fetchClientes = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get(`${API}/clientes?incluir_inativos=true`);
+      const response = await axios.get(`${API}/clientes?incluir_inativos=true&limit=0`);
       setClientes(response.data);
       setFilteredClientes(response.data);
     } catch (error) {
-      toast.error('Erro ao carregar clientes');
+      toast.error('Erro ao carregar clientes. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
