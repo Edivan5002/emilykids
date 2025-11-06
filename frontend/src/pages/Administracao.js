@@ -235,7 +235,7 @@ const Administracao = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5 mb-6">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 mb-6">
           <TabsTrigger value="dashboard">
             <Database size={16} className="mr-2" />
             Dashboard
@@ -243,6 +243,10 @@ const Administracao = () => {
           <TabsTrigger value="vendas">
             <ShoppingCart size={16} className="mr-2" />
             Vendas
+          </TabsTrigger>
+          <TabsTrigger value="orcamentos">
+            <FileText size={16} className="mr-2" />
+            Orçamentos
           </TabsTrigger>
           <TabsTrigger value="logs">
             <FileText size={16} className="mr-2" />
