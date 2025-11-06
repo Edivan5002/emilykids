@@ -247,16 +247,16 @@ const Clientes = () => {
               filteredClientes.map((c) => (
               <tr key={c.id}>
                 <td className="font-medium">{c.nome}</td>
-                <td>{c.cpf_cnpj}</td>
-                <td>{c.telefone || '-'}</td>
-                <td>{c.email || '-'}</td>
+                <td className="hidden sm:table-cell">{c.cpf_cnpj}</td>
+                <td className="hidden md:table-cell">{c.telefone || '-'}</td>
+                <td className="hidden lg:table-cell">{c.email || '-'}</td>
                 <td>
                   <span className={`badge ${c.ativo ? 'badge-success' : 'badge-danger'}`}>
                     {c.ativo ? 'Ativo' : 'Inativo'}
                   </span>
                 </td>
                 <td className="text-right">
-                  <div className="flex justify-end gap-2">
+                  <div className="flex justify-end gap-1 sm:gap-2">
                     <Button variant="ghost" size="sm" onClick={() => handleEdit(c)} title="Editar">
                       <Edit size={16} />
                     </Button>
@@ -265,10 +265,11 @@ const Clientes = () => {
                       size="sm"
                       onClick={() => setToggleDialog({ open: true, id: c.id, nome: c.nome, ativo: c.ativo })}
                       title={c.ativo ? 'Inativar' : 'Ativar'}
+                      className="hidden sm:flex"
                     >
                       <Power size={16} className={c.ativo ? 'text-orange-500' : 'text-green-500'} />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setDeleteDialog({ open: true, id: c.id, nome: c.nome })} title="Excluir">
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteDialog({ open: true, id: c.id, nome: c.nome })} title="Excluir" className="hidden sm:flex">
                       <Trash2 size={16} className="text-red-500" />
                     </Button>
                   </div>
