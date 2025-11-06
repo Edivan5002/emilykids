@@ -58,6 +58,7 @@ const Dashboard = () => {
     {
       title: 'Total de Clientes',
       value: stats?.total_clientes || 0,
+      subtitle: `${stats?.total_clientes_ativos || 0} ativos • ${stats?.total_clientes_inativos || 0} inativos`,
       icon: Users,
       color: 'bg-blue-500',
       testid: 'total-clientes-card'
@@ -65,6 +66,7 @@ const Dashboard = () => {
     {
       title: 'Total de Produtos',
       value: stats?.total_produtos || 0,
+      subtitle: `${stats?.total_produtos_ativos || 0} ativos • ${stats?.total_produtos_inativos || 0} inativos`,
       icon: Package,
       color: 'bg-green-500',
       testid: 'total-produtos-card'
@@ -72,6 +74,7 @@ const Dashboard = () => {
     {
       title: 'Total de Vendas',
       value: stats?.total_vendas || 0,
+      subtitle: 'Vendas efetivadas',
       icon: ShoppingCart,
       color: 'bg-purple-500',
       testid: 'total-vendas-card'
@@ -79,6 +82,7 @@ const Dashboard = () => {
     {
       title: 'Faturamento Total',
       value: `R$ ${(stats?.total_faturamento || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      subtitle: 'Vendas efetivadas',
       icon: DollarSign,
       color: 'bg-yellow-500',
       testid: 'faturamento-card'
@@ -106,10 +110,13 @@ const Dashboard = () => {
           return (
             <Card key={stat.title} className="card-hover" data-testid={stat.testid}>
               <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex-1">
                     <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
                     <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                    {stat.subtitle && (
+                      <p className="text-xs text-gray-500 mt-1">{stat.subtitle}</p>
+                    )}
                   </div>
                   <div className={`${stat.color} p-4 rounded-xl`}>
                     <Icon className="text-white" size={24} />
