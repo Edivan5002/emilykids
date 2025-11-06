@@ -195,6 +195,48 @@ const Produtos = () => {
     }));
   };
 
+  const handleExportarProdutos = () => {
+    try {
+      const columns = [
+        { key: 'sku', label: 'SKU' },
+        { key: 'nome', label: 'Nome' },
+        { key: 'marca_nome', label: 'Marca' },
+        { key: 'categoria_nome', label: 'Categoria' },
+        { key: 'subcategoria_nome', label: 'Subcategoria' },
+        { key: 'preco_custo', label: 'Preço Custo' },
+        { key: 'preco_venda', label: 'Preço Venda' },
+        { key: 'margem_lucro', label: 'Margem (%)' },
+        { key: 'estoque_atual', label: 'Estoque Atual' },
+        { key: 'estoque_minimo', label: 'Estoque Mínimo' },
+        { key: 'estoque_maximo', label: 'Estoque Máximo' },
+        { key: 'ativo', label: 'Status' }
+      ];
+
+      // Preparar dados com nomes das relações
+      const dadosExportacao = produtosFiltrados.map(p => {
+        const marca = marcas.find(m => m.id === p.marca_id);
+        const categoria = categorias.find(c => c.id === p.categoria_id);
+        const subcategoria = subcategorias.find(s => s.id === p.subcategoria_id);
+        
+        return {
+          ...p,
+          marca_nome: marca?.nome || '-',
+          categoria_nome: categoria?.nome || '-',
+          subcategoria_nome: subcategoria?.nome || '-',
+          preco_custo: formatCurrency(p.preco_custo),
+          preco_venda: formatCurrency(p.preco_venda),
+          margem_lucro: p.margem_lucro?.toFixed(2) || '0.00',
+          ativo: p.ativo ? 'Ativo' : 'Inativo'
+        };
+      });
+
+      exportToCSV(dadosExportacao, 'produtos', columns);
+      toast.success('Produtos exportados com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao exportar produtos: ' + error.message);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
