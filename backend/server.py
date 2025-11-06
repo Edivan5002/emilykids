@@ -4901,9 +4901,11 @@ async def get_vendas(
     status_venda: str = None,
     status_entrega: str = None,
     cliente_id: str = None,
+    page: int = 1,
+    limit: int = 100,
     current_user: dict = Depends(require_permission("vendas", "ler"))
 ):
-    """Lista vendas com filtros"""
+    """Lista vendas com filtros e paginação opcional"""
     filtro = {}
     if status_venda:
         filtro["status_venda"] = status_venda
@@ -4912,7 +4914,13 @@ async def get_vendas(
     if cliente_id:
         filtro["cliente_id"] = cliente_id
     
-    vendas = await db.vendas.find(filtro, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    # Se limit=0, retorna todos (mantém compatibilidade)
+    if limit == 0:
+        vendas = await db.vendas.find(filtro, {"_id": 0}).sort("created_at", -1).to_list(10000)
+    else:
+        skip = (page - 1) * limit
+        vendas = await db.vendas.find(filtro, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
     return vendas
 
 @api_router.post("/vendas", response_model=Venda)
