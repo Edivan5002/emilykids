@@ -258,10 +258,10 @@ const Vendas = () => {
     vendasBoleto: vendasEfetivadas.filter(v => v.forma_pagamento === 'boleto').length
   };
 
-  // Top produtos mais vendidos
+  // Top produtos mais vendidos (apenas vendas efetivadas)
   const produtosMaisVendidos = () => {
     const produtosMap = {};
-    vendasFiltradas.forEach(venda => {
+    vendasEfetivadas.forEach(venda => {
       venda.itens.forEach(item => {
         if (!produtosMap[item.produto_id]) {
           produtosMap[item.produto_id] = {
