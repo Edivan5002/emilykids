@@ -618,6 +618,7 @@ const Administracao = () => {
               variant="destructive"
               onClick={() => {
                 if (confirmDialog.action === 'deleteVendas') handleDeleteVendasAntigas();
+                if (confirmDialog.action === 'deleteOrcamentos') handleDeleteOrcamentosAntigos();
                 if (confirmDialog.action === 'limparLogs') handleLimparLogs();
                 if (confirmDialog.action === 'resetarModulo') handleResetarModulo();
                 if (confirmDialog.action === 'removerTeste') handleRemoverDadosTeste();
