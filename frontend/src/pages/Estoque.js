@@ -61,15 +61,6 @@ const Estoque = () => {
       setAlertas(alertRes.data);
       setMarcas(marcasRes.data);
       setCategorias(catRes.data);
-
-      // Tentar buscar usuários (pode falhar se não for admin)
-      try {
-        const userRes = await axios.get(`${API}/usuarios`);
-        setUsuarios(userRes.data);
-      } catch (userError) {
-        console.log('Não foi possível carregar lista de usuários');
-        setUsuarios([]);
-      }
     } catch (error) {
       toast.error('Erro ao carregar dados');
     }
