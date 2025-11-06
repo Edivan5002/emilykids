@@ -274,7 +274,8 @@ const Clientes = () => {
                   </div>
                 </td>
               </tr>
-            ))}
+              ))
+            )}
           </tbody>
         </table>
       </div>
