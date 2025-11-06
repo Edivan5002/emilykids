@@ -72,15 +72,25 @@ table {
 
 table th {
   text-align: left;
-  padding: 1rem;
+  padding: 0.75rem 0.5rem;
   font-weight: 600;
   border-bottom: 2px solid #e2e8f0;
   color: #64748b;
+  font-size: 0.875rem;
 }
 
 table td {
-  padding: 1rem;
+  padding: 0.75rem 0.5rem;
   border-bottom: 1px solid #f1f5f9;
+  font-size: 0.875rem;
+}
+
+@media (min-width: 768px) {
+  table th,
+  table td {
+    padding: 1rem;
+    font-size: 1rem;
+  }
 }
 
 table tr:hover {
