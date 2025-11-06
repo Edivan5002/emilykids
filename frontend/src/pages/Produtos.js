@@ -1019,6 +1019,7 @@ const Produtos = () => {
         <table>
           <thead>
             <tr>
+              <th>Imagem</th>
               <th>SKU</th>
               <th>Nome</th>
               <th>Marca</th>
