@@ -7675,6 +7675,43 @@ async def admin_delete_vendas_antigas(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/admin/delete-orcamentos-antigos")
+async def admin_delete_orcamentos_antigos(
+    request: AdminDeleteOrcamentosRequest,
+    current_user: dict = Depends(require_permission("admin", "deletar"))
+):
+    """Deleta orçamentos mais antigos que X dias"""
+    # Verificar senha mestra
+    if request.senha_mestra != os.environ.get('ADMIN_MASTER_PASSWORD'):
+        raise HTTPException(status_code=403, detail="Senha mestra incorreta")
+    
+    try:
+        data_limite = (datetime.now(timezone.utc) - timedelta(days=request.dias)).isoformat()
+        
+        # Contar antes de deletar
+        count = await db.orcamentos.count_documents({"created_at": {"$lt": data_limite}})
+        
+        # Deletar orçamentos antigos
+        result = await db.orcamentos.delete_many({"created_at": {"$lt": data_limite}})
+        
+        # Log de auditoria
+        await log_action(
+            ip="0.0.0.0",
+            user_id=current_user["id"],
+            user_nome=current_user["nome"],
+            tela="administracao",
+            acao="deletar_orcamentos_antigos",
+            detalhes={"dias": request.dias, "orcamentos_deletados": result.deleted_count}
+        )
+        
+        return {
+            "success": True,
+            "message": f"{result.deleted_count} orçamentos deletados",
+            "deletadas": result.deleted_count
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.post("/admin/limpar-logs")
 async def admin_limpar_logs(
     request: AdminLimparLogsRequest,
