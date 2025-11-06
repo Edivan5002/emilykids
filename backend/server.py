@@ -6475,6 +6475,156 @@ Seja específico, use números e forneça recomendações práticas e acionávei
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro na análise: {str(e)}")
 
+@api_router.post("/ia/sugestao-precificacao")
+async def sugestao_precificacao(request: PrevisaoDemandaRequest, current_user: dict = Depends(get_current_user)):
+    """Sugestão inteligente de precificação usando IA"""
+    try:
+        produto_id = request.produto_id
+        
+        # Buscar produto
+        produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
+        if not produto:
+            raise HTTPException(status_code=404, detail="Produto não encontrado")
+        
+        # Buscar marca e categoria
+        marca = await db.marcas.find_one({"id": produto.get("marca_id")}, {"_id": 0})
+        categoria = await db.categorias.find_one({"id": produto.get("categoria_id")}, {"_id": 0})
+        
+        # Buscar histórico de vendas
+        vendas = await db.vendas.find({}, {"_id": 0}).to_list(1000)
+        
+        # Calcular estatísticas de vendas
+        quantidade_vendida = 0
+        receita_total = 0
+        ticket_medio_produto = 0
+        vendas_produto = 0
+        
+        for venda in vendas:
+            for item in venda.get("itens", []):
+                if item["produto_id"] == produto_id:
+                    quantidade_vendida += item["quantidade"]
+                    receita_total += item["preco_unitario"] * item["quantidade"]
+                    vendas_produto += 1
+        
+        if vendas_produto > 0:
+            ticket_medio_produto = receita_total / vendas_produto
+        
+        # Buscar produtos similares (mesma categoria)
+        produtos_similares = await db.produtos.find(
+            {
+                "categoria_id": produto.get("categoria_id"),
+                "id": {"$ne": produto_id},
+                "ativo": True
+            },
+            {"_id": 0}
+        ).limit(10).to_list(10)
+        
+        precos_similares = [p.get("preco_venda", 0) for p in produtos_similares if p.get("preco_venda")]
+        preco_medio_categoria = sum(precos_similares) / len(precos_similares) if precos_similares else 0
+        preco_minimo_categoria = min(precos_similares) if precos_similares else 0
+        preco_maximo_categoria = max(precos_similares) if precos_similares else 0
+        
+        # Usar GPT-4 para análise de precificação
+        api_key = os.environ.get('EMERGENT_LLM_KEY')
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"precificacao-{produto_id}-{datetime.now().isoformat()}",
+            system_message="Você é um especialista em precificação estratégica e análise de mercado. Forneça recomendações objetivas e fundamentadas."
+        ).with_model("openai", "gpt-4")
+        
+        prompt = f"""Analise a precificação do produto "{produto['nome']}" e forneça sugestões estratégicas:
+
+DADOS DO PRODUTO:
+- SKU: {produto['sku']}
+- Marca: {marca.get('nome') if marca else 'N/A'}
+- Categoria: {categoria.get('nome') if categoria else 'N/A'}
+- Preço de Custo Atual: R$ {produto.get('preco_custo', 0):.2f}
+- Preço de Venda Atual: R$ {produto.get('preco_venda', 0):.2f}
+- Margem de Lucro Atual: {produto.get('margem_lucro', 0):.2f}%
+- Estoque Atual: {produto.get('estoque_atual', 0)} unidades
+
+PERFORMANCE DE VENDAS:
+- Quantidade Total Vendida: {quantidade_vendida} unidades
+- Número de Transações: {vendas_produto} vendas
+- Receita Total Gerada: R$ {receita_total:.2f}
+- Ticket Médio do Produto: R$ {ticket_medio_produto:.2f}
+
+ANÁLISE DE MERCADO (Produtos Similares na Categoria):
+- Preço Médio da Categoria: R$ {preco_medio_categoria:.2f}
+- Faixa de Preço: R$ {preco_minimo_categoria:.2f} - R$ {preco_maximo_categoria:.2f}
+- Total de Produtos Similares: {len(produtos_similares)}
+
+TAREFA - FORNEÇA UMA ANÁLISE COMPLETA DE PRECIFICAÇÃO:
+
+1. **Análise do Preço Atual**:
+   - O preço está adequado? Muito alto ou muito baixo?
+   - A margem de lucro é saudável?
+   - Como se compara com a média da categoria?
+
+2. **Sugestão de Preço Ótimo**:
+   - Calcule um preço de venda sugerido
+   - Justifique com base em custos, mercado e performance
+   - Considere elasticidade de demanda
+
+3. **Estratégias de Precificação**:
+   - Preço premium vs. preço competitivo
+   - Possibilidade de promoções
+   - Pacotes e combos
+   - Precificação psicológica (ex: R$ 99,90 vs R$ 100)
+
+4. **Análise de Margem**:
+   - A margem atual é sustentável?
+   - Margem ideal para esta categoria
+   - Trade-off entre margem e volume
+
+5. **Recomendações Estratégicas**:
+   - Ações imediatas (aumentar, diminuir, manter)
+   - Impacto esperado nas vendas
+   - Riscos e oportunidades
+
+Seja específico nos valores sugeridos e forneça justificativas claras para cada recomendação."""
+        
+        message = UserMessage(text=prompt)
+        response = await chat.send_message(message)
+        
+        # Calcular alguns indicadores adicionais
+        markup_atual = ((produto.get('preco_venda', 0) - produto.get('preco_custo', 0)) / produto.get('preco_custo', 1)) * 100
+        roi = (receita_total - (produto.get('preco_custo', 0) * quantidade_vendida)) / max(produto.get('preco_custo', 0) * quantidade_vendida, 1) * 100 if quantidade_vendida > 0 else 0
+        
+        return {
+            "success": True,
+            "produto": {
+                "id": produto["id"],
+                "nome": produto["nome"],
+                "sku": produto["sku"],
+                "marca": marca.get('nome') if marca else 'N/A',
+                "categoria": categoria.get('nome') if categoria else 'N/A',
+                "preco_custo": produto.get('preco_custo', 0),
+                "preco_venda": produto.get('preco_venda', 0),
+                "margem_lucro": produto.get('margem_lucro', 0)
+            },
+            "estatisticas_vendas": {
+                "quantidade_vendida": quantidade_vendida,
+                "receita_total": round(receita_total, 2),
+                "vendas_realizadas": vendas_produto,
+                "ticket_medio": round(ticket_medio_produto, 2)
+            },
+            "analise_mercado": {
+                "preco_medio_categoria": round(preco_medio_categoria, 2),
+                "preco_minimo_categoria": round(preco_minimo_categoria, 2),
+                "preco_maximo_categoria": round(preco_maximo_categoria, 2),
+                "produtos_similares": len(produtos_similares)
+            },
+            "indicadores": {
+                "markup_atual": round(markup_atual, 2),
+                "roi": round(roi, 2)
+            },
+            "sugestao_ia": response,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro na análise de precificação: {str(e)}")
+
 # ========== RELATÓRIOS ==========
 
 @api_router.get("/relatorios/dashboard")
