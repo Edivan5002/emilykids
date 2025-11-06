@@ -22,6 +22,7 @@ const Marcas = () => {
   const [formData, setFormData] = useState({ nome: '', ativo: true });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, nome: '' });
   const [toggleDialog, setToggleDialog] = useState({ open: false, id: null, nome: '', ativo: false });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchMarcas();
