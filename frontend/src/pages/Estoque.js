@@ -638,6 +638,129 @@ const Estoque = () => {
         onAutorizado={handleAutorizacaoSucesso}
         acao="realizar ajuste manual de estoque"
       />
+
+      {/* Modal de Detalhes da Movimentação */}
+      <Dialog open={isDetalhesOpen} onOpenChange={setIsDetalhesOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText size={24} />
+              Detalhes da Movimentação
+            </DialogTitle>
+          </DialogHeader>
+          
+          {detalhesMovimentacao && (
+            <div className="space-y-6">
+              {/* Informações Principais */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Produto</p>
+                  <p className="font-semibold">
+                    {produtos.find(p => p.id === detalhesMovimentacao.produto_id)?.nome || 'Produto não encontrado'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">SKU</p>
+                  <p className="font-semibold">
+                    {produtos.find(p => p.id === detalhesMovimentacao.produto_id)?.sku || '-'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Tipo de Movimentação</p>
+                  <div className="flex items-center gap-2">
+                    {getTipoIcon(detalhesMovimentacao.tipo)}
+                    <span className={`font-semibold ${getTipoColor(detalhesMovimentacao.tipo)}`}>
+                      {detalhesMovimentacao.tipo === 'entrada' ? 'ENTRADA' : 'SAÍDA'}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Quantidade</p>
+                  <p className={`text-2xl font-bold ${getTipoColor(detalhesMovimentacao.tipo)}`}>
+                    {detalhesMovimentacao.tipo === 'entrada' ? '+' : '-'}{detalhesMovimentacao.quantidade}
+                  </p>
+                </div>
+              </div>
+
+              {/* Informações de Referência */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg border-b pb-2">Origem da Movimentação</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Tipo de Referência</p>
+                    <p className="font-medium">
+                      {detalhesMovimentacao.referencia_tipo === 'nota_fiscal' && '📄 Nota Fiscal'}
+                      {detalhesMovimentacao.referencia_tipo === 'venda' && '💰 Venda'}
+                      {detalhesMovimentacao.referencia_tipo === 'orcamento' && '📋 Orçamento'}
+                      {detalhesMovimentacao.referencia_tipo === 'devolucao' && '↩️ Devolução'}
+                      {detalhesMovimentacao.referencia_tipo === 'devolucao_venda' && '↩️ Devolução de Venda'}
+                      {detalhesMovimentacao.referencia_tipo === 'ajuste_manual' && '⚙️ Ajuste Manual'}
+                      {detalhesMovimentacao.referencia_tipo === 'cancelamento_nota_fiscal' && '❌ Cancelamento de NF'}
+                    </p>
+                  </div>
+                  {detalhesMovimentacao.referencia_id && (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">ID de Referência</p>
+                      <p className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                        {detalhesMovimentacao.referencia_id.substring(0, 8)}...
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Informações de Ajuste Manual */}
+              {detalhesMovimentacao.referencia_tipo === 'ajuste_manual' && detalhesMovimentacao.motivo && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                    <AlertCircle size={18} />
+                    Motivo do Ajuste
+                  </h3>
+                  <p className="text-blue-800">{detalhesMovimentacao.motivo}</p>
+                </div>
+              )}
+
+              {/* Informações de Data e Usuário */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg border-b pb-2">Informações Adicionais</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar size={18} className="text-gray-500" />
+                    <div>
+                      <p className="text-sm text-gray-600">Data e Hora</p>
+                      <p className="font-medium">
+                        {new Date(detalhesMovimentacao.timestamp).toLocaleString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  {detalhesMovimentacao.user_id && (
+                    <div className="flex items-center gap-2">
+                      <User size={18} className="text-gray-500" />
+                      <div>
+                        <p className="text-sm text-gray-600">Usuário Responsável</p>
+                        <p className="font-medium">ID: {detalhesMovimentacao.user_id.substring(0, 8)}...</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Botão de Fechar */}
+              <div className="flex justify-end pt-4 border-t">
+                <Button onClick={handleCloseDetalhes}>
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
