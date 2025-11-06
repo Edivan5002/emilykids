@@ -89,29 +89,6 @@ const LoginPage = () => {
     }
   };
 
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    
-    if (!forgotEmail) {
-      toast.error('Digite seu email');
-      return;
-    }
-
-    setForgotLoading(true);
-    try {
-      await axios.post(`${API}/auth/forgot-password?email=${encodeURIComponent(forgotEmail)}`);
-      toast.success('Instruções enviadas! Verifique seu email (ou console do servidor em desenvolvimento).', {
-        duration: 6000
-      });
-      setShowForgotPassword(false);
-      setForgotEmail('');
-    } catch (error) {
-      toast.error('Erro ao solicitar recuperação de senha');
-    } finally {
-      setForgotLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#F5F2E9' }}>
       <div className="w-full max-w-md">
