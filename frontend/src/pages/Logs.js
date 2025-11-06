@@ -1001,6 +1001,184 @@ const Logs = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Modal de Detalhes do Log */}
+      <Dialog open={isDetalhesOpen} onOpenChange={setIsDetalhesOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText size={24} />
+              Detalhes Completos do Log
+            </DialogTitle>
+          </DialogHeader>
+          
+          {detalhesLog && (
+            <div className="space-y-6">
+              {/* Badge de Severidade */}
+              <div className="flex items-center justify-center">
+                <Badge className={`${getSeveridadeBadge(detalhesLog.severidade)} text-lg px-4 py-2`}>
+                  {detalhesLog.severidade}
+                </Badge>
+              </div>
+
+              {/* Informações do Usuário */}
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <User size={20} />
+                  Informações do Usuário
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Nome</p>
+                    <p className="font-semibold">{detalhesLog.user_nome}</p>
+                  </div>
+                  {detalhesLog.user_email && (
+                    <div>
+                      <p className="text-sm text-gray-600">Email</p>
+                      <p className="font-semibold">{detalhesLog.user_email}</p>
+                    </div>
+                  )}
+                  {detalhesLog.user_papel && (
+                    <div>
+                      <p className="text-sm text-gray-600">Papel/Função</p>
+                      <p className="font-semibold">{detalhesLog.user_papel}</p>
+                    </div>
+                  )}
+                  {detalhesLog.user_id && (
+                    <div>
+                      <p className="text-sm text-gray-600">ID do Usuário</p>
+                      <p className="font-mono text-sm bg-white px-2 py-1 rounded">
+                        {detalhesLog.user_id.substring(0, 12)}...
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Informações da Ação */}
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <Activity size={20} className="text-blue-600" />
+                  Ação Executada
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Tela/Módulo</p>
+                    <p className="font-semibold text-blue-900">{detalhesLog.tela}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Ação</p>
+                    <p className="font-semibold text-blue-900">{detalhesLog.acao}</p>
+                  </div>
+                  {detalhesLog.metodo_http && (
+                    <div>
+                      <p className="text-sm text-gray-600">Método HTTP</p>
+                      <Badge variant="outline">{detalhesLog.metodo_http}</Badge>
+                    </div>
+                  )}
+                  {detalhesLog.status_code && (
+                    <div>
+                      <p className="text-sm text-gray-600">Status Code</p>
+                      <Badge variant="outline" className={detalhesLog.status_code < 400 ? 'bg-green-100' : 'bg-red-100'}>
+                        {detalhesLog.status_code}
+                      </Badge>
+                    </div>
+                  )}
+                  {detalhesLog.endpoint && (
+                    <div className="col-span-2">
+                      <p className="text-sm text-gray-600">Endpoint</p>
+                      <p className="font-mono text-sm bg-white px-2 py-1 rounded border">
+                        {detalhesLog.endpoint}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Informações Técnicas */}
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <Monitor size={20} />
+                  Informações Técnicas
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">IP</p>
+                    <p className="font-mono text-sm bg-white px-2 py-1 rounded flex items-center gap-2">
+                      <Globe size={14} />
+                      {detalhesLog.ip}
+                    </p>
+                  </div>
+                  {detalhesLog.navegador && (
+                    <div>
+                      <p className="text-sm text-gray-600">Navegador</p>
+                      <p className="font-medium">{detalhesLog.navegador}</p>
+                    </div>
+                  )}
+                  {detalhesLog.dispositivo && (
+                    <div>
+                      <p className="text-sm text-gray-600">Dispositivo</p>
+                      <p className="font-medium flex items-center gap-2">
+                        <Smartphone size={14} />
+                        {detalhesLog.dispositivo}
+                      </p>
+                    </div>
+                  )}
+                  {detalhesLog.tempo_execucao_ms && (
+                    <div>
+                      <p className="text-sm text-gray-600">Tempo de Execução</p>
+                      <p className="font-semibold flex items-center gap-2">
+                        <Clock size={14} />
+                        {detalhesLog.tempo_execucao_ms.toFixed(2)}ms
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Data e Hora */}
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Calendar size={18} className="text-gray-500" />
+                  <div>
+                    <p className="text-sm text-gray-600">Data e Hora</p>
+                    <p className="font-medium">
+                      {new Date(detalhesLog.timestamp).toLocaleString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Detalhes Extras (JSON) */}
+              {detalhesLog.detalhes && Object.keys(detalhesLog.detalhes).length > 0 && (
+                <div className="p-4 bg-gray-900 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-3 text-white flex items-center gap-2">
+                    <FileText size={20} />
+                    Detalhes Adicionais (JSON)
+                  </h3>
+                  <pre className="text-green-400 text-xs overflow-auto max-h-60 bg-black p-3 rounded border border-gray-700">
+                    {JSON.stringify(detalhesLog.detalhes, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {/* Botão de Fechar */}
+              <div className="flex justify-end pt-4 border-t">
+                <Button onClick={handleCloseDetalhes}>
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
