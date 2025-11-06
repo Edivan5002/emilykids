@@ -19,8 +19,6 @@ const Vendas = () => {
   const [vendas, setVendas] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [produtos, setProdutos] = useState([]);
-  const [showAutorizacao, setShowAutorizacao] = useState(false);
-  const [vendaParaExcluir, setVendaParaExcluir] = useState(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
