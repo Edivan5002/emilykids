@@ -685,14 +685,7 @@ const Vendas = () => {
                   )}
                 </CardContent>
               </Card>
-            ))}
-
-            {vendasFiltradas.length === 0 && (
-              <Card>
-                <CardContent className="p-12 text-center text-gray-500">
-                  Nenhuma venda encontrada com os filtros selecionados
-                </CardContent>
-              </Card>
+              ))
             )}
           </div>
         </TabsContent>
