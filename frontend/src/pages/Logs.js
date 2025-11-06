@@ -24,8 +24,13 @@ import {
   TrendingUp,
   Monitor,
   Smartphone,
-  Globe
+  Globe,
+  Eye,
+  FileText,
+  Calendar,
+  User
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
