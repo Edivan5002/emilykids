@@ -215,6 +215,10 @@ const Administracao = () => {
     setConfirmDialog({ open: true, action, data });
   };
 
+  const handleVerDetalhes = (log) => {
+    setDetalhesDialog({ open: true, log });
+  };
+
   return (
     <div className="page-container">
       {/* Header */}
