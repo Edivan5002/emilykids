@@ -434,6 +434,177 @@ const Estoque = () => {
           </Card>
         </TabsContent>
 
+        {/* TAB: INVENTÁRIO PERIÓDICO */}
+        <TabsContent value="inventario">
+          <div className="space-y-4">
+            {/* Status do Inventário Ativo */}
+            {inventarioAtivo ? (
+              <Card className="border-green-500 border-2">
+                <CardHeader className="bg-green-50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-green-800">Inventário em Andamento</CardTitle>
+                      <p className="text-sm text-green-600 mt-1">
+                        {inventarioAtivo.numero} - Iniciado em {new Date(inventarioAtivo.data_inicio).toLocaleString('pt-BR')}
+                      </p>
+                    </div>
+                    <Button variant="destructive" onClick={finalizarInventario}>
+                      <CheckCircle className="mr-2" size={16} />
+                      Finalizar Inventário
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="grid grid-cols-4 gap-4 mb-4">
+                    <div className="text-center p-3 bg-blue-50 rounded">
+                      <p className="text-2xl font-bold text-blue-600">{inventarioAtivo.total_produtos}</p>
+                      <p className="text-sm text-gray-600">Total de Produtos</p>
+                    </div>
+                    <div className="text-center p-3 bg-green-50 rounded">
+                      <p className="text-2xl font-bold text-green-600">{inventarioAtivo.total_contados}</p>
+                      <p className="text-sm text-gray-600">Contados</p>
+                    </div>
+                    <div className="text-center p-3 bg-yellow-50 rounded">
+                      <p className="text-2xl font-bold text-yellow-600">
+                        {inventarioAtivo.total_produtos - inventarioAtivo.total_contados}
+                      </p>
+                      <p className="text-sm text-gray-600">Pendentes</p>
+                    </div>
+                    <div className="text-center p-3 bg-red-50 rounded">
+                      <p className="text-2xl font-bold text-red-600">{inventarioAtivo.total_divergencias}</p>
+                      <p className="text-sm text-gray-600">Divergências</p>
+                    </div>
+                  </div>
+
+                  {/* Lista de Produtos para Contagem */}
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="text-left p-3">SKU</th>
+                          <th className="text-left p-3">Produto</th>
+                          <th className="text-center p-3">Estoque Sistema</th>
+                          <th className="text-center p-3">Contado</th>
+                          <th className="text-center p-3">Diferença</th>
+                          <th className="text-center p-3">Status</th>
+                          <th className="text-center p-3">Ação</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {inventarioAtivo.itens.map((item, idx) => (
+                          <tr key={idx} className={item.estoque_contado !== null ? 'bg-green-50' : ''}>
+                            <td className="p-3 font-mono text-sm">{item.produto_sku}</td>
+                            <td className="p-3">{item.produto_nome}</td>
+                            <td className="p-3 text-center font-semibold">{item.estoque_sistema}</td>
+                            <td className="p-3 text-center">
+                              {item.estoque_contado !== null ? (
+                                <span className="font-semibold text-green-600">{item.estoque_contado}</span>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center">
+                              {item.diferenca !== null && item.diferenca !== 0 ? (
+                                <span className={`font-semibold ${item.diferenca > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  {item.diferenca > 0 ? '+' : ''}{item.diferenca}
+                                </span>
+                              ) : item.diferenca === 0 ? (
+                                <span className="text-green-600">✓</span>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center">
+                              {item.estoque_contado !== null ? (
+                                <span className="text-xs bg-green-500 text-white px-2 py-1 rounded">Contado</span>
+                              ) : (
+                                <span className="text-xs bg-yellow-500 text-white px-2 py-1 rounded">Pendente</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center">
+                              <Button
+                                size="sm"
+                                variant={item.estoque_contado !== null ? 'outline' : 'default'}
+                                onClick={() => setContagemDialog({
+                                  open: true,
+                                  item: item,
+                                  quantidade: item.estoque_contado || item.estoque_sistema,
+                                  observacao: item.observacao || ''
+                                })}
+                              >
+                                {item.estoque_contado !== null ? 'Recontar' : 'Contar'}
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Inventário Periódico</CardTitle>
+                    <Button onClick={iniciarNovoInventario}>
+                      <Play className="mr-2" size={16} />
+                      Iniciar Novo Inventário
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-12 text-gray-500">
+                    <Clipboard size={64} className="mx-auto mb-4 text-gray-300" />
+                    <p className="text-lg font-medium">Nenhum inventário em andamento</p>
+                    <p className="text-sm">Clique em "Iniciar Novo Inventário" para começar</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Histórico de Inventários */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Histórico de Inventários</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {inventarios.filter(inv => inv.status !== 'em_andamento').length > 0 ? (
+                    inventarios.filter(inv => inv.status !== 'em_andamento').map(inv => (
+                      <div key={inv.id} className="border rounded-lg p-4 flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <span className="font-semibold">{inv.numero}</span>
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              inv.status === 'concluido' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                            }`}>
+                              {inv.status === 'concluido' ? 'Concluído' : 'Cancelado'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {new Date(inv.data_inicio).toLocaleDateString('pt-BR')} - 
+                            {inv.data_conclusao && ` ${new Date(inv.data_conclusao).toLocaleDateString('pt-BR')}`}
+                          </p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {inv.total_produtos} produtos • {inv.total_divergencias} divergências
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-500">Responsável:</p>
+                          <p className="text-sm font-medium">{inv.responsavel_nome}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-center text-gray-500 py-8">Nenhum inventário concluído</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
         {/* TAB: MOVIMENTAÇÕES */}
         <TabsContent value="movimentacoes">
           <Card>
