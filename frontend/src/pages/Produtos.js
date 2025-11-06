@@ -471,9 +471,9 @@ const Produtos = () => {
     }
   };
 
-  const uploadImageToProduct = async () => {
-    if (!previewImage) {
-      toast.error('Selecione uma imagem primeiro');
+  const uploadImagesToProduct = async () => {
+    if (previewImages.length === 0) {
+      toast.error('Selecione pelo menos uma imagem');
       return;
     }
 
@@ -481,24 +481,24 @@ const Produtos = () => {
       // Se está criando produto, adiciona à lista de fotos
       setFormData(prev => ({
         ...prev,
-        fotos: [...(prev.fotos || []), previewImage]
+        fotos: [...(prev.fotos || []), ...previewImages]
       }));
-      setPreviewImage(null);
-      toast.success('Imagem adicionada! Salve o produto para confirmar.');
+      setPreviewImages([]);
+      toast.success(`${previewImages.length} imagem(ns) adicionada(s)! Salve o produto para confirmar.`);
       return;
     }
 
-    // Se está editando, faz upload imediato
+    // Se está editando, faz upload imediato de todas as imagens
     setUploadingImage(true);
     try {
-      await axios.post(`${API}/produtos/${editingId}/upload-imagem`, {
-        imagem: previewImage
-      });
-      toast.success('Imagem enviada com sucesso!');
-      setPreviewImage(null);
+      for (const imagem of previewImages) {
+        await axios.post(`${API}/produtos/${editingId}/upload-imagem`, { imagem });
+      }
+      toast.success(`${previewImages.length} imagem(ns) enviada(s) com sucesso!`);
+      setPreviewImages([]);
       fetchData(); // Recarregar produtos
     } catch (error) {
-      toast.error('Erro ao enviar imagem: ' + (error.response?.data?.detail || error.message));
+      toast.error('Erro ao enviar imagens: ' + (error.response?.data?.detail || error.message));
     } finally {
       setUploadingImage(false);
     }
