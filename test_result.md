@@ -827,6 +827,21 @@ frontend:
         agent: "main"
         comment: "✅ MELHORIAS FASE 2 CONCLUÍDA - ÍNDICES E PAGINAÇÃO COMPLETA: (1) ÍNDICES MONGODB: Criados 48 índices em 12 coleções (produtos:6, vendas:7, orcamentos:4, movimentacoes_estoque:4, clientes:3, fornecedores:3, notas_fiscais:5, marcas:2, categorias:3, subcategorias:3, usuarios:3, logs:5). Script /app/backend/create_indexes.py executado com sucesso. IMPACTO: Queries 10-100x mais rápidas em coleções grandes; (2) PAGINAÇÃO COMPLETA: Adicionada em mais 8 endpoints: GET /marcas, /categorias, /subcategorias, /usuarios, /estoque/movimentacoes, /estoque/alertas, /roles. TOTAL: 14/14 endpoints com paginação (100%). Endpoint /logs já possuía paginação (offset/limit); (3) COMPATIBILIDADE: Mantida com limit=0 retornando todos os registros. Backend reiniciado sem erros, todas as requisições retornando 200 OK. RESULTADO: Sistema 100% otimizado para escalabilidade, com índices e paginação em TODOS os endpoints críticos."
 
+  - task: "Upload de Imagens no Módulo Produtos"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py, /app/frontend/src/pages/Produtos.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "REQUISITO: 'no módulo produtos implemente upload de imagens' - Produtos devem suportar múltiplas imagens."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ UPLOAD DE IMAGENS IMPLEMENTADO COMPLETAMENTE: (1) BACKEND: Adicionados 2 novos endpoints: POST /produtos/{id}/upload-imagem (aceita base64, adiciona à lista de fotos), DELETE /produtos/{id}/imagem/{indice} (remove imagem específica). Modelo Produto já possuía campo fotos:List[str]. Validações implementadas (tipo, tamanho); (2) FRONTEND: Nova aba 'Imagens' no formulário com 6 colunas; Upload com preview antes de confirmar; Suporte a múltiplas imagens por produto; Galeria visual com thumbnails 3 colunas; Hover effect para remover imagens; Validação cliente (máx 2MB, apenas imagens); Indicador de upload com loading; (3) LISTAGEM: Coluna 'Imagem' adicionada na tabela; Thumbnail 64x64px da primeira imagem; Placeholder visual quando sem imagem (ícone Package); (4) FUNCIONALIDADES: Upload imediato para produtos existentes; Buffer local para produtos novos (salva ao criar); Remoção individual de imagens; Numeração das imagens na galeria. Backend e frontend compilados sem erros. RESULTADO: Sistema completo de gestão de imagens de produtos com interface profissional."
+
 metadata:
   created_by: "main_agent"
   version: "7.1"
