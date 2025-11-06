@@ -3110,9 +3110,22 @@ async def toggle_subcategoria_status(subcategoria_id: str, current_user: dict = 
 # ========== PRODUTOS ==========
 
 @api_router.get("/produtos", response_model=List[Produto])
-async def get_produtos(incluir_inativos: bool = False, current_user: dict = Depends(require_permission("produtos", "ler"))):
+async def get_produtos(
+    incluir_inativos: bool = False,
+    page: int = 1,
+    limit: int = 100,
+    current_user: dict = Depends(require_permission("produtos", "ler"))
+):
+    """Lista produtos com paginação opcional"""
     filtro = {} if incluir_inativos else {"ativo": True}
-    produtos = await db.produtos.find(filtro, {"_id": 0}).to_list(1000)
+    
+    # Se limit=0, retorna todos (mantém compatibilidade)
+    if limit == 0:
+        produtos = await db.produtos.find(filtro, {"_id": 0}).to_list(10000)
+    else:
+        skip = (page - 1) * limit
+        produtos = await db.produtos.find(filtro, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    
     return produtos
 
 @api_router.post("/produtos", response_model=Produto)
