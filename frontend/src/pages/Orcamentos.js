@@ -35,8 +35,7 @@ const Orcamentos = () => {
     preco_unitario: 0
   });
 
-  const [showAutorizacao, setShowAutorizacao] = useState(false);
-  const [orcamentoParaExcluir, setOrcamentoParaExcluir] = useState(null);
+  // Removed unused state variables
 
   useEffect(() => {
     fetchData();
