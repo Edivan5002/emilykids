@@ -594,6 +594,7 @@ const Administracao = () => {
             <Alert className="border-yellow-200 bg-yellow-50">
               <AlertDescription className="text-yellow-800 text-sm">
                 {confirmDialog.action === 'deleteVendas' && `Você está prestes a deletar vendas com mais de ${diasVendas} dias.`}
+                {confirmDialog.action === 'deleteOrcamentos' && `Você está prestes a deletar orçamentos com mais de ${diasOrcamentos} dias.`}
                 {confirmDialog.action === 'limparLogs' && `Você está prestes a deletar logs com mais de ${diasLogs} dias.`}
                 {confirmDialog.action === 'resetarModulo' && `Você está prestes a resetar completamente o módulo "${moduloSelecionado}".`}
                 {confirmDialog.action === 'removerTeste' && 'Você está prestes a remover todos os dados de teste do sistema.'}
