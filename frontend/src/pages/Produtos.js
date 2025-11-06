@@ -501,10 +501,19 @@ const Produtos = () => {
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Produtos</h1>
           <p className="text-gray-600">Gerencie seu catálogo de produtos completo</p>
         </div>
-        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleCloseDialog(); else setIsOpen(true); }}>
-          <DialogTrigger asChild>
-            <Button data-testid="add-produto-btn"><Plus className="mr-2" size={18} />Novo Produto</Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={handleExportarProdutos}
+            disabled={produtosFiltrados.length === 0}
+          >
+            <Download className="mr-2" size={18} />
+            Exportar CSV
+          </Button>
+          <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleCloseDialog(); else setIsOpen(true); }}>
+            <DialogTrigger asChild>
+              <Button data-testid="add-produto-btn"><Plus className="mr-2" size={18} />Novo Produto</Button>
+            </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{isEditing ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
