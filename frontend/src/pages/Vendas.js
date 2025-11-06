@@ -339,16 +339,16 @@ const Vendas = () => {
         {/* TAB: DASHBOARD */}
         <TabsContent value="dashboard">
           {/* Estatísticas */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-lg" style={{backgroundColor: '#2C9AA1'}}>
+                  <div className="p-3 rounded-lg bg-green-500">
                     <ShoppingCart className="text-white" size={24} />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Total de Vendas</p>
-                    <p className="text-2xl font-bold">{estatisticas.totalVendas}</p>
+                    <p className="text-sm text-gray-600">Vendas Efetivadas</p>
+                    <p className="text-2xl font-bold">{estatisticas.vendasEfetivadas}</p>
                   </div>
                 </div>
               </CardContent>
@@ -357,12 +357,27 @@ const Vendas = () => {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-lg bg-green-500">
+                  <div className="p-3 rounded-lg bg-red-500">
+                    <Ban className="text-white" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Vendas Canceladas</p>
+                    <p className="text-2xl font-bold">{estatisticas.vendasCanceladas}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-lg" style={{backgroundColor: '#2C9AA1'}}>
                     <DollarSign className="text-white" size={24} />
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Faturamento Total</p>
                     <p className="text-2xl font-bold">R$ {estatisticas.faturamentoTotal.toFixed(2)}</p>
+                    <p className="text-xs text-gray-500">Apenas efetivadas</p>
                   </div>
                 </div>
               </CardContent>
