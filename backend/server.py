@@ -6629,19 +6629,37 @@ Seja específico nos valores sugeridos e forneça justificativas claras para cad
 
 @api_router.get("/relatorios/dashboard")
 async def get_dashboard(current_user: dict = Depends(require_permission("relatorios", "ler"))):
-    total_clientes = await db.clientes.count_documents({})
-    total_produtos = await db.produtos.count_documents({})
-    total_vendas = await db.vendas.count_documents({})
+    # Clientes - separar ativos e inativos
+    total_clientes_ativos = await db.clientes.count_documents({"ativo": True})
+    total_clientes_inativos = await db.clientes.count_documents({"ativo": False})
+    total_clientes = total_clientes_ativos + total_clientes_inativos
     
-    vendas = await db.vendas.find({}, {"_id": 0}).to_list(1000)
-    total_faturamento = sum(v["total"] for v in vendas)
+    # Produtos - separar ativos e inativos
+    total_produtos_ativos = await db.produtos.count_documents({"ativo": True})
+    total_produtos_inativos = await db.produtos.count_documents({"ativo": False})
+    total_produtos = total_produtos_ativos + total_produtos_inativos
+    
+    # Vendas - apenas efetivadas (não canceladas)
+    vendas_efetivadas = await db.vendas.find({
+        "$and": [
+            {"$or": [{"cancelada": {"$exists": False}}, {"cancelada": False}]},
+            {"$or": [{"status": {"$exists": False}}, {"status": {"$ne": "cancelada"}}]}
+        ]
+    }, {"_id": 0}).to_list(10000)
+    
+    total_vendas = len(vendas_efetivadas)
+    total_faturamento = sum(v["total"] for v in vendas_efetivadas)
     
     produtos = await db.produtos.find({}, {"_id": 0}).to_list(1000)
     produtos_estoque_baixo = len([p for p in produtos if p["estoque_atual"] <= p["estoque_minimo"]])
     
     return {
         "total_clientes": total_clientes,
+        "total_clientes_ativos": total_clientes_ativos,
+        "total_clientes_inativos": total_clientes_inativos,
         "total_produtos": total_produtos,
+        "total_produtos_ativos": total_produtos_ativos,
+        "total_produtos_inativos": total_produtos_inativos,
         "total_vendas": total_vendas,
         "total_faturamento": total_faturamento,
         "produtos_estoque_baixo": produtos_estoque_baixo
