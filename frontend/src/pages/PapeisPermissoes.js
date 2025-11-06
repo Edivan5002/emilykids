@@ -366,54 +366,6 @@ const PapeisPermissoes = () => {
           </Card>
         </TabsContent>
 
-        {/* GROUPS TAB */}
-        <TabsContent value="groups">
-          <div className="mb-4 flex justify-end">
-            <Button onClick={() => setIsGroupModalOpen(true)}>
-              <Plus size={16} className="mr-2" />
-              Novo Grupo
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            {groups.map((group) => (
-              <Card key={group.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>{group.nome}</CardTitle>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => handleDeleteGroup(group.id)}
-                      className="text-red-600"
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600 mb-3">{group.descricao || 'Sem descrição'}</p>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-500">Usuários:</span>
-                      <span className="ml-2 font-semibold">{group.user_ids.length}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Papéis:</span>
-                      <span className="ml-2 font-semibold">{group.role_ids.length}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            {groups.length === 0 && (
-              <div className="text-center py-12 text-gray-500">
-                Nenhum grupo cadastrado
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
         {/* HISTORY TAB */}
         <TabsContent value="history">
           <Card>
