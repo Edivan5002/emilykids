@@ -425,15 +425,15 @@ const Estoque = () => {
                       const status = getEstoqueStatus(produto);
                       return (
                         <tr key={produto.id} className="border-b hover:bg-gray-50">
-                          <td className="p-3 text-sm font-mono">{produto.sku}</td>
+                          <td className="p-3 text-sm font-mono hidden md:table-cell">{produto.sku}</td>
                           <td className="p-3 text-sm font-medium">{produto.nome}</td>
-                          <td className="p-3 text-sm text-gray-600">{getMarcaNome(produto.marca_id)}</td>
-                          <td className="p-3 text-sm text-gray-600">{getCategoriaNome(produto.categoria_id)}</td>
+                          <td className="p-3 text-sm text-gray-600 hidden lg:table-cell">{getMarcaNome(produto.marca_id)}</td>
+                          <td className="p-3 text-sm text-gray-600 hidden lg:table-cell">{getCategoriaNome(produto.categoria_id)}</td>
                           <td className="p-3 text-sm text-center">
                             <span className={`font-bold ${status.color}`}>{produto.estoque_atual}</span>
                           </td>
-                          <td className="p-3 text-sm text-center text-gray-600">{produto.estoque_minimo}</td>
-                          <td className="p-3 text-sm text-center text-gray-600">{produto.estoque_maximo}</td>
+                          <td className="p-3 text-sm text-center text-gray-600 hidden sm:table-cell">{produto.estoque_minimo}</td>
+                          <td className="p-3 text-sm text-center text-gray-600 hidden sm:table-cell">{produto.estoque_maximo}</td>
                           <td className="p-3 text-sm">
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.bg} ${status.color}`}>
                               {status.label}
