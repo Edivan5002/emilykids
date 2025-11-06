@@ -241,13 +241,19 @@ const Vendas = () => {
     return true;
   });
 
+  // Separar vendas efetivadas e canceladas
+  const vendasEfetivadas = vendasFiltradas.filter(v => !v.cancelada && v.status_venda !== 'cancelada');
+  const vendasCanceladas = vendasFiltradas.filter(v => v.cancelada || v.status_venda === 'cancelada');
+
   const estatisticas = {
     totalVendas: vendasFiltradas.length,
-    faturamentoTotal: vendasFiltradas.reduce((sum, v) => sum + v.total, 0),
-    ticketMedio: vendasFiltradas.length > 0 ? 
-      vendasFiltradas.reduce((sum, v) => sum + v.total, 0) / vendasFiltradas.length : 0,
-    vendasCartao: vendasFiltradas.filter(v => v.forma_pagamento === 'cartao').length,
-    vendasPix: vendasFiltradas.filter(v => v.forma_pagamento === 'pix').length,
+    vendasEfetivadas: vendasEfetivadas.length,
+    vendasCanceladas: vendasCanceladas.length,
+    faturamentoTotal: vendasEfetivadas.reduce((sum, v) => sum + v.total, 0), // Apenas efetivadas
+    ticketMedio: vendasEfetivadas.length > 0 ? 
+      vendasEfetivadas.reduce((sum, v) => sum + v.total, 0) / vendasEfetivadas.length : 0, // Apenas efetivadas
+    vendasCartao: vendasEfetivadas.filter(v => v.forma_pagamento === 'cartao').length,
+    vendasPix: vendasEfetivadas.filter(v => v.forma_pagamento === 'pix').length,
     vendasDinheiro: vendasFiltradas.filter(v => v.forma_pagamento === 'dinheiro').length,
     vendasBoleto: vendasFiltradas.filter(v => v.forma_pagamento === 'boleto').length
   };
