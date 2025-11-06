@@ -7833,15 +7833,14 @@ async def admin_remover_dados_teste(
 
 @api_router.post("/admin/limpar-tudo")
 async def admin_limpar_tudo(
-    senha_mestra: str,
-    confirmar: str,
+    request: AdminLimparTudoRequest,
     current_user: dict = Depends(require_permission("admin", "deletar"))
 ):
     """CUIDADO: Limpa TODOS os dados do sistema (exceto usuários admin)"""
-    if senha_mestra != os.environ.get('ADMIN_MASTER_PASSWORD'):
+    if request.senha_mestra != os.environ.get('ADMIN_MASTER_PASSWORD'):
         raise HTTPException(status_code=403, detail="Senha mestra incorreta")
     
-    if confirmar != "LIMPAR TUDO":
+    if request.confirmar != "LIMPAR TUDO":
         raise HTTPException(status_code=400, detail="Confirmação inválida. Digite 'LIMPAR TUDO'")
     
     try:
