@@ -727,16 +727,7 @@ const Orcamentos = () => {
               </div>
             </CardContent>
           </Card>
-        ))}
-
-        {orcamentos.length === 0 && (
-          <Card>
-            <CardContent className="p-12 text-center text-gray-500">
-              <ClipboardList size={48} className="mx-auto mb-4 text-gray-400" />
-              <p>Nenhum orçamento cadastrado</p>
-              <p className="text-sm mt-2">Clique em "Novo Orçamento" para criar</p>
-            </CardContent>
-          </Card>
+          ))
         )}
       </div>
 
