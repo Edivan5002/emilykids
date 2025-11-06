@@ -4162,16 +4162,24 @@ def calcular_margem_lucro(itens: List[dict], produtos_db) -> float:
 async def get_orcamentos(
     status: str = None,
     cliente_id: str = None,
+    page: int = 1,
+    limit: int = 100,
     current_user: dict = Depends(require_permission("orcamentos", "ler"))
 ):
-    """Lista orçamentos com filtros"""
+    """Lista orçamentos com filtros e paginação opcional"""
     filtro = {}
     if status:
         filtro["status"] = status
     if cliente_id:
         filtro["cliente_id"] = cliente_id
     
-    orcamentos = await db.orcamentos.find(filtro, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    # Se limit=0, retorna todos (mantém compatibilidade)
+    if limit == 0:
+        orcamentos = await db.orcamentos.find(filtro, {"_id": 0}).sort("created_at", -1).to_list(10000)
+    else:
+        skip = (page - 1) * limit
+        orcamentos = await db.orcamentos.find(filtro, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
     return orcamentos
 
 @api_router.post("/orcamentos", response_model=Orcamento)
