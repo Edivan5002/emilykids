@@ -20,6 +20,7 @@ const NotasFiscais = () => {
   const [produtos, setProdutos] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [cancelDialog, setCancelDialog] = useState({ open: false, notaId: null, confirmada: false, motivo: '' });
   
   const [formData, setFormData] = useState({
     numero: '',
