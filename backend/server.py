@@ -422,7 +422,7 @@ class CancelarNotaRequest(BaseModel):
     motivo: str
 
 class MovimentacaoEstoque(BaseModel):
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="allow")  # Mudado de ignore para allow
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     produto_id: str
     tipo: str  # entrada, saida
