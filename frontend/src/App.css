@@ -53,9 +53,16 @@
 .table-container {
   background: white;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+@media (min-width: 768px) {
+  .table-container {
+    padding: 1.5rem;
+  }
 }
 
 table {
