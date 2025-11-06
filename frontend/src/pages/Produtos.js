@@ -596,7 +596,10 @@ const Produtos = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{relatorios.valorEstoque.total_produtos}</div>
-              <p className="text-xs text-gray-500">{relatorios.valorEstoque.total_itens_estoque} itens em estoque</p>
+              <p className="text-xs text-gray-500">
+                {relatorios.valorEstoque.total_produtos_ativos} ativos • {relatorios.valorEstoque.total_produtos_inativos} inativos
+              </p>
+              <p className="text-xs text-gray-400 mt-1">{relatorios.valorEstoque.total_itens_estoque} itens em estoque</p>
             </CardContent>
           </Card>
           
