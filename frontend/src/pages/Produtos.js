@@ -83,7 +83,9 @@ const Produtos = () => {
   const [novoComponente, setNovoComponente] = useState({ produto_id: '', quantidade: 1 });
   const [tagInput, setTagInput] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [previewImage, setPreviewImage] = useState(null);
+  const [previewImages, setPreviewImages] = useState([]);
+  const [zoomImage, setZoomImage] = useState(null);
+  const [fotoPrincipalIndex, setFotoPrincipalIndex] = useState(0);
 
   useEffect(() => {
     fetchData();
