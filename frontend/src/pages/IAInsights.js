@@ -71,6 +71,26 @@ const IAInsights = () => {
     }
   };
 
+  const analisarPrecificacao = async () => {
+    if (!produtoSelecionado) {
+      toast.error('Selecione um produto');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const response = await axios.post(`${API}/ia/sugestao-precificacao`, {
+        produto_id: produtoSelecionado
+      });
+      setPrecificacaoData(response.data);
+      toast.success('Análise de precificação concluída!');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao analisar precificação');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const analisarRecomendacoes = async () => {
     if (!clienteSelecionado) {
       toast.error('Selecione um cliente');
