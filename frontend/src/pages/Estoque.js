@@ -126,6 +126,11 @@ const Estoque = () => {
     setDetalhesMovimentacao(null);
   };
 
+  const getUsuarioNome = (userId) => {
+    const usuario = usuarios.find(u => u.id === userId);
+    return usuario ? usuario.nome : 'Usuário não encontrado';
+  };
+
   const produtosFiltrados = produtos.filter(p => {
     // Busca
     if (filtros.busca) {
