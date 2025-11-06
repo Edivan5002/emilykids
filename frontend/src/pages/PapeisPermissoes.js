@@ -46,16 +46,6 @@ const PapeisPermissoes = () => {
   const [permissions, setPermissions] = useState([]);
   const [permissionsByModule, setPermissionsByModule] = useState({});
   
-  // Groups
-  const [groups, setGroups] = useState([]);
-  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
-  const [groupForm, setGroupForm] = useState({
-    nome: '',
-    descricao: '',
-    user_ids: [],
-    role_ids: []
-  });
-  
   // History
   const [permissionHistory, setPermissionHistory] = useState([]);
   const [detalhesHistorico, setDetalhesHistorico] = useState(null);
