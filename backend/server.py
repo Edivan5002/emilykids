@@ -629,6 +629,41 @@ class AtualizarEntregaRequest(BaseModel):
     codigo_rastreio: Optional[str] = None
     observacoes_entrega: Optional[str] = None
 
+# Modelos de Inventário
+class ItemInventario(BaseModel):
+    produto_id: str
+    produto_nome: Optional[str] = None
+    produto_sku: Optional[str] = None
+    estoque_sistema: int
+    estoque_contado: Optional[int] = None
+    diferenca: Optional[int] = None
+    observacao: Optional[str] = None
+
+class Inventario(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "id": "uuid-string",
+                "numero": "INV-001",
+                "data_inicio": "2024-11-06T10:00:00",
+                "status": "em_andamento"
+            }
+        }
+    )
+    id: str
+    numero: str
+    data_inicio: str
+    data_conclusao: Optional[str] = None
+    status: str  # em_andamento, concluido, cancelado
+    responsavel_id: str
+    responsavel_nome: Optional[str] = None
+    itens: List[ItemInventario]
+    total_produtos: int = 0
+    total_contados: int = 0
+    total_divergencias: int = 0
+    observacoes: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
 class CheckEstoqueRequest(BaseModel):
     produto_id: str
     quantidade: int
