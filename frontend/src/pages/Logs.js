@@ -753,12 +753,18 @@ const Logs = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {Object.entries(estatisticas.por_dispositivo).map(([disp, count]) => (
-                        <div key={disp} className="flex items-center justify-between">
-                          <span className="text-sm text-gray-700">{disp}</span>
-                          <span className="font-semibold">{count}</span>
+                      {Object.keys(estatisticas.por_dispositivo || {}).length > 0 ? (
+                        Object.entries(estatisticas.por_dispositivo).map(([disp, count]) => (
+                          <div key={disp} className="flex items-center justify-between">
+                            <span className="text-sm text-gray-700">{disp}</span>
+                            <span className="font-semibold">{count}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-4 text-gray-500 text-sm">
+                          Nenhum dado de dispositivo disponível
                         </div>
-                      ))}
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -769,12 +775,18 @@ const Logs = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {Object.entries(estatisticas.por_navegador).map(([nav, count]) => (
-                        <div key={nav} className="flex items-center justify-between">
-                          <span className="text-sm text-gray-700">{nav}</span>
-                          <span className="font-semibold">{count}</span>
+                      {Object.keys(estatisticas.por_navegador || {}).length > 0 ? (
+                        Object.entries(estatisticas.por_navegador).map(([nav, count]) => (
+                          <div key={nav} className="flex items-center justify-between">
+                            <span className="text-sm text-gray-700">{nav}</span>
+                            <span className="font-semibold">{count}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-4 text-gray-500 text-sm">
+                          Nenhum dado de navegador disponível
                         </div>
-                      ))}
+                      )}
                     </div>
                   </CardContent>
                 </Card>
