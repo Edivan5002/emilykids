@@ -215,14 +215,14 @@ const Clientes = () => {
         </Select>
       </div>
 
-      <div className="table-container">
-        <table>
+      <div className="table-container overflow-x-auto">
+        <table className="min-w-full">
           <thead>
             <tr>
               <th>Nome</th>
-              <th>CPF/CNPJ</th>
-              <th>Telefone</th>
-              <th>Email</th>
+              <th className="hidden sm:table-cell">CPF/CNPJ</th>
+              <th className="hidden md:table-cell">Telefone</th>
+              <th className="hidden lg:table-cell">Email</th>
               <th>Status</th>
               <th className="text-right">Ações</th>
             </tr>
