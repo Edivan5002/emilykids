@@ -25,6 +25,8 @@ const Estoque = () => {
   const [loading, setLoading] = useState(false);
   const [showAutorizacao, setShowAutorizacao] = useState(false);
   const [ajusteData, setAjusteData] = useState(null);
+  const [detalhesMovimentacao, setDetalhesMovimentacao] = useState(null);
+  const [isDetalhesOpen, setIsDetalhesOpen] = useState(false);
 
   // Filtros
   const [filtros, setFiltros] = useState({
