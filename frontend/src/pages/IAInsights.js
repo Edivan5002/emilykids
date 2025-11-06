@@ -26,6 +26,7 @@ const IAInsights = () => {
   
   // Estados para cada análise
   const [previsaoData, setPrevisaoData] = useState(null);
+  const [precificacaoData, setPrecificacaoData] = useState(null);
   const [recomendacoesData, setRecomendacoesData] = useState(null);
   const [analisePredicaoData, setAnalisePredicaoData] = useState(null);
   
