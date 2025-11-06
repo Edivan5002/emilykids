@@ -375,6 +375,49 @@ const Administracao = () => {
           </Card>
         </TabsContent>
 
+        {/* ORÇAMENTOS TAB */}
+        <TabsContent value="orcamentos">
+          <Card>
+            <CardHeader>
+              <CardTitle>Deletar Orçamentos Antigos</CardTitle>
+              <CardDescription>Remove orçamentos mais antigos que o período especificado</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Deletar orçamentos com mais de (dias):</Label>
+                <Input
+                  type="number"
+                  value={diasOrcamentos}
+                  onChange={(e) => setDiasOrcamentos(parseInt(e.target.value))}
+                  min="1"
+                  className="mt-2"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Orçamentos criados antes de {new Date(Date.now() - diasOrcamentos * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')}
+                </p>
+              </div>
+
+              {stats && (
+                <Alert>
+                  <FileText className="h-4 w-4" />
+                  <AlertDescription>
+                    Total de orçamentos no sistema: <strong>{stats.orcamentos}</strong>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <Button 
+                onClick={() => openConfirmDialog('deleteOrcamentos')}
+                variant="destructive"
+                className="w-full"
+              >
+                <Trash2 size={16} className="mr-2" />
+                Deletar Orçamentos Antigos
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* LOGS TAB */}
         <TabsContent value="logs">
           <Card>
