@@ -659,7 +659,7 @@ const Estoque = () => {
 
       {/* Modal de Detalhes da Movimentação */}
       <Dialog open={isDetalhesOpen} onOpenChange={setIsDetalhesOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {detalhesMovimentacao?.referencia_tipo === 'ajuste_manual' ? (
