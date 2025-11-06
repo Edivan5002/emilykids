@@ -3509,9 +3509,12 @@ async def ajuste_manual_estoque(request: AjusteEstoqueRequest, current_user: dic
         "referencia_tipo": "ajuste_manual",
         "referencia_id": f"ajuste_{datetime.now(timezone.utc).timestamp()}",
         "user_id": current_user["id"],
-        "motivo": request.motivo if request.motivo else None,
+        "motivo": request.motivo,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
+    
+    print(f"DEBUG AJUSTE: Salvando movimentação com motivo: {request.motivo}")
+    print(f"DEBUG AJUSTE: Dados completos: {movimentacao_dict}")
     
     await db.movimentacoes_estoque.insert_one(movimentacao_dict)
     
