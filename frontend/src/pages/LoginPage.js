@@ -11,30 +11,15 @@ import { Eye, EyeOff, Shield, Lock, AlertCircle } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-// Logo Emily Kids colorido
+// Logo Emily Kids
 const EmilyKidsLogo = () => (
-  <div className="flex flex-col items-center mb-6">
-    <div 
-      className="rounded-full p-4 mb-1" 
-      style={{ backgroundColor: '#F5F2E9' }}
-    >
-      <img 
-        src="/boneca.png" 
-        alt="Emily Kids" 
-        className="w-40 h-40 object-contain"
-        style={{ filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))' }}
-      />
-    </div>
-    <div className="text-5xl font-bold tracking-wider flex" style={{ fontFamily: 'Arial, sans-serif' }}>
-      <span style={{ color: '#F89A50' }}>E</span>
-      <span style={{ color: '#FDC948' }}>M</span>
-      <span style={{ color: '#39B5A7' }}>I</span>
-      <span style={{ color: '#5B8FB9' }}>L</span>
-      <span style={{ color: '#E8509B' }}>Y</span>
-    </div>
-    <div className="text-2xl font-semibold tracking-widest" style={{ color: '#8C7C6F' }}>
-      KIDS
-    </div>
+  <div className="flex justify-center mb-8">
+    <img 
+      src="/logo-emily.jpeg" 
+      alt="Emily Kids" 
+      className="w-80 h-auto object-contain"
+      style={{ maxWidth: '100%' }}
+    />
   </div>
 );
 
