@@ -604,7 +604,7 @@ const Vendas = () => {
                   )}
 
                   {/* Informação de Orçamento Convertido */}
-                  {venda.orcamento_id && (
+                  {venda.orcamento_id && venda.orcamento_id !== '' && venda.orcamento_id !== 'null' ? (
                     <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                       <div className="flex items-center gap-2">
                         <ShoppingCart size={18} className="text-blue-600" />
@@ -614,7 +614,7 @@ const Vendas = () => {
                         </div>
                       </div>
                     </div>
-                  )}
+                  ) : null}
 
                   <div className="mb-4">
                     <p className="text-sm font-semibold mb-2">Itens:</p>
