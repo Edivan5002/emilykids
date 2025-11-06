@@ -1081,6 +1081,77 @@ const Estoque = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de Contagem */}
+      <Dialog open={contagemDialog.open} onOpenChange={(open) => !open && setContagemDialog({ open: false, item: null, quantidade: 0, observacao: '' })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Registrar Contagem</DialogTitle>
+          </DialogHeader>
+          {contagemDialog.item && (
+            <div className="space-y-4">
+              <div className="p-3 bg-gray-50 rounded">
+                <p className="text-sm text-gray-600">Produto:</p>
+                <p className="font-semibold">{contagemDialog.item.produto_nome}</p>
+                <p className="text-sm text-gray-500">SKU: {contagemDialog.item.produto_sku}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-blue-50 rounded">
+                  <p className="text-sm text-blue-600">Estoque no Sistema:</p>
+                  <p className="text-2xl font-bold text-blue-700">{contagemDialog.item.estoque_sistema}</p>
+                </div>
+                <div className="p-3 bg-green-50 rounded">
+                  <p className="text-sm text-green-600">Quantidade Contada:</p>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={contagemDialog.quantidade}
+                    onChange={(e) => setContagemDialog({...contagemDialog, quantidade: parseInt(e.target.value) || 0})}
+                    className="text-2xl font-bold text-green-700 text-center mt-1"
+                  />
+                </div>
+              </div>
+
+              {contagemDialog.quantidade !== contagemDialog.item.estoque_sistema && (
+                <div className={`p-3 rounded ${
+                  contagemDialog.quantidade > contagemDialog.item.estoque_sistema 
+                    ? 'bg-green-50 border border-green-200' 
+                    : 'bg-red-50 border border-red-200'
+                }`}>
+                  <p className="text-sm font-semibold">
+                    Diferença: {contagemDialog.quantidade > contagemDialog.item.estoque_sistema ? '+' : ''}
+                    {contagemDialog.quantidade - contagemDialog.item.estoque_sistema} unidades
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <Label>Observação (opcional)</Label>
+                <textarea
+                  className="w-full p-2 border rounded mt-1"
+                  rows="3"
+                  placeholder="Adicione uma observação sobre esta contagem..."
+                  value={contagemDialog.observacao}
+                  onChange={(e) => setContagemDialog({...contagemDialog, observacao: e.target.value})}
+                />
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setContagemDialog({ open: false, item: null, quantidade: 0, observacao: '' })}
+                >
+                  Cancelar
+                </Button>
+                <Button onClick={registrarContagem}>
+                  Confirmar Contagem
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
