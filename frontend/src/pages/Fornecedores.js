@@ -305,15 +305,15 @@ const Fornecedores = () => {
         </Select>
       </div>
 
-      <div className="table-container">
-        <table>
+      <div className="table-container overflow-x-auto">
+        <table className="min-w-full">
           <thead>
             <tr>
               <th>Razão Social</th>
-              <th>CNPJ</th>
-              <th>IE</th>
-              <th>Telefone</th>
-              <th>Email</th>
+              <th className="hidden sm:table-cell">CNPJ</th>
+              <th className="hidden md:table-cell">IE</th>
+              <th className="hidden lg:table-cell">Telefone</th>
+              <th className="hidden lg:table-cell">Email</th>
               <th>Status</th>
               <th className="text-right">Ações</th>
             </tr>
