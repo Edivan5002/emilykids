@@ -71,6 +71,10 @@ const Logs = () => {
   
   // Loading
   const [loading, setLoading] = useState(false);
+  
+  // Modal de Detalhes
+  const [detalhesLog, setDetalhesLog] = useState(null);
+  const [isDetalhesOpen, setIsDetalhesOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
