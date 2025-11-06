@@ -9,9 +9,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Power, Search, X, TrendingUp, Package, DollarSign, AlertTriangle, History, Download } from 'lucide-react';
+import { Plus, Edit, Trash2, Power, Search, X, TrendingUp, Package, DollarSign, AlertTriangle, History, Download, Star, ZoomIn, Upload, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { exportToCSV, formatCurrency } from '../utils/exportUtils';
+import imageCompression from 'browser-image-compression';
+import { ReactSortable } from 'react-sortablejs';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
