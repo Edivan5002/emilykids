@@ -133,9 +133,17 @@ const Estoque = () => {
     setDetalhesMovimentacao(null);
   };
 
-  const getUsuarioNome = (userId) => {
-    const usuario = usuarios.find(u => u.id === userId);
-    return usuario ? usuario.nome : 'Usuário não encontrado';
+  const getUsuarioNome = (movimentacao) => {
+    // Priorizar user_nome que vem do backend
+    if (movimentacao.user_nome) {
+      return movimentacao.user_nome;
+    }
+    // Fallback: buscar na lista de usuários se disponível
+    if (movimentacao.user_id && usuarios.length > 0) {
+      const usuario = usuarios.find(u => u.id === movimentacao.user_id);
+      return usuario ? usuario.nome : 'Usuário não encontrado';
+    }
+    return 'Sistema';
   };
 
   const produtosFiltrados = produtos.filter(p => {
