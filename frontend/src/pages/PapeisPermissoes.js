@@ -96,15 +96,6 @@ const PapeisPermissoes = () => {
     }
   };
 
-  const fetchGroups = async () => {
-    try {
-      const response = await axios.get(`${API}/user-groups`);
-      setGroups(response.data);
-    } catch (error) {
-      toast.error('Erro ao carregar grupos');
-    }
-  };
-
   const fetchPermissionHistory = async () => {
     try {
       const response = await axios.get(`${API}/permission-history?limit=50`);
