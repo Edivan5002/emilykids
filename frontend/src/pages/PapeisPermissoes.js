@@ -55,6 +55,8 @@ const PapeisPermissoes = () => {
   
   // History
   const [permissionHistory, setPermissionHistory] = useState([]);
+  const [detalhesHistorico, setDetalhesHistorico] = useState(null);
+  const [isDetalhesOpen, setIsDetalhesOpen] = useState(false);
   
   // Loading
   const [loading, setLoading] = useState(false);
