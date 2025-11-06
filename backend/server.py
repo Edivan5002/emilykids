@@ -2717,9 +2717,22 @@ async def toggle_fornecedor_status(fornecedor_id: str, current_user: dict = Depe
 # ========== MARCAS ==========
 
 @api_router.get("/marcas", response_model=List[Marca])
-async def get_marcas(incluir_inativos: bool = False, current_user: dict = Depends(require_permission("marcas", "ler"))):
+async def get_marcas(
+    incluir_inativos: bool = False,
+    page: int = 1,
+    limit: int = 100,
+    current_user: dict = Depends(require_permission("marcas", "ler"))
+):
+    """Lista marcas com paginação opcional"""
     filtro = {} if incluir_inativos else {"ativo": True}
-    marcas = await db.marcas.find(filtro, {"_id": 0}).to_list(1000)
+    
+    # Se limit=0, retorna todos (mantém compatibilidade)
+    if limit == 0:
+        marcas = await db.marcas.find(filtro, {"_id": 0}).to_list(10000)
+    else:
+        skip = (page - 1) * limit
+        marcas = await db.marcas.find(filtro, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    
     return marcas
 
 @api_router.post("/marcas", response_model=Marca)
