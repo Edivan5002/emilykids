@@ -678,6 +678,14 @@ const Estoque = () => {
           
           {detalhesMovimentacao && (
             <div className="space-y-6">
+              {/* Badge de Ajuste Manual */}
+              {detalhesMovimentacao.referencia_tipo === 'ajuste_manual' && (
+                <div className="flex items-center justify-center gap-2 p-3 bg-blue-500 text-white rounded-lg">
+                  <Edit size={20} />
+                  <span className="font-semibold text-lg">AJUSTE MANUAL DE ESTOQUE</span>
+                </div>
+              )}
+
               {/* Informações Principais */}
               <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
                 <div>
