@@ -31,6 +31,39 @@ const Subcategorias = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    let filtered = subcategorias;
+
+    // Filtro por busca (nome)
+    if (searchTerm) {
+      filtered = filtered.filter(s =>
+        s.nome.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filtro por categoria
+    if (categoriaFilter !== 'todas') {
+      filtered = filtered.filter(s => s.categoria_id === categoriaFilter);
+    }
+
+    // Filtro por marca (através da categoria)
+    if (marcaFilter !== 'todas') {
+      const categoriasFiltradasPorMarca = categorias
+        .filter(c => c.marca_id === marcaFilter)
+        .map(c => c.id);
+      filtered = filtered.filter(s => categoriasFiltradasPorMarca.includes(s.categoria_id));
+    }
+
+    // Filtro por status
+    if (statusFilter !== 'todos') {
+      filtered = filtered.filter(s => 
+        statusFilter === 'ativo' ? s.ativo : !s.ativo
+      );
+    }
+
+    setFilteredSubcategorias(filtered);
+  }, [searchTerm, categoriaFilter, marcaFilter, statusFilter, subcategorias, categorias]);
+
   const fetchData = async () => {
     try {
       const [subRes, catRes, marcasRes] = await Promise.all([
@@ -39,6 +72,7 @@ const Subcategorias = () => {
         axios.get(`${API}/marcas`)
       ]);
       setSubcategorias(subRes.data);
+      setFilteredSubcategorias(subRes.data);
       setCategorias(catRes.data.filter(c => c.ativo));
       setMarcas(marcasRes.data);
     } catch (error) {
