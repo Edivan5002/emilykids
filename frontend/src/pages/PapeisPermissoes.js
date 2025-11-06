@@ -564,44 +564,6 @@ const PapeisPermissoes = () => {
         </DialogContent>
       </Dialog>
 
-      {/* GROUP MODAL */}
-      <Dialog open={isGroupModalOpen} onOpenChange={setIsGroupModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Novo Grupo</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div>
-              <Label>Nome</Label>
-              <Input
-                value={groupForm.nome}
-                onChange={(e) => setGroupForm({...groupForm, nome: e.target.value})}
-                placeholder="Ex: Equipe Vendas Sul"
-              />
-            </div>
-
-            <div>
-              <Label>Descrição</Label>
-              <Input
-                value={groupForm.descricao}
-                onChange={(e) => setGroupForm({...groupForm, descricao: e.target.value})}
-                placeholder="Descrição do grupo"
-              />
-            </div>
-
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setIsGroupModalOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleCreateGroup}>
-                Criar Grupo
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* DETALHES HISTÓRICO MODAL */}
       <Dialog open={isDetalhesOpen} onOpenChange={setIsDetalhesOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
