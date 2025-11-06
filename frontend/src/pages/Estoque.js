@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Package, AlertCircle, TrendingDown, TrendingUp, Edit, Shield, Search, Filter, Eye, FileText, Calendar, User } from 'lucide-react';
+import { Package, AlertCircle, TrendingDown, TrendingUp, Edit, Shield, Search, Filter, Eye, FileText, Calendar, User, Clipboard, CheckCircle, XCircle, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import AutorizacaoModal from '../components/AutorizacaoModal';
