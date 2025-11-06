@@ -3844,6 +3844,289 @@ async def ajuste_manual_estoque(request: AjusteEstoqueRequest, current_user: dic
         "quantidade": abs(request.quantidade)
     }
 
+# ========== INVENTÁRIO PERIÓDICO ==========
+
+@api_router.post("/estoque/inventario/iniciar", response_model=Inventario)
+async def iniciar_inventario(
+    observacoes: Optional[str] = None,
+    current_user: dict = Depends(require_permission("estoque", "editar"))
+):
+    """Inicia um novo inventário periódico"""
+    
+    # Verificar se já existe inventário em andamento
+    inventario_aberto = await db.inventarios.find_one({"status": "em_andamento"}, {"_id": 0})
+    if inventario_aberto:
+        raise HTTPException(
+            status_code=400, 
+            detail="Já existe um inventário em andamento. Finalize-o antes de iniciar um novo."
+        )
+    
+    # Buscar todos os produtos ativos
+    produtos = await db.produtos.find({"ativo": True}, {"_id": 0}).to_list(10000)
+    
+    # Gerar número do inventário
+    ultimo_inventario = await db.inventarios.find_one(
+        {}, {"_id": 0, "numero": 1}, sort=[("created_at", -1)]
+    )
+    
+    if ultimo_inventario and ultimo_inventario.get("numero"):
+        ultimo_num = int(ultimo_inventario["numero"].split("-")[1])
+        novo_numero = f"INV-{str(ultimo_num + 1).zfill(3)}"
+    else:
+        novo_numero = "INV-001"
+    
+    # Criar itens do inventário
+    itens = []
+    for produto in produtos:
+        itens.append({
+            "produto_id": produto["id"],
+            "produto_nome": produto["nome"],
+            "produto_sku": produto["sku"],
+            "estoque_sistema": produto.get("estoque_atual", 0),
+            "estoque_contado": None,
+            "diferenca": None,
+            "observacao": None
+        })
+    
+    # Criar inventário
+    inventario = {
+        "id": str(uuid.uuid4()),
+        "numero": novo_numero,
+        "data_inicio": datetime.now(timezone.utc).isoformat(),
+        "data_conclusao": None,
+        "status": "em_andamento",
+        "responsavel_id": current_user["id"],
+        "responsavel_nome": current_user["nome"],
+        "itens": itens,
+        "total_produtos": len(itens),
+        "total_contados": 0,
+        "total_divergencias": 0,
+        "observacoes": observacoes,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.inventarios.insert_one(inventario)
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="estoque",
+        acao="iniciar_inventario",
+        detalhes={"inventario_id": inventario["id"], "numero": novo_numero, "total_produtos": len(itens)}
+    )
+    
+    return inventario
+
+@api_router.get("/estoque/inventario", response_model=List[Inventario])
+async def listar_inventarios(
+    status: Optional[str] = None,
+    limit: int = 100,
+    current_user: dict = Depends(require_permission("estoque", "ler"))
+):
+    """Lista todos os inventários"""
+    filtro = {}
+    if status:
+        filtro["status"] = status
+    
+    if limit == 0:
+        inventarios = await db.inventarios.find(filtro, {"_id": 0}).sort("created_at", -1).to_list(10000)
+    else:
+        inventarios = await db.inventarios.find(filtro, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    return inventarios
+
+@api_router.get("/estoque/inventario/{inventario_id}", response_model=Inventario)
+async def obter_inventario(
+    inventario_id: str,
+    current_user: dict = Depends(require_permission("estoque", "ler"))
+):
+    """Obtém detalhes de um inventário específico"""
+    inventario = await db.inventarios.find_one({"id": inventario_id}, {"_id": 0})
+    if not inventario:
+        raise HTTPException(status_code=404, detail="Inventário não encontrado")
+    
+    return inventario
+
+@api_router.put("/estoque/inventario/{inventario_id}/registrar-contagem")
+async def registrar_contagem(
+    inventario_id: str,
+    produto_id: str,
+    quantidade_contada: int,
+    observacao: Optional[str] = None,
+    current_user: dict = Depends(require_permission("estoque", "editar"))
+):
+    """Registra a contagem de um produto no inventário"""
+    
+    # Buscar inventário
+    inventario = await db.inventarios.find_one({"id": inventario_id}, {"_id": 0})
+    if not inventario:
+        raise HTTPException(status_code=404, detail="Inventário não encontrado")
+    
+    if inventario["status"] != "em_andamento":
+        raise HTTPException(status_code=400, detail="Inventário não está em andamento")
+    
+    # Atualizar item específico
+    itens = inventario["itens"]
+    item_encontrado = False
+    total_contados = 0
+    total_divergencias = 0
+    
+    for item in itens:
+        if item["produto_id"] == produto_id:
+            item["estoque_contado"] = quantidade_contada
+            item["diferenca"] = quantidade_contada - item["estoque_sistema"]
+            item["observacao"] = observacao
+            item_encontrado = True
+        
+        if item.get("estoque_contado") is not None:
+            total_contados += 1
+            if item.get("diferenca", 0) != 0:
+                total_divergencias += 1
+    
+    if not item_encontrado:
+        raise HTTPException(status_code=404, detail="Produto não encontrado no inventário")
+    
+    # Atualizar inventário
+    await db.inventarios.update_one(
+        {"id": inventario_id},
+        {
+            "$set": {
+                "itens": itens,
+                "total_contados": total_contados,
+                "total_divergencias": total_divergencias
+            }
+        }
+    )
+    
+    return {"message": "Contagem registrada com sucesso"}
+
+@api_router.post("/estoque/inventario/{inventario_id}/finalizar")
+async def finalizar_inventario(
+    inventario_id: str,
+    aplicar_ajustes: bool = True,
+    current_user: dict = Depends(require_permission("estoque", "editar"))
+):
+    """Finaliza o inventário e aplica os ajustes de estoque"""
+    
+    # Buscar inventário
+    inventario = await db.inventarios.find_one({"id": inventario_id}, {"_id": 0})
+    if not inventario:
+        raise HTTPException(status_code=404, detail="Inventário não encontrado")
+    
+    if inventario["status"] != "em_andamento":
+        raise HTTPException(status_code=400, detail="Inventário não está em andamento")
+    
+    # Verificar se todos os produtos foram contados
+    itens_nao_contados = [item for item in inventario["itens"] if item.get("estoque_contado") is None]
+    if itens_nao_contados:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Existem {len(itens_nao_contados)} produtos sem contagem. Finalize todas as contagens antes de concluir."
+        )
+    
+    ajustes_aplicados = []
+    
+    if aplicar_ajustes:
+        # Aplicar ajustes de estoque
+        for item in inventario["itens"]:
+            if item.get("diferenca", 0) != 0:
+                # Atualizar estoque do produto
+                await db.produtos.update_one(
+                    {"id": item["produto_id"]},
+                    {"$set": {"estoque_atual": item["estoque_contado"]}}
+                )
+                
+                # Registrar movimentação
+                tipo_mov = "entrada" if item["diferenca"] > 0 else "saida"
+                movimentacao = {
+                    "id": str(uuid.uuid4()),
+                    "produto_id": item["produto_id"],
+                    "tipo": tipo_mov,
+                    "quantidade": abs(item["diferenca"]),
+                    "referencia_tipo": "inventario",
+                    "referencia_id": inventario_id,
+                    "user_id": current_user["id"],
+                    "motivo": f"Ajuste de inventário {inventario['numero']}",
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+                await db.movimentacoes_estoque.insert_one(movimentacao)
+                
+                ajustes_aplicados.append({
+                    "produto": item["produto_nome"],
+                    "sku": item["produto_sku"],
+                    "diferenca": item["diferenca"]
+                })
+    
+    # Atualizar status do inventário
+    await db.inventarios.update_one(
+        {"id": inventario_id},
+        {
+            "$set": {
+                "status": "concluido",
+                "data_conclusao": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="estoque",
+        acao="finalizar_inventario",
+        detalhes={
+            "inventario_id": inventario_id,
+            "numero": inventario["numero"],
+            "total_divergencias": inventario["total_divergencias"],
+            "ajustes_aplicados": len(ajustes_aplicados),
+            "aplicou_ajustes": aplicar_ajustes
+        }
+    )
+    
+    return {
+        "message": "Inventário finalizado com sucesso",
+        "total_divergencias": inventario["total_divergencias"],
+        "ajustes_aplicados": ajustes_aplicados if aplicar_ajustes else []
+    }
+
+@api_router.delete("/estoque/inventario/{inventario_id}/cancelar")
+async def cancelar_inventario(
+    inventario_id: str,
+    motivo: str,
+    current_user: dict = Depends(require_permission("estoque", "editar"))
+):
+    """Cancela um inventário em andamento"""
+    
+    inventario = await db.inventarios.find_one({"id": inventario_id}, {"_id": 0})
+    if not inventario:
+        raise HTTPException(status_code=404, detail="Inventário não encontrado")
+    
+    if inventario["status"] != "em_andamento":
+        raise HTTPException(status_code=400, detail="Apenas inventários em andamento podem ser cancelados")
+    
+    await db.inventarios.update_one(
+        {"id": inventario_id},
+        {
+            "$set": {
+                "status": "cancelado",
+                "data_conclusao": datetime.now(timezone.utc).isoformat(),
+                "observacoes": f"{inventario.get('observacoes', '')} | CANCELADO: {motivo}"
+            }
+        }
+    )
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="estoque",
+        acao="cancelar_inventario",
+        detalhes={"inventario_id": inventario_id, "numero": inventario["numero"], "motivo": motivo}
+    )
+    
+    return {"message": "Inventário cancelado com sucesso"}
+
 # ========== NOTAS FISCAIS ==========
 
 # Valor mínimo que requer aprovação (pode ser configurado)
