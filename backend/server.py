@@ -6864,8 +6864,9 @@ async def get_dashboard_logs(current_user: dict = Depends(require_permission("lo
     # KPIs
     total_logs = len(logs)
     total_erros = len([l for l in logs if l.get("severidade") in ["ERROR", "CRITICAL"]])
-    total_security = len([l for l in logs if l.get("severidade") == "SECURITY"])
-    usuarios_ativos = len(set(l.get("user_id") for l in logs))
+    
+    # Contar usuários REALMENTE ativos no sistema (não apenas nos logs)
+    usuarios_ativos_count = await db.usuarios.count_documents({"ativo": True})
     
     # Atividade por dia
     atividade_por_dia = {}
@@ -6875,11 +6876,14 @@ async def get_dashboard_logs(current_user: dict = Depends(require_permission("lo
             atividade_por_dia[dia] = 0
         atividade_por_dia[dia] += 1
     
-    # Logs de segurança recentes
+    # Logs de segurança recentes (últimos 7 dias)
     logs_seguranca = await db.logs_seguranca.find(
         {"timestamp": {"$gte": data_inicio}},
         {"_id": 0}
     ).sort("timestamp", -1).limit(10).to_list(10)
+    
+    # Total de logs de segurança nos últimos 7 dias
+    total_security = await db.logs_seguranca.count_documents({"timestamp": {"$gte": data_inicio}})
     
     return {
         "periodo": "Últimos 7 dias",
