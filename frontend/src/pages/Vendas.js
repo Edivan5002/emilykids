@@ -392,6 +392,7 @@ const Vendas = () => {
                   <div>
                     <p className="text-sm text-gray-600">Ticket Médio</p>
                     <p className="text-2xl font-bold">R$ {estatisticas.ticketMedio.toFixed(2)}</p>
+                    <p className="text-xs text-gray-500">Apenas efetivadas</p>
                   </div>
                 </div>
               </CardContent>
