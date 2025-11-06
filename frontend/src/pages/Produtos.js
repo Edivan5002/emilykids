@@ -80,6 +80,8 @@ const Produtos = () => {
   const [novaVariacao, setNovaVariacao] = useState({ tamanho: '', cor: '', sku_variante: '', estoque_atual: 0, preco_adicional: 0 });
   const [novoComponente, setNovoComponente] = useState({ produto_id: '', quantidade: 1 });
   const [tagInput, setTagInput] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
 
   useEffect(() => {
     fetchData();
