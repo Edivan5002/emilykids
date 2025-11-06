@@ -7636,13 +7636,12 @@ async def admin_get_estatisticas(current_user: dict = Depends(require_permission
 
 @api_router.post("/admin/delete-vendas-antigas")
 async def admin_delete_vendas_antigas(
-    dias: int,
-    senha_mestra: str,
+    request: AdminDeleteVendasRequest,
     current_user: dict = Depends(require_permission("admin", "deletar"))
 ):
     """Deleta vendas mais antigas que X dias"""
     # Verificar senha mestra
-    if senha_mestra != os.environ.get('ADMIN_MASTER_PASSWORD'):
+    if request.senha_mestra != os.environ.get('ADMIN_MASTER_PASSWORD'):
         raise HTTPException(status_code=403, detail="Senha mestra incorreta")
     
     try:
