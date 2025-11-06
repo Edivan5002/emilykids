@@ -50,17 +50,20 @@ const Vendas = () => {
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const [vendasRes, cliRes, prodRes] = await Promise.all([
-        axios.get(`${API}/vendas`),
-        axios.get(`${API}/clientes`),
-        axios.get(`${API}/produtos`)
+        axios.get(`${API}/vendas?limit=0`),
+        axios.get(`${API}/clientes?limit=0`),
+        axios.get(`${API}/produtos?limit=0`)
       ]);
       setVendas(vendasRes.data);
       setClientes(cliRes.data);
       setProdutos(prodRes.data);
     } catch (error) {
-      toast.error('Erro ao carregar dados');
+      toast.error('Erro ao carregar dados. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
