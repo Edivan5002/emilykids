@@ -736,6 +736,103 @@ const Produtos = () => {
                   </div>
                 </TabsContent>
 
+                {/* ABA IMAGENS */}
+                <TabsContent value="imagens" className="space-y-4">
+                  <div className="border rounded-lg p-6 bg-gray-50">
+                    <h3 className="font-semibold mb-4 flex items-center gap-2">
+                      <Package size={20} />
+                      Upload de Imagens do Produto
+                    </h3>
+                    
+                    {/* Preview de Imagem */}
+                    {previewImage && (
+                      <div className="mb-4 p-4 border rounded-lg bg-white">
+                        <Label className="mb-2 block">Preview da Nova Imagem:</Label>
+                        <div className="relative inline-block">
+                          <img 
+                            src={previewImage} 
+                            alt="Preview" 
+                            className="max-w-xs max-h-64 rounded border"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2"
+                            onClick={() => setPreviewImage(null)}
+                          >
+                            <X size={16} />
+                          </Button>
+                        </div>
+                        <div className="mt-3">
+                          <Button
+                            type="button"
+                            onClick={uploadImageToProduct}
+                            disabled={uploadingImage}
+                          >
+                            {uploadingImage ? 'Enviando...' : 'Confirmar Upload'}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Upload Input */}
+                    <div className="mb-4">
+                      <Label htmlFor="image-upload">Selecionar Imagem</Label>
+                      <Input
+                        id="image-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="mt-1"
+                      />
+                      <p className="text-sm text-gray-500 mt-1">
+                        Tamanho máximo: 2MB. Formatos: JPG, PNG, GIF
+                      </p>
+                    </div>
+
+                    {/* Galeria de Imagens Existentes */}
+                    {formData.fotos && formData.fotos.length > 0 && (
+                      <div>
+                        <Label className="mb-2 block">Imagens do Produto ({formData.fotos.length}):</Label>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          {formData.fotos.map((foto, index) => (
+                            <div key={index} className="relative group border rounded-lg overflow-hidden">
+                              <img 
+                                src={foto} 
+                                alt={`Produto ${index + 1}`}
+                                className="w-full h-40 object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => removeImage(index)}
+                                >
+                                  <Trash2 size={16} className="mr-1" />
+                                  Remover
+                                </Button>
+                              </div>
+                              <div className="absolute top-2 left-2 bg-white px-2 py-1 rounded text-xs font-semibold">
+                                #{index + 1}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(!formData.fotos || formData.fotos.length === 0) && !previewImage && (
+                      <div className="text-center py-8 text-gray-500">
+                        <Package size={48} className="mx-auto mb-2 text-gray-400" />
+                        <p>Nenhuma imagem cadastrada</p>
+                        <p className="text-sm">Selecione uma imagem acima para começar</p>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
                 {/* ABA VARIAÇÕES */}
                 <TabsContent value="variacoes" className="space-y-4">
                   <div className="flex items-center gap-2">
