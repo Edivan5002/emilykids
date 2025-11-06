@@ -593,12 +593,11 @@ const Vendas = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleExcluirClick(venda)}
-                      data-testid={`excluir-venda-${venda.id}`}
+                      onClick={() => handleCancelarVenda(venda.id)}
+                      data-testid={`cancelar-venda-${venda.id}`}
                     >
-                      <Trash2 className="mr-2 text-red-500" size={16} />
-                      Excluir Venda
-                      {user?.papel === 'vendedor' && <Shield className="ml-1" size={12} style={{color: '#E76F51'}} />}
+                      <Ban className="mr-2 text-red-500" size={16} />
+                      Cancelar Venda
                     </Button>
                   </div>
                 </CardContent>
