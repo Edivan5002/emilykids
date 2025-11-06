@@ -49,12 +49,15 @@ const Marcas = () => {
   }, [searchTerm, statusFilter, marcas]);
 
   const fetchMarcas = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get(`${API}/marcas?incluir_inativos=true`);
+      const response = await axios.get(`${API}/marcas?incluir_inativos=true&limit=0`);
       setMarcas(response.data);
       setFilteredMarcas(response.data);
     } catch (error) {
-      toast.error('Erro ao carregar marcas');
+      toast.error('Erro ao carregar marcas. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
