@@ -806,94 +806,167 @@ const Produtos = () => {
                 <TabsContent value="imagens" className="space-y-4">
                   <div className="border rounded-lg p-6 bg-gray-50">
                     <h3 className="font-semibold mb-4 flex items-center gap-2">
-                      <Package size={20} />
-                      Upload de Imagens do Produto
+                      <ImageIcon size={20} />
+                      Galeria de Imagens do Produto
                     </h3>
                     
-                    {/* Preview de Imagem */}
-                    {previewImage && (
+                    {/* Preview de Imagens */}
+                    {previewImages.length > 0 && (
                       <div className="mb-4 p-4 border rounded-lg bg-white">
-                        <Label className="mb-2 block">Preview da Nova Imagem:</Label>
-                        <div className="relative inline-block">
-                          <img 
-                            src={previewImage} 
-                            alt="Preview" 
-                            className="max-w-xs max-h-64 rounded border"
-                          />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            className="absolute top-2 right-2"
-                            onClick={() => setPreviewImage(null)}
-                          >
-                            <X size={16} />
-                          </Button>
+                        <Label className="mb-2 block">Preview das Novas Imagens ({previewImages.length}):</Label>
+                        <div className="grid grid-cols-3 gap-3 mb-3">
+                          {previewImages.map((img, idx) => (
+                            <div key={idx} className="relative">
+                              <img 
+                                src={img} 
+                                alt={`Preview ${idx + 1}`}
+                                className="w-full h-32 object-cover rounded border"
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="absolute top-1 right-1"
+                                onClick={() => setPreviewImages(previewImages.filter((_, i) => i !== idx))}
+                              >
+                                <X size={14} />
+                              </Button>
+                            </div>
+                          ))}
                         </div>
-                        <div className="mt-3">
+                        <div className="flex gap-2">
                           <Button
                             type="button"
-                            onClick={uploadImageToProduct}
+                            onClick={uploadImagesToProduct}
                             disabled={uploadingImage}
                           >
-                            {uploadingImage ? 'Enviando...' : 'Confirmar Upload'}
+                            <Upload size={16} className="mr-2" />
+                            {uploadingImage ? 'Enviando...' : `Confirmar Upload (${previewImages.length})`}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setPreviewImages([])}
+                          >
+                            Cancelar
                           </Button>
                         </div>
                       </div>
                     )}
 
-                    {/* Upload Input */}
-                    <div className="mb-4">
-                      <Label htmlFor="image-upload">Selecionar Imagem</Label>
+                    {/* Upload Input com Múltiplas Imagens */}
+                    <div className="mb-4 p-4 border-2 border-dashed rounded-lg bg-white">
+                      <Label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center py-4">
+                        <Upload size={48} className="text-blue-500 mb-2" />
+                        <span className="text-lg font-medium">Clique para selecionar imagens</span>
+                        <span className="text-sm text-gray-500">ou arraste e solte aqui</span>
+                      </Label>
                       <Input
                         id="image-upload"
                         type="file"
                         accept="image/*"
+                        multiple
                         onChange={handleImageUpload}
-                        className="mt-1"
+                        className="hidden"
                       />
-                      <p className="text-sm text-gray-500 mt-1">
-                        Tamanho máximo: 2MB. Formatos: JPG, PNG, GIF
+                      <p className="text-xs text-gray-500 mt-2 text-center">
+                        ✓ Múltiplas imagens  ✓ Compressão automática  ✓ Máx 500KB por imagem
                       </p>
                     </div>
 
-                    {/* Galeria de Imagens Existentes */}
+                    {/* Galeria de Imagens Existentes com Drag & Drop */}
                     {formData.fotos && formData.fotos.length > 0 && (
                       <div>
-                        <Label className="mb-2 block">Imagens do Produto ({formData.fotos.length}):</Label>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <Label className="mb-3 block flex items-center justify-between">
+                          <span>Galeria do Produto ({formData.fotos.length} imagens)</span>
+                          <span className="text-xs text-gray-500">Arraste para reordenar</span>
+                        </Label>
+                        <ReactSortable
+                          list={formData.fotos.map((foto, idx) => ({ id: idx, foto, originalIndex: idx }))}
+                          setList={(newList) => handleReordenarImagens(newList)}
+                          animation={200}
+                          className="grid grid-cols-2 md:grid-cols-3 gap-4"
+                        >
                           {formData.fotos.map((foto, index) => (
-                            <div key={index} className="relative group border rounded-lg overflow-hidden">
+                            <div 
+                              key={index} 
+                              className="relative group border-2 rounded-lg overflow-hidden cursor-move hover:border-blue-400 transition-all"
+                              style={{ borderColor: index === fotoPrincipalIndex ? '#3b82f6' : '#e5e7eb' }}
+                            >
                               <img 
                                 src={foto} 
                                 alt={`Produto ${index + 1}`}
-                                className="w-full h-40 object-cover"
+                                className="w-full h-48 object-cover"
+                                onClick={() => setZoomImage(foto)}
                               />
-                              <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              
+                              {/* Badge de Imagem Principal */}
+                              {index === fotoPrincipalIndex && (
+                                <div className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                                  <Star size={12} fill="white" />
+                                  Principal
+                                </div>
+                              )}
+                              
+                              {/* Número da Imagem */}
+                              <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded text-xs font-bold">
+                                #{index + 1}
+                              </div>
+
+                              {/* Ações no Hover */}
+                              <div className="absolute inset-0 bg-black bg-opacity-60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="bg-white"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setZoomImage(foto);
+                                  }}
+                                >
+                                  <ZoomIn size={16} className="mr-1" />
+                                  Ampliar
+                                </Button>
+                                {index !== fotoPrincipalIndex && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="bg-blue-500 text-white hover:bg-blue-600"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      definirImagemPrincipal(index);
+                                    }}
+                                  >
+                                    <Star size={16} className="mr-1" />
+                                    Definir Principal
+                                  </Button>
+                                )}
                                 <Button
                                   type="button"
                                   variant="destructive"
                                   size="sm"
-                                  onClick={() => removeImage(index)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeImage(index);
+                                  }}
                                 >
                                   <Trash2 size={16} className="mr-1" />
                                   Remover
                                 </Button>
                               </div>
-                              <div className="absolute top-2 left-2 bg-white px-2 py-1 rounded text-xs font-semibold">
-                                #{index + 1}
-                              </div>
                             </div>
                           ))}
-                        </div>
+                        </ReactSortable>
                       </div>
                     )}
 
-                    {(!formData.fotos || formData.fotos.length === 0) && !previewImage && (
-                      <div className="text-center py-8 text-gray-500">
-                        <Package size={48} className="mx-auto mb-2 text-gray-400" />
-                        <p>Nenhuma imagem cadastrada</p>
-                        <p className="text-sm">Selecione uma imagem acima para começar</p>
+                    {(!formData.fotos || formData.fotos.length === 0) && previewImages.length === 0 && (
+                      <div className="text-center py-12 text-gray-500">
+                        <Package size={64} className="mx-auto mb-3 text-gray-300" />
+                        <p className="text-lg font-medium">Nenhuma imagem cadastrada</p>
+                        <p className="text-sm">Selecione imagens acima para começar</p>
                       </div>
                     )}
                   </div>
