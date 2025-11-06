@@ -1326,6 +1326,22 @@ const Produtos = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Zoom */}
+      <Dialog open={!!zoomImage} onOpenChange={() => setZoomImage(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Visualização da Imagem</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-4">
+            <img 
+              src={zoomImage} 
+              alt="Zoom" 
+              className="max-w-full max-h-[70vh] object-contain rounded"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
