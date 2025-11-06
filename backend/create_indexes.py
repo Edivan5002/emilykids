@@ -14,8 +14,9 @@ async def create_all_indexes():
     
     # Conectar ao MongoDB
     mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+    db_name = os.environ.get('DB_NAME', 'emily_kids')
     client = AsyncIOMotorClient(mongo_url)
-    db = client.emily_kids
+    db = client[db_name]
     
     print("🔧 Criando índices no MongoDB...")
     print("-" * 50)
