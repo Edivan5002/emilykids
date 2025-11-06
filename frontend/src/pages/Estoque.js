@@ -662,8 +662,17 @@ const Estoque = () => {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <FileText size={24} />
-              Detalhes da Movimentação
+              {detalhesMovimentacao?.referencia_tipo === 'ajuste_manual' ? (
+                <>
+                  <Edit size={24} className="text-blue-600" />
+                  <span>Detalhes do Ajuste Manual</span>
+                </>
+              ) : (
+                <>
+                  <FileText size={24} />
+                  <span>Detalhes da Movimentação</span>
+                </>
+              )}
             </DialogTitle>
           </DialogHeader>
           
