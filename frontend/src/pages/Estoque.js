@@ -50,18 +50,20 @@ const Estoque = () => {
 
   const fetchData = async () => {
     try {
-      const [prodRes, movRes, alertRes, marcasRes, catRes] = await Promise.all([
+      const [prodRes, movRes, alertRes, marcasRes, catRes, userRes] = await Promise.all([
         axios.get(`${API}/produtos`),
         axios.get(`${API}/estoque/movimentacoes`),
         axios.get(`${API}/estoque/alertas`),
         axios.get(`${API}/marcas`),
-        axios.get(`${API}/categorias`)
+        axios.get(`${API}/categorias`),
+        axios.get(`${API}/usuarios`)
       ]);
       setProdutos(prodRes.data);
       setMovimentacoes(movRes.data);
       setAlertas(alertRes.data);
       setMarcas(marcasRes.data);
       setCategorias(catRes.data);
+      setUsuarios(userRes.data);
     } catch (error) {
       toast.error('Erro ao carregar dados');
     }
