@@ -254,8 +254,8 @@ const Vendas = () => {
       vendasEfetivadas.reduce((sum, v) => sum + v.total, 0) / vendasEfetivadas.length : 0, // Apenas efetivadas
     vendasCartao: vendasEfetivadas.filter(v => v.forma_pagamento === 'cartao').length,
     vendasPix: vendasEfetivadas.filter(v => v.forma_pagamento === 'pix').length,
-    vendasDinheiro: vendasFiltradas.filter(v => v.forma_pagamento === 'dinheiro').length,
-    vendasBoleto: vendasFiltradas.filter(v => v.forma_pagamento === 'boleto').length
+    vendasDinheiro: vendasEfetivadas.filter(v => v.forma_pagamento === 'dinheiro').length,
+    vendasBoleto: vendasEfetivadas.filter(v => v.forma_pagamento === 'boleto').length
   };
 
   // Top produtos mais vendidos
