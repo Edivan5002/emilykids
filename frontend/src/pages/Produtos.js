@@ -1158,14 +1158,14 @@ const Produtos = () => {
         <table className="min-w-full">
           <thead>
             <tr>
-              <th>Imagem</th>
-              <th>SKU</th>
+              <th className="hidden sm:table-cell">Imagem</th>
+              <th className="hidden md:table-cell">SKU</th>
               <th>Nome</th>
-              <th>Marca</th>
-              <th>Preço Custo</th>
+              <th className="hidden lg:table-cell">Marca</th>
+              <th className="hidden md:table-cell">Preço Custo</th>
               <th>Preço Venda</th>
-              <th>Margem</th>
-              <th>Estoque</th>
+              <th className="hidden lg:table-cell">Margem</th>
+              <th className="hidden sm:table-cell">Estoque</th>
               <th>Status</th>
               <th className="text-right">Ações</th>
             </tr>
