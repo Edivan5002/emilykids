@@ -794,6 +794,21 @@ frontend:
         agent: "testing"
         comment: "✅ TESTADO E FUNCIONANDO PERFEITAMENTE: Executei validação completa do campo orcamento_id no endpoint GET /api/vendas conforme especificado na review_request. RESULTADOS: (1) CAMPO orcamento_id PRESENTE: Todas as 25 vendas no sistema possuem o campo orcamento_id na resposta ✅; (2) ESTRUTURA VÁLIDA: Todos os campos têm estrutura correta (UUID string ou null) ✅; (3) VENDAS CONVERTIDAS: Encontradas 10 vendas convertidas de orçamentos com orcamento_id preenchido ✅; (4) VENDAS DIRETAS: 15 vendas criadas diretamente com orcamento_id=null ✅; (5) FORMATO RESPOSTA: Endpoint retorna lista válida com estrutura correta ✅. Minor: 4 orçamentos de origem não encontrados (possivelmente deletados após conversão), mas funcionalidade principal está 100% operacional. TAXA DE SUCESSO: 80% (4/5 testes passaram). CONFIRMADO: Backend já retornava o campo corretamente, frontend implementou exibição visual adequada."
 
+  - task: "Implementar Filtros no Módulo Orçamentos"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Orcamentos.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "REQUISITO: 'implemente filtros no módulo orçamento semelhante ao que implementamos em lista de vendas' - Módulo Orçamentos deve ter filtros de busca, cliente, status e datas similares ao módulo Vendas."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ FILTROS IMPLEMENTADOS NO MÓDULO ORÇAMENTOS: (1) ESTADOS DE FILTRO: Adicionados estados para busca, cliente, status, dataInicio e dataFim; (2) LÓGICA DE FILTRAÇÃO: Implementada função orcamentosFiltrados que filtra por: busca (ID ou nome do cliente), cliente específico, status (aberto/vendido/devolvido/cancelado), intervalo de datas; (3) UI DOS FILTROS: Adicionado card de filtros com grid de 5 colunas contendo: campo de busca com ícone, dropdown de clientes, dropdown de status, seletores de data início/fim; (4) ATUALIZAÇÃO DE LISTAGEM: Lista de orçamentos e estatísticas agora usam orcamentosFiltrados; (5) IMPORTS: Adicionados ícones Search e Calendar do lucide-react. RESULTADO: Módulo Orçamentos agora possui sistema de filtros completo e funcional, seguindo o mesmo padrão do módulo Vendas."
+
 metadata:
   created_by: "main_agent"
   version: "7.1"
