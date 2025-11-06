@@ -13,7 +13,7 @@ import sys
 import os
 
 # Backend URL from environment
-BACKEND_URL = "https://emily-kids-erp.preview.emergentagent.com/api"
+BACKEND_URL = "https://mobile-pos-admin.preview.emergentagent.com/api"
 
 class RBACSystemTester:
     def __init__(self):

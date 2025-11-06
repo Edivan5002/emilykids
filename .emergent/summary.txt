@@ -1,33 +1,52 @@
 <analysis>
-The trajectory details a comprehensive refactoring and enhancement effort across multiple modules of the Emily Kids application. Initially, the focus was on critical bug fixes related to form submissions (e.g., empty strings for optional fields causing 422 errors) in Fornecedores and Clientes modules, identified and resolved by sanitizing frontend data. This set a pattern for subsequent module improvements.
+The trajectory details the continuous development of the Emily Kids application, primarily focusing on enhancing existing modules and introducing new functionalities as requested by the user. The initial phase of work involved refining core CRUD operations, improving data handling for optional fields (converting empty strings to null), and implementing robust dependency-based inactivation/deletion across master data modules like Fornecedores, Clientes, Marcas, Categorias, Subcategorias, and Produtos. UI/UX was significantly improved with search/filter capabilities and detailed modals.
 
-A significant portion of the work involved implementing consistent logic for displaying inactive items and enforcing dependency-based inactivation/deletion across Marcas, Categorias, Subcategorias, and Produtos. This required both frontend modifications to fetch inactive items and backend updates to  to add robust validation logic.
+Subsequently, the development addressed a series of critical enhancements: first, displaying converted budget IDs in the sales list, followed by replicating advanced filtering in the Orçamentos module. A major refactoring effort involved implementing pagination and loading states across almost all backend endpoints and their corresponding frontend pages to improve performance and user experience. Destructive actions, such as canceling sales and invoices, were upgraded with professional confirmation dialogs. Data export functionality was added to key modules like Produtos.
 
-Further enhancements included redesigning the Notas Fiscais and Vendas modules to replace deletion with a cancellation mechanism, complete with stock reversal and status updates. UI/UX improvements such as adding search/filter functionalities to master data modules (Clientes, Fornecedores, Marcas, Categorias, Subcategorias) and creating professional detail modals for Estoque (movements and manual adjustments) and Logs were also implemented. A persistent issue with displaying the motivo (reason) in the Estoque adjustment modal led to backend model and endpoint modifications for proper data enrichment. The final task in the trajectory began with the user requesting an update to the Vendas module to display associated budget IDs for converted sales, which the AI engineer was starting to investigate.
+Later, the system was significantly expanded with an advanced image upload and management system for Produtos, including multiple images, main image selection, reordering, and compression. The Estoque module received a comprehensive periodic inventory system, complete with inventory initiation, product counting, comparison, and a cancellation mechanism with reason logging. Finally, the IA Insights module was enhanced with demand forecasting and intelligent pricing suggestions using an LLM. The current task involves making the entire system responsive across desktop and mobile.
 </analysis>
 
 <product_requirements>
-The Emily Kids application is an integrated sales, inventory, and business intelligence system with JWT-based RBAC. It supports CRUD for master data (Clients, Suppliers, Brands, Categories, Subcategories, Products), stock control, invoicing, budgeting, and sales, with a focus on conditional inactivation/deletion based on inter-module dependencies.
+The Emily Kids application is an integrated sales, inventory, and business intelligence system with JWT-based RBAC, supporting CRUD for master data (Clients, Suppliers, Brands, Categories, Subcategories, Products), stock control, invoicing, budgeting, and sales. It focuses on conditional inactivation/deletion based on inter-module dependencies.
 
-**Key enhancements addressed in the trajectory:**
-*   **Fornecedores & Clientes**: Resolved registration/editing errors (frontend sending empty strings), implemented inactive item display, and robust dependency validation for inactivation/deletion against modules like products, budgets, and sales. Modal window size increased for Fornecedores.
+**Initial Key Enhancements (prior to the current trajectory's detailed work):**
+*   **Fornecedores & Clientes**: Resolved registration/editing errors (frontend empty strings to null), implemented inactive item display, robust dependency validation for inactivation/deletion. Modal size increased for Fornecedores.
 *   **Marcas, Categorias, Subcategorias**: Implemented display of inactive items and dependency-based inactivation/deletion.
-*   **Produtos**: Resolved registration errors, displayed inactive products, and enforced dependency-based inactivation/deletion. Ensured fornecedor preferencial dropdown displays active suppliers correctly.
-*   **Notas Fiscais**: Replaced excluir (delete) with cancelar (cancel) button, with logic for stock reversal and status update to cancelada.
-*   **Vendas**: Replaced excluir (delete) with cancelar (cancel) button, with stock return logic and status cancelada. Dashboard adjusted to separate vendas efetivadas (effective sales) and vendas canceladas.
-*   **Estoque**: Implemented professional detail modals for histórico de movimentações and ajustes manuais, displaying user names instead of IDs, and correctly showing the adjustment motivo (reason). Modal height adjusted.
+*   **Produtos**: Resolved registration errors, displayed inactive products, enforced dependency-based inactivation/deletion. Ensured fornecedor preferencial dropdown displays active suppliers.
+*   **Notas Fiscais**: Replaced excluir with cancelar button, with stock reversal and cancelada status.
+*   **Vendas**: Replaced excluir with cancelar button, with stock return logic and cancelada status. Dashboard adjusted to separate vendas efetivadas and vendas canceladas.
+*   **Estoque**: Implemented professional detail modals for histórico de movimentações and ajustes manuais, displaying user names, and correctly showing motivo. Modal height adjusted.
 *   **Logs**: Implemented professional detail modals for log entries.
-*   **Search/Filter**: Added search by name, CPF/CNPJ, and status filters across Clientes, Fornecedores, Marcas, Categorias, and Subcategorias modules.
+*   **Search/Filter**: Added search by name, CPF/CNPJ, and status filters across Clientes, Fornecedores, Marcas, Categorias, and Subcategorias.
+
+**User Requests within this trajectory:**
+1.  **Vendas Module Enhancement**: Display the associated budget ID for sales converted from an Orçamento in the sales listing.
+2.  **Orçamentos Module Filters**: Implement search/filter functionality in the Orçamentos module, similar to Vendas.
+3.  **System Improvements from **:
+    *   **High Priority (Implemented)**:
+        *   Backend Pagination: Implement pagination on all main API endpoints (, , , , , , , , , , , , ).  already has it.
+        *   Frontend Loading States: Implement visual loading indicators across key modules (, , , , , , , ).
+        *   MongoDB Indexes: Create essential indexes for performance optimization.
+    *   **Medium Priority (Implemented)**:
+        *   Destructive Action Confirmations: Add professional confirmation dialogs for critical actions like cancelling sales and invoices.
+        *   Data Export: Implement functionality to export data from key modules (e.g., Produtos) to CSV.
+    *   **Functionalities Extras (Implemented)**:
+        *   Produtos Image Upload: Implement upload functionality for product images, including multiple images, setting a main image, reordering, and compression.
+        *   Estoque Periodic Inventory: Implement a comprehensive periodic inventory system, including inventory creation, product counting, comparison, automatic adjustments, and cancellation.
+        *   IA Insights Features: Implement demand forecasting and intelligent pricing suggestions using an LLM.
+4.  **Responsive Layout**: Make the entire system layout responsive, adapting to desktop and mobile without excessive scrolling.
 </product_requirements>
 
 <key_technical_concepts>
 -   **FastAPI**: Python framework for backend APIs and logic.
 -   **React**: JavaScript library for dynamic frontend UI.
--   **MongoDB**: NoSQL database for data storage, using UUIDs for IDs.
+-   **MongoDB**: NoSQL database for data storage, using UUIDs for IDs and for which indexes were added.
 -   **Pydantic**: Data validation and serialization for FastAPI models.
 -   **Axios**: HTTP client for frontend-backend communication.
--   **Shadcn UI & Tailwind CSS**: Frontend styling and UI components.
+-   **Shadcn UI & Tailwind CSS**: Frontend styling and UI components, including , , , , .
 -   **Role-Based Access Control (RBAC)**: Implemented for granular permissions.
+-   **Emergent LLM Key**: Used for integrating AI capabilities like demand forecasting and pricing suggestions.
+-   **react-image-file-resizer**: Frontend library for image compression.
 </key_technical_concepts>
 
 <code_architecture>
@@ -36,100 +55,92 @@ The Emily Kids application is an integrated sales, inventory, and business intel
 -   
     -   **Summary**: Central FastAPI backend. Handles API endpoints, authentication, RBAC, and database interactions.
     -   **Changes**:
-        -   Modified  (earlier in trajectory, not shown in detail here) for  and  synchronization.
-        -   Updated  and  (and their  counterparts) endpoints by adjusting Pydantic models for optional fields to handle empty strings from frontend as .
-        -   Enhanced  related endpoints for listing, status toggle, and deletion to include robust dependency validation (checking ,  association).
-        -   Enhanced  delete endpoint for  and  dependencies.
-        -   Updated  delete and toggle-status endpoints to validate  and  dependencies.
-        -   Updated  delete and toggle-status endpoints to validate  and  dependencies.
-        -   Updated  delete and toggle-status endpoints to validate  dependencies.
-        -   Updated  delete and toggle-status endpoints to validate , , and  dependencies.
-        -   Confirmed  endpoint logic for stock reversal.
-        -   Confirmed  endpoint logic for stock return.
-        -   Modified  endpoint to enrich movement data with  by performing a lookup on .
-        -   Modified  Pydantic model to include an   field.
-        -   Updated  to explicitly save the  field to the  document.
--   
-    -   **Summary**: UI for managing client accounts.
-    -   **Changes**:
-        -   Implemented frontend data sanitization to convert empty strings to  for optional fields during client creation/editing.
-        -   Added search/filter functionality for , , and .
-        -   Adjusted  to include  for listing.
--   
-    -   **Summary**: UI for managing supplier accounts.
-    -   **Changes**:
-        -   Implemented frontend data sanitization to convert empty strings to  for optional fields during supplier creation/editing.
-        -   Increased the size of the supplier registration/editing modal window.
-        -   Added search/filter functionality for , , and .
-        -   Adjusted  to include  for listing.
--   
-    -   **Summary**: UI for managing brand accounts.
-    -   **Changes**:
-        -   Adjusted  to include  for listing inactive brands.
-        -   Added search/filter functionality for  and .
--   
-    -   **Summary**: UI for managing categories.
-    -   **Changes**:
-        -   Adjusted  to include  for listing.
-        -   Added search/filter functionality for , , and .
--   
-    -   **Summary**: UI for managing subcategories.
-    -   **Changes**:
-        -   Adjusted  to include  for listing.
-        -   Added search/filter functionality for , , , and .
--   
-    -   **Summary**: UI for managing product accounts.
-    -   **Changes**:
-        -   Adjusted  to include  for listing inactive products.
-        -   Modified  call to include  to populate the  dropdown correctly.
-        -   Ensured  displays  instead of  and forces black text in the UI.
-        -   Implemented comprehensive frontend data sanitization for all optional fields during product creation/editing.
--   
-    -   **Summary**: UI for managing invoices.
-    -   **Changes**:
-        -   Removed the DELETE button and implemented a CANCELAR button.
-        -   Added logic to disable Confirmar and Atualizar Estoque actions for cancelled notes.
-        -   Adjusted status display logic to correctly show Cancelada status and filter cancelled notes from Notas Pendentes statistics.
-        -   Added a new card for Notas Canceladas in statistics.
-        -   Removed  references.
+        -   Pydantic models for , ,  updated to handle  fields (empty strings to ).
+        -   Dependency validation enhanced for deletion/inactivation across , , , , , .
+        -    and  cancellation endpoints confirmed and stock reversal logic.
+        -    model enriched with  and .  updated to save .
+        -   **Pagination**:  model added. All main GET endpoints (, , , , , , , , , , , , ) modified to return paginated data.
+        -   **Image Upload (Produtos)**:  model confirmed with . Added  and . New endpoints: , , .
+        -   **Periodic Inventory (Estoque)**: New Pydantic models  and . New endpoints: , , , , , .
+        -   **IA Insights**:  endpoint refined. New endpoint  added.
+-    (New file)
+    -   **Summary**: Python script to create MongoDB indexes for performance optimization.
+    -   **Changes**: Created to define and execute index creation on various collections.
 -   
     -   **Summary**: UI for managing sales.
     -   **Changes**:
-        -   Removed the DELETE button and implemented a CANCELAR button.
-        -   Added logic to disable actions for cancelled sales.
-        -   Adjusted status display logic to correctly show Cancelada status with a badge and display the cancellation .
-        -   Refactored sales dashboard to separate Total de Vendas, Faturamento, and Ticket Médio into Vendas Efetivadas and Vendas Canceladas.
-        -   Adjusted calculations for top products and top clients to only consider Vendas Efetivadas.
+        -   Frontend data sanitization. Removed DELETE, added CANCELAR button.
+        -   Adjusted status display and dashboard for Cancelada sales.
+        -   **Budget ID Display**: Modified to display  when a sale is converted from a budget.
+        -   **Loading States**: Implemented  state and visual indicator.
+        -   **Destructive Confirmation**: Replaced  with a professional  for cancelling sales.
+        -   Temporary  for debugging.
+-   
+    -   **Summary**: UI for managing budgets.
+    -   **Changes**:
+        -   **Search/Filter**: Added states (), logic (), and UI for filtering budgets by status, client, and dates.
+        -   **Loading States**: Implemented  state and visual indicator.
+-   
+    -   **Summary**: UI for managing product accounts.
+    -   **Changes**:
+        -   Frontend data sanitization.  adjusted to .
+        -   **Loading States**: Implemented  state and visual indicator.
+        -   **Data Export**: Integrated  for exporting product data to CSV, added export button.
+        -   **Image Upload**: Added , ,  states. Implemented , ,  functions. Added Imagens tab to the product form with upload input, image previews, main image selection, reordering, and a zoom modal. Updated table to display .
+-   , , , , 
+    -   **Summary**: UIs for managing master data.
+    -   **Changes**:
+        -   Frontend data sanitization (Clientes, Fornecedores, Produtos).
+        -   Search/filter functionality added (all).
+        -    added to fetch calls (all).
+        -   **Loading States**: Implemented  state and visual indicators in each.
+-   
+    -   **Summary**: UI for managing invoices.
+    -   **Changes**: Removed DELETE, added CANCELAR button, logic for disabled actions on cancelled notes, updated status display, and statistics.
+        -   **Destructive Confirmation**: Replaced  with a professional  for cancelling invoices.
 -   
     -   **Summary**: UI for managing stock, including movement history and manual adjustments.
     -   **Changes**:
-        -   Implemented a professional Ver Detalhes modal for both Histórico de Movimentações and Ajustes Manuais.
-        -   Modified the modal to display the  instead of  for movements and adjustments.
-        -   Added dynamic header, badge, and prominent reason display for manual adjustments within the detail modal.
-        -   Adjusted modal height and added scroll for better usability.
-        -   Ensured  for manual adjustments is correctly captured and displayed.
+        -   Implemented Ver Detalhes modal for movements/adjustments, displaying  and .
+        -   **Periodic Inventory**: Added states (, ), functions (, , , ), and a new Inventário tab with its content and associated dialogs (, ).
 -   
-    -   **Summary**: UI for displaying application logs.
+    -   **Summary**: UI for displaying application insights.
     -   **Changes**:
-        -   Implemented a professional Ver Detalhes modal for individual log entries.
-        -   Added states and functions to manage the visibility and content of the log detail modal.
+        -   Existing structure for demand prediction ().
+        -   **New IA Features**: Added  state,  function, and a new Precificação tab with its UI.
+-    (New file)
+    -   **Summary**: Utility functions for exporting data to CSV format.
+    -   **Changes**: Created to provide a reusable  function.
+-    (New file, then integrated inline)
+    -   **Summary**: Auxiliary functions for periodic inventory management.
+    -   **Changes**: Initially created as a separate file, then its logic was integrated directly into  for better state management.
+-   
+    -   **Summary**: Shadcn UI components.
+    -   **Changes**: Used  for professional confirmation dialogs in  and , and .
+-   
+    -   **Summary**: Documents system analysis and suggested improvements.
+    -   **Changes**: Read and referenced by the AI engineer to implement new features.
+-    (New file)
+    -   **Summary**: Report detailing implemented improvements based on .
+    -   **Changes**: Created by the AI engineer to track progress.
 -   
     -   **Summary**: Documents testing protocols, user problem statements, and agent communications.
     -   **Changes**: Continuously updated to reflect problems, solutions, testing progress, and communications for all modules addressed.
-
+-    and 
+    -   **Summary**: Dependency management files.
+    -   **Changes**:  (frontend),  (backend - implied for LLM use) added to respective files.
 </code_architecture>
 
 <pending_tasks>
--   Frontend testing and verification for Marcas, Categorias, Subcategorias, Produtos, Notas Fiscais, Vendas, Estoque, and Logs modules to ensure all implemented changes (display of inactive items, conditional inactivation, search filters, detail modals, cancellation logic, dashboard updates) are working correctly.
--   Implement the display of original budget ID information for sales that were converted from an existing budget in the Vendas module list.
+-   Implement the responsive layout for the entire system, adapting to desktop and mobile environments to avoid excessive scrolling.
 </pending_tasks>
 
 <current_work>
-Immediately prior to this summary, the AI engineer was addressing a user request for the Vendas (Sales) module. The user explicitly requested: no módulo vendas em lista de vendas em todos os orçamentos que foram convertidos em vendas deve vir a informação orçamento com id convertido em vendas. This means that for any sale that originated from an Orçamento (Budget), the sales listing in the frontend should display the associated budget ID.
+Immediately prior to this summary, the AI engineer was tasked with implementing a fully responsive layout for the Emily Kids application. The user's explicit request was: o layout do sistema deve ser responsivo se adaptando tanto a pc desktop quanto a mobile evitando ao máximo a necessidade scroll (the system layout must be responsive, adapting to both desktop PC and mobile, avoiding scrolling as much as possible).
 
-The AI engineer acknowledged this request and stated the first step would be to verificar se o modelo de venda já tem essa referência (check if the sales model already has this reference) in the backend. This indicates the current work is in the initial investigation phase, focusing on understanding the existing data model in  to determine how to retrieve and display this information. No code changes have been made yet regarding this specific request.
+The AI engineer acknowledged this request and stated the starting point would be to analyze the  component, followed by adjusting the main pages. This indicates the current work is in the initial investigation and planning phase for the responsive design implementation. No code changes have been made yet regarding this specific request in the provided trajectory snippet, only the intent to analyze .
 </current_work>
 
 <optional_next_step>
-Verify the backend  model in  to check if it contains a field referencing the original budget ID.
+Analyze  to understand the current layout structure for implementing responsiveness.
 </optional_next_step>
