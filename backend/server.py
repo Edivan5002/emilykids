@@ -3415,6 +3415,74 @@ async def deletar_imagem_produto(
     
     return {"message": "Imagem removida com sucesso"}
 
+@api_router.put("/produtos/{produto_id}/reordenar-imagens")
+async def reordenar_imagens_produto(
+    produto_id: str,
+    nova_ordem: dict,
+    current_user: dict = Depends(require_permission("produtos", "editar"))
+):
+    """Reordena as imagens do produto"""
+    produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    
+    fotos_atuais = produto.get("fotos", [])
+    indices = nova_ordem.get("indices", [])
+    
+    # Validar índices
+    if len(indices) != len(fotos_atuais):
+        raise HTTPException(status_code=400, detail="Número de índices não corresponde ao número de fotos")
+    
+    # Reordenar fotos
+    fotos_reordenadas = [fotos_atuais[i] for i in indices]
+    
+    await db.produtos.update_one(
+        {"id": produto_id},
+        {"$set": {"fotos": fotos_reordenadas}}
+    )
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="produtos",
+        acao="reordenar_imagens",
+        detalhes={"produto_id": produto_id}
+    )
+    
+    return {"message": "Imagens reordenadas com sucesso"}
+
+@api_router.put("/produtos/{produto_id}/imagem-principal/{indice}")
+async def definir_imagem_principal(
+    produto_id: str,
+    indice: int,
+    current_user: dict = Depends(require_permission("produtos", "editar"))
+):
+    """Define qual imagem é a principal do produto"""
+    produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    
+    fotos = produto.get("fotos", [])
+    if not fotos or indice >= len(fotos) or indice < 0:
+        raise HTTPException(status_code=404, detail="Imagem não encontrada")
+    
+    await db.produtos.update_one(
+        {"id": produto_id},
+        {"$set": {"foto_principal_index": indice}}
+    )
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="produtos",
+        acao="definir_imagem_principal",
+        detalhes={"produto_id": produto_id, "indice": indice}
+    )
+    
+    return {"message": "Imagem principal definida com sucesso"}
+
 @api_router.put("/produtos/{produto_id}/toggle-status")
 async def toggle_produto_status(produto_id: str, current_user: dict = Depends(require_permission("produtos", "editar"))):
     # Verificar se o produto existe
