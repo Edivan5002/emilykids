@@ -3410,6 +3410,18 @@ async def get_alertas_estoque(current_user: dict = Depends(get_current_user)):
 @api_router.get("/estoque/movimentacoes")
 async def get_movimentacoes(current_user: dict = Depends(get_current_user)):
     movimentacoes = await db.movimentacoes_estoque.find({}, {"_id": 0}).sort("timestamp", -1).to_list(100)
+    
+    # Enriquecer movimentações com nome do usuário
+    for mov in movimentacoes:
+        if mov.get("user_id"):
+            usuario = await db.users.find_one({"id": mov["user_id"]}, {"_id": 0, "nome": 1})
+            if usuario:
+                mov["user_nome"] = usuario.get("nome", "Usuário não encontrado")
+            else:
+                mov["user_nome"] = "Usuário não encontrado"
+        else:
+            mov["user_nome"] = "Sistema"
+    
     return movimentacoes
 
 @api_router.post("/estoque/check-disponibilidade", response_model=CheckEstoqueResponse)
