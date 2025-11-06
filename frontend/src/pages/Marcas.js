@@ -168,7 +168,7 @@ const Marcas = () => {
             <tr>
               <th>Nome</th>
               <th>Status</th>
-              <th>className="text-right">Ações</th>
+              <th className="text-right">Ações</th>
             </tr>
           </thead>
           <tbody>
