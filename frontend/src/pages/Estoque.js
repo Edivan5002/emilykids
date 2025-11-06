@@ -292,10 +292,19 @@ const Estoque = () => {
       </div>
 
       <Tabs defaultValue="visao-geral" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="visao-geral">
             <Package className="mr-2" size={16} />
             Visão Geral
+          </TabsTrigger>
+          <TabsTrigger value="inventario">
+            <Clipboard className="mr-2" size={16} />
+            Inventário
+            {inventarioAtivo && (
+              <span className="ml-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
+                Em andamento
+              </span>
+            )}
           </TabsTrigger>
           <TabsTrigger value="movimentacoes">
             <TrendingUp className="mr-2" size={16} />
