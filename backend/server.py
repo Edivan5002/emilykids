@@ -430,6 +430,7 @@ class MovimentacaoEstoque(BaseModel):
     referencia_tipo: str  # nota_fiscal, orcamento, venda, devolucao
     referencia_id: str
     user_id: str
+    motivo: Optional[str] = None  # Para ajustes manuais
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class Orcamento(BaseModel):
