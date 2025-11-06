@@ -752,7 +752,7 @@ const Estoque = () => {
                       <User size={18} className="text-gray-500" />
                       <div>
                         <p className="text-sm text-gray-600">Usuário Responsável</p>
-                        <p className="font-medium">ID: {detalhesMovimentacao.user_id.substring(0, 8)}...</p>
+                        <p className="font-medium">{getUsuarioNome(detalhesMovimentacao.user_id)}</p>
                       </div>
                     </div>
                   )}
