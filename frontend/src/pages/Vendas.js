@@ -596,17 +596,39 @@ const Vendas = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 justify-end">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleCancelarVenda(venda.id)}
-                      data-testid={`cancelar-venda-${venda.id}`}
-                    >
-                      <Ban className="mr-2 text-red-500" size={16} />
-                      Cancelar Venda
-                    </Button>
-                  </div>
+                  {/* Motivo do Cancelamento */}
+                  {(venda.cancelada || venda.status_venda === 'cancelada') && venda.motivo_cancelamento && (
+                    <div className="mt-4 p-3 bg-red-100 border border-red-200 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle size={18} className="text-red-600 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-semibold text-red-900">Motivo do Cancelamento:</p>
+                          <p className="text-sm text-red-800">{venda.motivo_cancelamento}</p>
+                          {venda.data_cancelamento && (
+                            <p className="text-xs text-red-600 mt-1">
+                              Cancelada em: {new Date(venda.data_cancelamento).toLocaleString('pt-BR')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Botão de Cancelar - apenas se não estiver cancelada */}
+                  {!venda.cancelada && venda.status_venda !== 'cancelada' && (
+                    <div className="flex gap-2 justify-end mt-4">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCancelarVenda(venda.id)}
+                        data-testid={`cancelar-venda-${venda.id}`}
+                        className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                      >
+                        <Ban className="mr-2" size={16} />
+                        Cancelar Venda
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
