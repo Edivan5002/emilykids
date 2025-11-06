@@ -279,6 +279,7 @@ class Produto(BaseModel):
     
     # Mídia
     fotos: Optional[List[str]] = None
+    foto_principal_index: Optional[int] = 0  # Índice da foto principal na lista
     descricao: Optional[str] = None
     
     # Status
