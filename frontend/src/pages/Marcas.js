@@ -13,6 +13,9 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const Marcas = () => {
   const [marcas, setMarcas] = useState([]);
+  const [filteredMarcas, setFilteredMarcas] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('todos');
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
