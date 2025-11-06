@@ -302,9 +302,30 @@ const Layout = ({ children }) => {
       {/* Main Content */}
       <div
         className={`flex-1 transition-all duration-300 ${
-          sidebarOpen ? 'ml-64' : 'ml-20'
+          isMobile ? 'ml-0' : sidebarOpen ? 'ml-64' : 'ml-20'
         }`}
       >
+        {/* Header mobile com botão de menu */}
+        {isMobile && (
+          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 rounded hover:bg-gray-100"
+            >
+              <Menu size={24} />
+            </button>
+            <div className="flex items-center gap-1">
+              <span className="text-xl font-bold" style={{color: '#F26C4F'}}>E</span>
+              <span className="text-xl font-bold" style={{color: '#F4A261'}}>M</span>
+              <span className="text-xl font-bold" style={{color: '#267698'}}>I</span>
+              <span className="text-xl font-bold" style={{color: '#2C9AA1'}}>L</span>
+              <span className="text-xl font-bold" style={{color: '#E76F51'}}>Y</span>
+              <span className="text-sm font-semibold ml-1" style={{color: '#3A3A3A'}}>KIDS</span>
+            </div>
+            <div className="w-10" /> {/* Spacer para centralizar logo */}
+          </div>
+        )}
+        
         <div className="h-full overflow-y-auto">
           {children}
         </div>
