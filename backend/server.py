@@ -3507,7 +3507,8 @@ async def ajuste_manual_estoque(request: AjusteEstoqueRequest, current_user: dic
         quantidade=abs(request.quantidade),
         referencia_tipo="ajuste_manual",
         referencia_id=f"ajuste_{datetime.now(timezone.utc).timestamp()}",
-        user_id=current_user["id"]
+        user_id=current_user["id"],
+        motivo=request.motivo
     )
     await db.movimentacoes_estoque.insert_one(movimentacao.model_dump())
     
