@@ -611,7 +611,7 @@ const Administracao = () => {
                 {confirmDialog.action === 'limparLogs' && `Você está prestes a deletar logs com mais de ${diasLogs} dias.`}
                 {confirmDialog.action === 'resetarModulo' && `Você está prestes a resetar completamente o módulo "${moduloSelecionado}".`}
                 {confirmDialog.action === 'removerTeste' && 'Você está prestes a remover todos os dados de teste do sistema.'}
-                {confirmDialog.action === 'limparTudo' && 'Você está prestes a LIMPAR TODO O SISTEMA (exceto Usuários e Papéis/Permissões). Esta é a ação mais destrutiva!'}
+                {confirmDialog.action === 'limparTudo' && 'Você está prestes a LIMPAR TODO O SISTEMA incluindo TODOS os LOGS (exceto Usuários e Papéis/Permissões). Esta é a ação mais destrutiva!'}
               </AlertDescription>
             </Alert>
           </div>
