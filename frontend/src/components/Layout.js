@@ -73,6 +73,7 @@ const Layout = ({ children }) => {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/usuarios', label: 'Usuários', icon: UserCog, adminOnly: true },
     { path: '/papeis-permissoes', label: 'Papéis & Permissões', icon: Shield, adminOnly: true },
+    { path: '/administracao', label: 'Administração', icon: Shield, adminOnly: true, className: 'text-red-600' },
     { 
       label: 'Cadastros', 
       icon: FolderOpen, 
