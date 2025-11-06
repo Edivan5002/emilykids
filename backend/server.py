@@ -7597,6 +7597,10 @@ class AdminDeleteVendasRequest(BaseModel):
     dias: int
     senha_mestra: str
 
+class AdminDeleteOrcamentosRequest(BaseModel):
+    dias: int
+    senha_mestra: str
+
 class AdminLimparLogsRequest(BaseModel):
     dias: int
     senha_mestra: str
