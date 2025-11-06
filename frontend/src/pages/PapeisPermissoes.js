@@ -250,7 +250,7 @@ const PapeisPermissoes = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4 mb-6">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger value="roles">
             <Shield size={16} className="mr-2" />
             Papéis
