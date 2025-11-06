@@ -539,25 +539,27 @@ const Administracao = () => {
               <div className="space-y-3">
                 {logsAuditoria.map((log, idx) => (
                   <div key={idx} className="p-4 border rounded-lg bg-gray-50">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3 flex-1">
                         <Badge variant={log.acao.includes('limpar_tudo') ? 'destructive' : 'default'}>
                           {log.acao}
                         </Badge>
                         <span className="font-semibold">{log.user_nome}</span>
                       </div>
-                      <span className="text-xs text-gray-500">
-                        {new Date(log.timestamp).toLocaleString('pt-BR')}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-gray-500">
+                          {new Date(log.timestamp).toLocaleString('pt-BR')}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleVerDetalhes(log)}
+                        >
+                          <Eye size={16} className="mr-2" />
+                          Ver Detalhes
+                        </Button>
+                      </div>
                     </div>
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-900">
-                        Ver detalhes
-                      </summary>
-                      <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
-                        {JSON.stringify(log.detalhes, null, 2)}
-                      </pre>
-                    </details>
                   </div>
                 ))}
                 {logsAuditoria.length === 0 && (
