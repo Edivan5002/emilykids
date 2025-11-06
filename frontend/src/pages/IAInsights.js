@@ -272,6 +272,199 @@ const IAInsights = () => {
           </Card>
         </TabsContent>
 
+        {/* SUGESTÃO DE PRECIFICAÇÃO */}
+        <TabsContent value="precificacao" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sugestão Inteligente de Precificação</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Selecione um Produto</label>
+                <Select value={produtoSelecionado} onValueChange={setProdutoSelecionado}>
+                  <SelectTrigger data-testid="select-produto-preco">
+                    <SelectValue placeholder="Escolha um produto para análise" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {produtos.map(p => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.nome} - SKU: {p.sku} - R$ {p.preco_venda?.toFixed(2)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button 
+                onClick={analisarPrecificacao} 
+                disabled={loading || !produtoSelecionado}
+                data-testid="btn-analisar-precificacao"
+                className="w-full"
+                style={{backgroundColor: '#267698'}}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 animate-spin" size={16} />
+                    Analisando Precificação...
+                  </>
+                ) : (
+                  <>
+                    <DollarSign className="mr-2" size={16} />
+                    Analisar Precificação
+                  </>
+                )}
+              </Button>
+
+              {precificacaoData && (
+                <div className="space-y-4 mt-4">
+                  {/* Informações do Produto */}
+                  <Card className="border-2 border-blue-200 bg-blue-50">
+                    <CardHeader>
+                      <CardTitle className="text-lg">📦 {precificacaoData.produto.nome}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center p-3 bg-white rounded">
+                          <p className="text-xs text-gray-500">SKU</p>
+                          <p className="text-sm font-bold">{precificacaoData.produto.sku}</p>
+                        </div>
+                        <div className="text-center p-3 bg-white rounded">
+                          <p className="text-xs text-gray-500">Preço Custo</p>
+                          <p className="text-sm font-bold text-red-600">
+                            R$ {precificacaoData.produto.preco_custo.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="text-center p-3 bg-white rounded">
+                          <p className="text-xs text-gray-500">Preço Venda</p>
+                          <p className="text-sm font-bold text-green-600">
+                            R$ {precificacaoData.produto.preco_venda.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="text-center p-3 bg-white rounded">
+                          <p className="text-xs text-gray-500">Margem</p>
+                          <p className="text-sm font-bold text-blue-600">
+                            {precificacaoData.produto.margem_lucro.toFixed(1)}%
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Estatísticas de Vendas */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">📊 Performance de Vendas</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center p-3 bg-gray-50 rounded">
+                          <p className="text-xs text-gray-500">Qtd. Vendida</p>
+                          <p className="text-xl font-bold text-blue-600">
+                            {precificacaoData.estatisticas_vendas.quantidade_vendida}
+                          </p>
+                        </div>
+                        <div className="text-center p-3 bg-gray-50 rounded">
+                          <p className="text-xs text-gray-500">Receita Total</p>
+                          <p className="text-xl font-bold text-green-600">
+                            R$ {precificacaoData.estatisticas_vendas.receita_total.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="text-center p-3 bg-gray-50 rounded">
+                          <p className="text-xs text-gray-500">Nº Vendas</p>
+                          <p className="text-xl font-bold">
+                            {precificacaoData.estatisticas_vendas.vendas_realizadas}
+                          </p>
+                        </div>
+                        <div className="text-center p-3 bg-gray-50 rounded">
+                          <p className="text-xs text-gray-500">Ticket Médio</p>
+                          <p className="text-xl font-bold text-purple-600">
+                            R$ {precificacaoData.estatisticas_vendas.ticket_medio.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Análise de Mercado */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">🎯 Análise de Mercado</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center p-3 bg-gray-50 rounded">
+                          <p className="text-xs text-gray-500">Preço Médio Categoria</p>
+                          <p className="text-lg font-bold text-blue-600">
+                            R$ {precificacaoData.analise_mercado.preco_medio_categoria.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="text-center p-3 bg-gray-50 rounded">
+                          <p className="text-xs text-gray-500">Preço Mínimo</p>
+                          <p className="text-lg font-bold text-red-600">
+                            R$ {precificacaoData.analise_mercado.preco_minimo_categoria.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="text-center p-3 bg-gray-50 rounded">
+                          <p className="text-xs text-gray-500">Preço Máximo</p>
+                          <p className="text-lg font-bold text-green-600">
+                            R$ {precificacaoData.analise_mercado.preco_maximo_categoria.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="text-center p-3 bg-gray-50 rounded">
+                          <p className="text-xs text-gray-500">Produtos Similares</p>
+                          <p className="text-lg font-bold">
+                            {precificacaoData.analise_mercado.produtos_similares}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Indicadores Financeiros */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">💰 Indicadores Financeiros</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center p-4 bg-blue-50 border-2 border-blue-200 rounded">
+                          <p className="text-sm text-gray-600 mb-1">Markup Atual</p>
+                          <p className="text-3xl font-bold text-blue-600">
+                            {precificacaoData.indicadores.markup_atual.toFixed(1)}%
+                          </p>
+                        </div>
+                        <div className="text-center p-4 bg-green-50 border-2 border-green-200 rounded">
+                          <p className="text-sm text-gray-600 mb-1">ROI</p>
+                          <p className="text-3xl font-bold text-green-600">
+                            {precificacaoData.indicadores.roi.toFixed(1)}%
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Análise da IA */}
+                  <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <EmilyLogo size={24} />
+                        Análise Inteligente de Precificação
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="prose prose-sm max-w-none">
+                        <pre className="whitespace-pre-wrap text-sm bg-white p-4 rounded border">
+                          {precificacaoData.sugestao_ia}
+                        </pre>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* RECOMENDAÇÕES */}
         <TabsContent value="recomendacoes" className="space-y-4">
           <Card>
