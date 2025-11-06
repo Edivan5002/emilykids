@@ -782,6 +782,7 @@ const Produtos = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Filtros Avançados */}
