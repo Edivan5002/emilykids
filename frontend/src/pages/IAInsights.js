@@ -447,7 +447,7 @@ const IAInsights = () => {
                   <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <EmilyLogo size={24} />
+                        <EmilyIcon size={24} />
                         Análise Inteligente de Precificação
                       </CardTitle>
                     </CardHeader>
