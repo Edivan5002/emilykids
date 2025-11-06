@@ -697,6 +697,105 @@ const PapeisPermissoes = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* DETALHES HISTÓRICO MODAL */}
+      <Dialog open={isDetalhesOpen} onOpenChange={setIsDetalhesOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="text-purple-600" size={24} />
+              Detalhes do Histórico
+            </DialogTitle>
+          </DialogHeader>
+          
+          {detalhesHistorico && (
+            <div className="space-y-6">
+              {/* Informações Principais */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Informações da Ação</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Ação Realizada</p>
+                      <Badge className={`${getAcaoBadgeColor(detalhesHistorico.acao)} border text-base px-3 py-1`}>
+                        {detalhesHistorico.acao}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Data e Hora</p>
+                      <p className="font-medium flex items-center gap-2">
+                        <Clock size={16} className="text-gray-500" />
+                        {new Date(detalhesHistorico.timestamp).toLocaleString('pt-BR')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Usuário Responsável</p>
+                      <p className="font-semibold text-lg flex items-center gap-2">
+                        <Users size={16} className="text-blue-600" />
+                        {detalhesHistorico.user_nome}
+                      </p>
+                    </div>
+                    {detalhesHistorico.user_id && (
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">ID do Usuário</p>
+                        <p className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                          {detalhesHistorico.user_id}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Detalhes da Operação */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Detalhes da Operação</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {detalhesHistorico.detalhes && Object.entries(detalhesHistorico.detalhes).map(([key, value]) => (
+                      <div key={key} className="border-b pb-3 last:border-b-0">
+                        <p className="text-sm font-semibold text-gray-700 mb-1 capitalize">
+                          {key.replace(/_/g, ' ')}
+                        </p>
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          {typeof value === 'object' ? (
+                            <pre className="text-xs text-gray-800 overflow-auto">
+                              {JSON.stringify(value, null, 2)}
+                            </pre>
+                          ) : (
+                            <p className="text-sm text-gray-800">{String(value)}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* JSON Completo (Expandível) */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Dados Completos (JSON)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <details className="cursor-pointer">
+                    <summary className="text-sm text-gray-600 hover:text-gray-900 font-medium mb-2">
+                      Clique para expandir/recolher
+                    </summary>
+                    <pre className="text-xs bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto max-h-96 font-mono">
+                      {JSON.stringify(detalhesHistorico, null, 2)}
+                    </pre>
+                  </details>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
