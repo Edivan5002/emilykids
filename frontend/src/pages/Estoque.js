@@ -50,6 +50,7 @@ const Estoque = () => {
 
   useEffect(() => {
     fetchData();
+    fetchInventarios();
   }, []);
 
   const fetchData = async () => {
@@ -68,6 +69,91 @@ const Estoque = () => {
       setCategorias(catRes.data);
     } catch (error) {
       toast.error('Erro ao carregar dados');
+    }
+  };
+
+  const fetchInventarios = async () => {
+    try {
+      const response = await axios.get(`${API}/estoque/inventario?limit=0`);
+      setInventarios(response.data);
+      
+      // Verificar se há inventário em andamento
+      const inventarioAberto = response.data.find(inv => inv.status === 'em_andamento');
+      if (inventarioAberto) {
+        setInventarioAtivo(inventarioAberto);
+      } else {
+        setInventarioAtivo(null);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar inventários:', error);
+    }
+  };
+
+  const iniciarNovoInventario = async () => {
+    try {
+      const response = await axios.post(`${API}/estoque/inventario/iniciar`);
+      toast.success(`Inventário ${response.data.numero} iniciado com ${response.data.total_produtos} produtos!`);
+      await fetchInventarios();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao iniciar inventário');
+    }
+  };
+
+  const registrarContagem = async () => {
+    if (!contagemDialog.item || contagemDialog.quantidade < 0) {
+      toast.error('Dados inválidos');
+      return;
+    }
+
+    try {
+      await axios.put(
+        `${API}/estoque/inventario/${inventarioAtivo.id}/registrar-contagem`,
+        null,
+        {
+          params: {
+            produto_id: contagemDialog.item.produto_id,
+            quantidade_contada: contagemDialog.quantidade,
+            observacao: contagemDialog.observacao || undefined
+          }
+        }
+      );
+      toast.success('Contagem registrada!');
+      setContagemDialog({ open: false, item: null, quantidade: 0, observacao: '' });
+      await fetchInventarios();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao registrar contagem');
+    }
+  };
+
+  const finalizarInventario = async () => {
+    if (!inventarioAtivo) return;
+
+    const confirmar = window.confirm(
+      `Finalizar inventário ${inventarioAtivo.numero}?\n\n` +
+      `Total de produtos: ${inventarioAtivo.total_produtos}\n` +
+      `Produtos contados: ${inventarioAtivo.total_contados}\n` +
+      `Divergências: ${inventarioAtivo.total_divergencias}\n\n` +
+      `Os ajustes serão aplicados automaticamente no estoque.`
+    );
+
+    if (!confirmar) return;
+
+    try {
+      const response = await axios.post(
+        `${API}/estoque/inventario/${inventarioAtivo.id}/finalizar`,
+        null,
+        { params: { aplicar_ajustes: true } }
+      );
+      
+      toast.success(
+        `Inventário finalizado! ${response.data.total_divergencias} divergências e ` +
+        `${response.data.ajustes_aplicados?.length || 0} ajustes aplicados.`
+      );
+      
+      await fetchInventarios();
+      await fetchData(); // Recarregar para ver os estoques atualizados
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao finalizar inventário');
     }
   };
 
