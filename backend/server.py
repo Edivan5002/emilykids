@@ -3593,16 +3593,24 @@ VALOR_MINIMO_APROVACAO = 5000.00
 async def get_notas_fiscais(
     status: str = None,
     fornecedor_id: str = None,
+    page: int = 1,
+    limit: int = 100,
     current_user: dict = Depends(require_permission("notas_fiscais", "ler"))
 ):
-    """Lista notas fiscais com filtros opcionais"""
+    """Lista notas fiscais com filtros e paginação opcional"""
     filtro = {}
     if status:
         filtro["status"] = status
     if fornecedor_id:
         filtro["fornecedor_id"] = fornecedor_id
     
-    notas = await db.notas_fiscais.find(filtro, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    # Se limit=0, retorna todos (mantém compatibilidade)
+    if limit == 0:
+        notas = await db.notas_fiscais.find(filtro, {"_id": 0}).sort("created_at", -1).to_list(10000)
+    else:
+        skip = (page - 1) * limit
+        notas = await db.notas_fiscais.find(filtro, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
     return notas
 
 @api_router.post("/notas-fiscais", response_model=NotaFiscal)
