@@ -166,8 +166,8 @@ const Marcas = () => {
         </Select>
       </div>
 
-      <div className="table-container">
-        <table>
+      <div className="table-container overflow-x-auto">
+        <table className="min-w-full">
           <thead>
             <tr>
               <th>Nome</th>
