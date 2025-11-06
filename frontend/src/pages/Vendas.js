@@ -182,38 +182,23 @@ const Vendas = () => {
     });
   };
 
-  // EXCLUIR VENDA
-  const handleExcluirClick = (venda) => {
-    if (user?.papel === 'admin' || user?.papel === 'gerente') {
-      handleExcluirDireto(venda.id);
-    } else {
-      setVendaParaExcluir(venda);
-      setShowAutorizacao(true);
+  // CANCELAR VENDA
+  const handleCancelarVenda = async (vendaId) => {
+    const motivo = window.prompt(
+      'Esta venda será cancelada e o estoque será devolvido.\n\nDigite o motivo do cancelamento:'
+    );
+    
+    if (!motivo || motivo.trim() === '') {
+      toast.error('Motivo do cancelamento é obrigatório');
+      return;
     }
-  };
-
-  const handleExcluirDireto = async (vendaId) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta venda? Os itens serão devolvidos ao estoque.')) return;
 
     try {
-      await axios.delete(`${API}/vendas/${vendaId}`);
-      toast.success('Venda excluída e estoque devolvido com sucesso!');
-      fetchData();
+      await axios.post(`${API}/vendas/${vendaId}/cancelar`, { motivo: motivo.trim() });
+      toast.success('Venda cancelada e estoque devolvido com sucesso!');
+      fetchVendas();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao excluir venda');
-    }
-  };
-
-  const handleAutorizacaoSucesso = async (autorizador) => {
-    if (vendaParaExcluir) {
-      try {
-        await axios.delete(`${API}/vendas/${vendaParaExcluir.id}`);
-        toast.success(`Venda excluída com autorização de ${autorizador.nome}! Estoque devolvido.`);
-        fetchData();
-        setVendaParaExcluir(null);
-      } catch (error) {
-        toast.error(error.response?.data?.detail || 'Erro ao excluir venda');
-      }
+      toast.error(error.response?.data?.detail || 'Erro ao cancelar venda');
     }
   };
 
