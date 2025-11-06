@@ -2859,9 +2859,22 @@ async def toggle_marca_status(marca_id: str, current_user: dict = Depends(requir
 # ========== CATEGORIAS ==========
 
 @api_router.get("/categorias", response_model=List[Categoria])
-async def get_categorias(incluir_inativos: bool = False, current_user: dict = Depends(require_permission("categorias", "ler"))):
+async def get_categorias(
+    incluir_inativos: bool = False,
+    page: int = 1,
+    limit: int = 100,
+    current_user: dict = Depends(require_permission("categorias", "ler"))
+):
+    """Lista categorias com paginação opcional"""
     filtro = {} if incluir_inativos else {"ativo": True}
-    categorias = await db.categorias.find(filtro, {"_id": 0}).to_list(1000)
+    
+    # Se limit=0, retorna todos (mantém compatibilidade)
+    if limit == 0:
+        categorias = await db.categorias.find(filtro, {"_id": 0}).to_list(10000)
+    else:
+        skip = (page - 1) * limit
+        categorias = await db.categorias.find(filtro, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    
     return categorias
 
 @api_router.post("/categorias", response_model=Categoria)
