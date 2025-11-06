@@ -192,6 +192,9 @@ const Orcamentos = () => {
   };
 
   const handleAprovar = async (orcamentoId) => {
+    // TODO: Implement approval logic
+    console.log('Aprovar orçamento:', orcamentoId);
+  };
 
   const handleClose = () => {
     setIsOpen(false);
