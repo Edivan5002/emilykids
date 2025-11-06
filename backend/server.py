@@ -7711,12 +7711,11 @@ async def admin_limpar_logs(
 
 @api_router.post("/admin/resetar-modulo")
 async def admin_resetar_modulo(
-    modulo: str,
-    senha_mestra: str,
+    request: AdminResetarModuloRequest,
     current_user: dict = Depends(require_permission("admin", "deletar"))
 ):
     """Reseta completamente um módulo (deleta todos os dados)"""
-    if senha_mestra != os.environ.get('ADMIN_MASTER_PASSWORD'):
+    if request.senha_mestra != os.environ.get('ADMIN_MASTER_PASSWORD'):
         raise HTTPException(status_code=403, detail="Senha mestra incorreta")
     
     modulos_validos = {
@@ -7728,7 +7727,7 @@ async def admin_resetar_modulo(
         "logs": "logs"
     }
     
-    if modulo not in modulos_validos:
+    if request.modulo not in modulos_validos:
         raise HTTPException(status_code=400, detail="Módulo inválido")
     
     try:
