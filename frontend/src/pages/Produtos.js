@@ -800,7 +800,23 @@ const Produtos = () => {
             </tr>
           </thead>
           <tbody>
-            {produtosFiltrados.map((p) => (
+            {loading ? (
+              <tr>
+                <td colSpan="10" className="text-center py-8">
+                  <div className="flex flex-col items-center justify-center space-y-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <p className="text-gray-600">Carregando produtos...</p>
+                  </div>
+                </td>
+              </tr>
+            ) : produtosFiltrados.length === 0 ? (
+              <tr>
+                <td colSpan="10" className="text-center py-8 text-gray-500">
+                  Nenhum produto encontrado
+                </td>
+              </tr>
+            ) : (
+              produtosFiltrados.map((p) => (
               <tr key={p.id}>
                 <td className="font-mono text-sm">{p.sku}</td>
                 <td className="font-medium">
