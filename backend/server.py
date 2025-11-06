@@ -7673,16 +7673,15 @@ async def admin_delete_vendas_antigas(
 
 @api_router.post("/admin/limpar-logs")
 async def admin_limpar_logs(
-    dias: int,
-    senha_mestra: str,
+    request: AdminLimparLogsRequest,
     current_user: dict = Depends(require_permission("admin", "deletar"))
 ):
     """Limpa logs mais antigos que X dias"""
-    if senha_mestra != os.environ.get('ADMIN_MASTER_PASSWORD'):
+    if request.senha_mestra != os.environ.get('ADMIN_MASTER_PASSWORD'):
         raise HTTPException(status_code=403, detail="Senha mestra incorreta")
     
     try:
-        data_limite = (datetime.now(timezone.utc) - timedelta(days=dias)).isoformat()
+        data_limite = (datetime.now(timezone.utc) - timedelta(days=request.dias)).isoformat()
         
         # Deletar logs antigos
         result_logs = await db.logs.delete_many({"timestamp": {"$lt": data_limite}})
