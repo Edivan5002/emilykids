@@ -1183,6 +1183,67 @@ const Estoque = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de Cancelar Inventário */}
+      <Dialog open={cancelarDialog.open} onOpenChange={(open) => !open && setCancelarDialog({ open: false, motivo: '' })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Cancelar Inventário</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-900">
+                ⚠️ <strong>Atenção:</strong> Esta ação é irreversível!
+              </p>
+              <ul className="mt-2 text-sm text-red-800 list-disc list-inside">
+                <li>O inventário será cancelado</li>
+                <li>Todas as contagens serão perdidas</li>
+                <li>Nenhum ajuste será aplicado ao estoque</li>
+                <li>Esta ação não pode ser desfeita</li>
+              </ul>
+            </div>
+
+            {inventarioAtivo && (
+              <div className="p-3 bg-gray-50 rounded">
+                <p className="text-sm text-gray-600">Inventário:</p>
+                <p className="font-semibold">{inventarioAtivo.numero}</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {inventarioAtivo.total_contados} de {inventarioAtivo.total_produtos} produtos contados
+                </p>
+              </div>
+            )}
+
+            <div>
+              <Label htmlFor="motivo-cancelamento">Motivo do Cancelamento *</Label>
+              <textarea
+                id="motivo-cancelamento"
+                className="w-full mt-1 p-2 border rounded-md"
+                rows="3"
+                placeholder="Digite o motivo do cancelamento..."
+                value={cancelarDialog.motivo}
+                onChange={(e) => setCancelarDialog({ ...cancelarDialog, motivo: e.target.value })}
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => setCancelarDialog({ open: false, motivo: '' })}
+              >
+                Voltar
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={cancelarInventarioConfirm}
+                disabled={!cancelarDialog.motivo.trim()}
+              >
+                <XCircle className="mr-2" size={16} />
+                Confirmar Cancelamento
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
