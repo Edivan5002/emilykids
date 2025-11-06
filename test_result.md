@@ -454,8 +454,8 @@ frontend:
   - task: "Melhoria módulo Estoque - Visualização de Detalhes Profissional"
     implemented: true
     working: "NA"
-    file: "/app/frontend/src/pages/Estoque.js"
-    stuck_count: 0
+    file: "/app/frontend/src/pages/Estoque.js, /app/backend/server.py"
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
@@ -465,6 +465,12 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "✅ VISUALIZAÇÃO DE DETALHES IMPLEMENTADA: (1) BOTÃO VER DETALHES: Adicionado ícone Eye em cada movimentação do histórico; (2) MODAL PROFISSIONAL: Criado Dialog com layout estruturado incluindo: Informações principais (produto, SKU, tipo, quantidade) em cards com bg-gray-50; Seção 'Origem da Movimentação' com ícones descritivos e tipo de referência; Card especial azul para ajustes manuais exibindo motivo; Seção 'Informações Adicionais' com data/hora formatada e usuário responsável; (3) VISUAL: Uso de ícones (FileText, Calendar, User, AlertCircle), cores contextuais (entrada/saída), badges, grid layouts; (4) AJUSTES MANUAIS: Destaque especial para motivo do ajuste em card azul destacado. Sistema agora tem visualização completa e profissional de todas as movimentações."
+      - working: false
+        agent: "user"
+        comment: "BUG: 'esta aparecendo usuário não encontrado corrija para aparecer o nome do usuário correto' - Modal exibindo mensagem genérica ao invés do nome real do usuário."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ BUG CORRIGIDO - NOME DO USUÁRIO: (1) CAUSA IDENTIFICADA: Endpoint /usuarios requer permissão de admin, usuários não-admin não conseguiam buscar lista; (2) SOLUÇÃO BACKEND: Modificado endpoint GET /estoque/movimentacoes para enriquecer dados - agora busca nome do usuário do banco e adiciona campo user_nome em cada movimentação; (3) SOLUÇÃO FRONTEND: Simplificado função getUsuarioNome() para usar diretamente campo user_nome do backend; Removida dependência do endpoint /usuarios; (4) FALLBACK: Se user_nome não existir, exibe 'Sistema'. RESULTADO: Nome do usuário agora aparece corretamente para todos os perfis de acesso, sem necessidade de permissões especiais."
 
   - task: "Refatoração módulo Notas Fiscais - Cancelamento ao invés de Exclusão"
     implemented: true
