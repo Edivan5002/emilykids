@@ -186,19 +186,16 @@ const Vendas = () => {
   };
 
   // CANCELAR VENDA
-  const handleCancelarVenda = async (vendaId) => {
-    const motivo = window.prompt(
-      'Esta venda será cancelada e o estoque será devolvido.\n\nDigite o motivo do cancelamento:'
-    );
-    
-    if (!motivo || motivo.trim() === '') {
+  const handleCancelarVenda = async () => {
+    if (!cancelDialog.motivo || cancelDialog.motivo.trim() === '') {
       toast.error('Motivo do cancelamento é obrigatório');
       return;
     }
 
     try {
-      await axios.post(`${API}/vendas/${vendaId}/cancelar`, { motivo: motivo.trim() });
+      await axios.post(`${API}/vendas/${cancelDialog.vendaId}/cancelar`, { motivo: cancelDialog.motivo.trim() });
       toast.success('Venda cancelada e estoque devolvido com sucesso!');
+      setCancelDialog({ open: false, vendaId: null, motivo: '' });
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao cancelar venda');
