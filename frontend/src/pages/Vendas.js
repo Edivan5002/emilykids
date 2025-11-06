@@ -20,6 +20,7 @@ const Vendas = () => {
   const [produtos, setProdutos] = useState([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [cancelDialog, setCancelDialog] = useState({ open: false, vendaId: null, motivo: '' });
 
   // Filtros
   const [filtros, setFiltros] = useState({
