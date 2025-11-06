@@ -536,7 +536,7 @@ const Logs = () => {
                     {logs.map((log, idx) => (
                       <div key={idx} className="p-4 border rounded-lg hover:bg-gray-50">
                         <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 flex-1">
                             <Badge className={getSeveridadeBadge(log.severidade)}>
                               {log.severidade}
                             </Badge>
@@ -545,9 +545,19 @@ const Logs = () => {
                               <span className="text-xs text-gray-500">({log.user_papel})</span>
                             )}
                           </div>
-                          <span className="text-sm text-gray-500">
-                            {new Date(log.timestamp).toLocaleString('pt-BR')}
-                          </span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-gray-500">
+                              {new Date(log.timestamp).toLocaleString('pt-BR')}
+                            </span>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleVerDetalhes(log)}
+                              title="Ver detalhes completos"
+                            >
+                              <Eye size={16} />
+                            </Button>
+                          </div>
                         </div>
                         
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-3">
