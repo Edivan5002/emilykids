@@ -672,7 +672,7 @@ const Vendas = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleCancelarVenda(venda.id)}
+                        onClick={() => setCancelDialog({ open: true, vendaId: venda.id, motivo: '' })}
                         data-testid={`cancelar-venda-${venda.id}`}
                         className="border-orange-500 text-orange-600 hover:bg-orange-50"
                       >
