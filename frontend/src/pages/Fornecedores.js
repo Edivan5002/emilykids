@@ -319,7 +319,23 @@ const Fornecedores = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredFornecedores.map((f) => (
+            {loading ? (
+              <tr>
+                <td colSpan="7" className="text-center py-8">
+                  <div className="flex flex-col items-center justify-center space-y-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <p className="text-gray-600">Carregando fornecedores...</p>
+                  </div>
+                </td>
+              </tr>
+            ) : filteredFornecedores.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="text-center py-8 text-gray-500">
+                  Nenhum fornecedor encontrado
+                </td>
+              </tr>
+            ) : (
+              filteredFornecedores.map((f) => (
               <tr key={f.id}>
                 <td className="font-medium">{f.razao_social}</td>
                 <td>{f.cnpj}</td>
