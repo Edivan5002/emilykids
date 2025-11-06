@@ -1050,6 +1050,19 @@ const Produtos = () => {
             ) : (
               produtosFiltrados.map((p) => (
               <tr key={p.id}>
+                <td className="w-20">
+                  {p.fotos && p.fotos.length > 0 ? (
+                    <img 
+                      src={p.fotos[0]} 
+                      alt={p.nome}
+                      className="w-16 h-16 object-cover rounded border"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-200 rounded border flex items-center justify-center">
+                      <Package size={24} className="text-gray-400" />
+                    </div>
+                  )}
+                </td>
                 <td className="font-mono text-sm">{p.sku}</td>
                 <td className="font-medium">
                   {p.nome}
