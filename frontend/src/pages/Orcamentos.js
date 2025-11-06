@@ -191,39 +191,7 @@ const Orcamentos = () => {
     }
   };
 
-  const handleExcluirClick = (orcamento) => {
-    if (user?.papel === 'admin' || user?.papel === 'gerente') {
-      handleExcluirDireto(orcamento.id);
-    } else {
-      setOrcamentoParaExcluir(orcamento);
-      setShowAutorizacao(true);
-    }
-  };
-
-  const handleExcluirDireto = async (orcamentoId) => {
-    if (!window.confirm('Tem certeza que deseja excluir este orçamento? Os itens serão devolvidos ao estoque.')) return;
-
-    try {
-      await axios.delete(`${API}/orcamentos/${orcamentoId}`);
-      toast.success('Orçamento excluído e estoque devolvido!');
-      fetchData();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao excluir');
-    }
-  };
-
-  const handleAutorizacaoSucesso = async (autorizador) => {
-    if (orcamentoParaExcluir) {
-      try {
-        await axios.delete(`${API}/orcamentos/${orcamentoParaExcluir.id}`);
-        toast.success(`Orçamento excluído com autorização de ${autorizador.nome}!`);
-        fetchData();
-        setOrcamentoParaExcluir(null);
-      } catch (error) {
-        toast.error(error.response?.data?.detail || 'Erro ao excluir');
-      }
-    }
-  };
+  const handleAprovar = async (orcamentoId) => {
 
   const handleClose = () => {
     setIsOpen(false);
