@@ -2582,9 +2582,22 @@ async def toggle_cliente_status(cliente_id: str, current_user: dict = Depends(re
 # ========== FORNECEDORES ==========
 
 @api_router.get("/fornecedores", response_model=List[Fornecedor])
-async def get_fornecedores(incluir_inativos: bool = False, current_user: dict = Depends(require_permission("fornecedores", "ler"))):
+async def get_fornecedores(
+    incluir_inativos: bool = False,
+    page: int = 1,
+    limit: int = 100,
+    current_user: dict = Depends(require_permission("fornecedores", "ler"))
+):
+    """Lista fornecedores com paginação opcional"""
     filtro = {} if incluir_inativos else {"ativo": True}
-    fornecedores = await db.fornecedores.find(filtro, {"_id": 0}).to_list(1000)
+    
+    # Se limit=0, retorna todos (mantém compatibilidade)
+    if limit == 0:
+        fornecedores = await db.fornecedores.find(filtro, {"_id": 0}).to_list(10000)
+    else:
+        skip = (page - 1) * limit
+        fornecedores = await db.fornecedores.find(filtro, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    
     return fornecedores
 
 @api_router.post("/fornecedores", response_model=Fornecedor)
