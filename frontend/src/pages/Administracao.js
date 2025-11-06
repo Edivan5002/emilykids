@@ -37,6 +37,7 @@ const Administracao = () => {
   
   // Estados para cada tipo de operação
   const [diasVendas, setDiasVendas] = useState(90);
+  const [diasOrcamentos, setDiasOrcamentos] = useState(90);
   const [diasLogs, setDiasLogs] = useState(90);
   const [moduloSelecionado, setModuloSelecionado] = useState('');
   const [confirmarLimparTudo, setConfirmarLimparTudo] = useState('');
