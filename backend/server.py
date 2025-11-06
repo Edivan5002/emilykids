@@ -868,7 +868,8 @@ async def send_password_reset_email(email: str, token: str, user_name: str):
     # Para ambiente de produção, implemente com serviço SMTP real
     # Por enquanto, vamos apenas logar o token (NUNCA fazer isso em produção)
     
-    reset_link = f"http://localhost:3000/reset-password?token={token}"
+    frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+    reset_link = f"{frontend_url}/reset-password?token={token}"
     
     # TODO: Implementar envio real de email
     # Exemplo com smtplib ou serviço como SendGrid, AWS SES, etc.
