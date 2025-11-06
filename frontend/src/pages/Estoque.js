@@ -92,6 +92,7 @@ const Estoque = () => {
 
     setLoading(true);
     try {
+      console.log('DEBUG: Enviando ajuste com dados:', formAjuste);
       await axios.post(`${API}/estoque/ajuste-manual`, formAjuste);
       toast.success('Estoque ajustado com sucesso!');
       fetchData();
