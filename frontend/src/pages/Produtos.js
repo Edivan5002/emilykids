@@ -422,6 +422,84 @@ const Produtos = () => {
     }));
   };
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validar tipo de arquivo
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione apenas arquivos de imagem');
+      return;
+    }
+
+    // Validar tamanho (máximo 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 2MB');
+      return;
+    }
+
+    // Converter para base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewImage(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const uploadImageToProduct = async () => {
+    if (!previewImage) {
+      toast.error('Selecione uma imagem primeiro');
+      return;
+    }
+
+    if (!editingId) {
+      // Se está criando produto, adiciona à lista de fotos
+      setFormData(prev => ({
+        ...prev,
+        fotos: [...(prev.fotos || []), previewImage]
+      }));
+      setPreviewImage(null);
+      toast.success('Imagem adicionada! Salve o produto para confirmar.');
+      return;
+    }
+
+    // Se está editando, faz upload imediato
+    setUploadingImage(true);
+    try {
+      await axios.post(`${API}/produtos/${editingId}/upload-imagem`, {
+        imagem: previewImage
+      });
+      toast.success('Imagem enviada com sucesso!');
+      setPreviewImage(null);
+      fetchData(); // Recarregar produtos
+    } catch (error) {
+      toast.error('Erro ao enviar imagem: ' + (error.response?.data?.detail || error.message));
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeImage = async (indice) => {
+    if (!editingId) {
+      // Se está criando, remove da lista local
+      setFormData(prev => ({
+        ...prev,
+        fotos: prev.fotos.filter((_, i) => i !== indice)
+      }));
+      toast.success('Imagem removida');
+      return;
+    }
+
+    // Se está editando, remove do servidor
+    try {
+      await axios.delete(`${API}/produtos/${editingId}/imagem/${indice}`);
+      toast.success('Imagem removida com sucesso!');
+      fetchData();
+    } catch (error) {
+      toast.error('Erro ao remover imagem: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
   const getMarcaNome = (marca_id) => {
     const marca = marcas.find(m => m.id === marca_id);
     return marca ? marca.nome : '-';
