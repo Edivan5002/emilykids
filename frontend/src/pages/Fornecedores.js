@@ -66,12 +66,15 @@ const Fornecedores = () => {
   }, [searchTerm, statusFilter, fornecedores]);
 
   const fetchFornecedores = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get(`${API}/fornecedores?incluir_inativos=true`);
+      const response = await axios.get(`${API}/fornecedores?incluir_inativos=true&limit=0`);
       setFornecedores(response.data);
       setFilteredFornecedores(response.data);
     } catch (error) {
-      toast.error('Erro ao carregar fornecedores');
+      toast.error('Erro ao carregar fornecedores. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
