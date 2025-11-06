@@ -7731,7 +7731,7 @@ async def admin_resetar_modulo(
         raise HTTPException(status_code=400, detail="Módulo inválido")
     
     try:
-        collection_name = modulos_validos[modulo]
+        collection_name = modulos_validos[request.modulo]
         
         # Contar antes
         count = await db[collection_name].count_documents({})
@@ -7746,12 +7746,12 @@ async def admin_resetar_modulo(
             user_nome=current_user["nome"],
             tela="administracao",
             acao="resetar_modulo",
-            detalhes={"modulo": modulo, "registros_deletados": result.deleted_count}
+            detalhes={"modulo": request.modulo, "registros_deletados": result.deleted_count}
         )
         
         return {
             "success": True,
-            "message": f"Módulo '{modulo}' resetado: {result.deleted_count} registros deletados",
+            "message": f"Módulo '{request.modulo}' resetado: {result.deleted_count} registros deletados",
             "deletados": result.deleted_count
         }
     except Exception as e:
