@@ -7645,7 +7645,7 @@ async def admin_delete_vendas_antigas(
         raise HTTPException(status_code=403, detail="Senha mestra incorreta")
     
     try:
-        data_limite = (datetime.now(timezone.utc) - timedelta(days=dias)).isoformat()
+        data_limite = (datetime.now(timezone.utc) - timedelta(days=request.dias)).isoformat()
         
         # Contar antes de deletar
         count = await db.vendas.count_documents({"created_at": {"$lt": data_limite}})
