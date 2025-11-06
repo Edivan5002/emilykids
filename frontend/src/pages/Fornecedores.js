@@ -338,17 +338,17 @@ const Fornecedores = () => {
               filteredFornecedores.map((f) => (
               <tr key={f.id}>
                 <td className="font-medium">{f.razao_social}</td>
-                <td>{f.cnpj}</td>
-                <td>{f.ie || '-'}</td>
-                <td>{f.telefone || '-'}</td>
-                <td>{f.email || '-'}</td>
+                <td className="hidden sm:table-cell">{f.cnpj}</td>
+                <td className="hidden md:table-cell">{f.ie || '-'}</td>
+                <td className="hidden lg:table-cell">{f.telefone || '-'}</td>
+                <td className="hidden lg:table-cell">{f.email || '-'}</td>
                 <td>
                   <span className={`badge ${f.ativo ? 'badge-success' : 'badge-danger'}`}>
                     {f.ativo ? 'Ativo' : 'Inativo'}
                   </span>
                 </td>
                 <td className="text-right">
-                  <div className="flex justify-end gap-2">
+                  <div className="flex justify-end gap-1 sm:gap-2">
                     <Button variant="ghost" size="sm" onClick={() => handleEdit(f)} title="Editar">
                       <Edit size={16} />
                     </Button>
@@ -357,10 +357,11 @@ const Fornecedores = () => {
                       size="sm"
                       onClick={() => setToggleDialog({ open: true, id: f.id, nome: f.razao_social, ativo: f.ativo })}
                       title={f.ativo ? 'Inativar' : 'Ativar'}
+                      className="hidden sm:flex"
                     >
                       <Power size={16} className={f.ativo ? 'text-orange-500' : 'text-green-500'} />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setDeleteDialog({ open: true, id: f.id, nome: f.razao_social })} title="Excluir">
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteDialog({ open: true, id: f.id, nome: f.razao_social })} title="Excluir" className="hidden sm:flex">
                       <Trash2 size={16} className="text-red-500" />
                     </Button>
                   </div>
