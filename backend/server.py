@@ -7696,7 +7696,7 @@ async def admin_limpar_logs(
             user_nome=current_user["nome"],
             tela="administracao",
             acao="limpar_logs",
-            detalhes={"dias": dias, "logs_deletados": result_logs.deleted_count, "logs_seguranca_deletados": result_security.deleted_count}
+            detalhes={"dias": request.dias, "logs_deletados": result_logs.deleted_count, "logs_seguranca_deletados": result_security.deleted_count}
         )
         
         return {
