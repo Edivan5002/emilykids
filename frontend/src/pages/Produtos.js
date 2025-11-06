@@ -1191,11 +1191,19 @@ const Produtos = () => {
               <tr key={p.id}>
                 <td className="w-20">
                   {p.fotos && p.fotos.length > 0 ? (
-                    <img 
-                      src={p.fotos[0]} 
-                      alt={p.nome}
-                      className="w-16 h-16 object-cover rounded border"
-                    />
+                    <div className="relative">
+                      <img 
+                        src={p.fotos[p.foto_principal_index || 0]} 
+                        alt={p.nome}
+                        className="w-16 h-16 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => setZoomImage(p.fotos[p.foto_principal_index || 0])}
+                      />
+                      {p.fotos.length > 1 && (
+                        <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                          {p.fotos.length}
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <div className="w-16 h-16 bg-gray-200 rounded border flex items-center justify-center">
                       <Package size={24} className="text-gray-400" />
