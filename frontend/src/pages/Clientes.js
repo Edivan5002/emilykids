@@ -228,7 +228,23 @@ const Clientes = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredClientes.map((c) => (
+            {loading ? (
+              <tr>
+                <td colSpan="6" className="text-center py-8">
+                  <div className="flex flex-col items-center justify-center space-y-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <p className="text-gray-600">Carregando clientes...</p>
+                  </div>
+                </td>
+              </tr>
+            ) : filteredClientes.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="text-center py-8 text-gray-500">
+                  Nenhum cliente encontrado
+                </td>
+              </tr>
+            ) : (
+              filteredClientes.map((c) => (
               <tr key={c.id}>
                 <td className="font-medium">{c.nome}</td>
                 <td>{c.cpf_cnpj}</td>
