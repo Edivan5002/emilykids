@@ -1977,12 +1977,22 @@ async def toggle_usuario_status(user_id: str, current_user: dict = Depends(get_c
 # --- ROLES (Papéis) ---
 
 @api_router.get("/roles", response_model=List[Role])
-async def get_roles(current_user: dict = Depends(require_permission("usuarios", "ler"))):
-    """Lista todos os papéis"""
+async def get_roles(
+    page: int = 1,
+    limit: int = 100,
+    current_user: dict = Depends(require_permission("usuarios", "ler"))
+):
+    """Lista todos os papéis com paginação opcional"""
     if current_user.get("papel") != "admin":
         raise HTTPException(status_code=403, detail="Apenas administradores podem gerenciar papéis")
     
-    roles = await db.roles.find({}, {"_id": 0}).sort("hierarquia_nivel", 1).to_list(1000)
+    # Se limit=0, retorna todos (mantém compatibilidade)
+    if limit == 0:
+        roles = await db.roles.find({}, {"_id": 0}).sort("hierarquia_nivel", 1).to_list(1000)
+    else:
+        skip = (page - 1) * limit
+        roles = await db.roles.find({}, {"_id": 0}).sort("hierarquia_nivel", 1).skip(skip).limit(limit).to_list(limit)
+    
     return roles
 
 @api_router.get("/roles/{role_id}", response_model=Role)
