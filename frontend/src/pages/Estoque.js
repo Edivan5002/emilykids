@@ -113,6 +113,16 @@ const Estoque = () => {
     });
   };
 
+  const handleVerDetalhes = (movimentacao) => {
+    setDetalhesMovimentacao(movimentacao);
+    setIsDetalhesOpen(true);
+  };
+
+  const handleCloseDetalhes = () => {
+    setIsDetalhesOpen(false);
+    setDetalhesMovimentacao(null);
+  };
+
   const produtosFiltrados = produtos.filter(p => {
     // Busca
     if (filtros.busca) {
