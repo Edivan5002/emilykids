@@ -7905,10 +7905,9 @@ async def admin_limpar_tudo(
         deletados["categorias"] = (await db.categorias.delete_many({})).deleted_count
         deletados["subcategorias"] = (await db.subcategorias.delete_many({})).deleted_count
         
-        # Deletar logs antigos (manter últimos 7 dias)
-        data_limite = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
-        deletados["logs"] = (await db.logs.delete_many({"timestamp": {"$lt": data_limite}})).deleted_count
-        deletados["logs_seguranca"] = (await db.logs_seguranca.delete_many({"timestamp": {"$lt": data_limite}})).deleted_count
+        # Deletar TODOS os logs (incluindo este comando será o último log antes da limpeza)
+        deletados["logs"] = (await db.logs.delete_many({})).deleted_count
+        deletados["logs_seguranca"] = (await db.logs_seguranca.delete_many({})).deleted_count
         
         # PRESERVAR: Usuários, Roles (Papéis) e Permissões
         # NÃO deletar: usuarios, roles, user_roles, permissions
