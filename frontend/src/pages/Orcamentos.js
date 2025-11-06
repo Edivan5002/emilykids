@@ -35,6 +35,15 @@ const Orcamentos = () => {
     preco_unitario: 0
   });
 
+  // Filtros
+  const [filtros, setFiltros] = useState({
+    busca: '',
+    cliente: 'todos',
+    status: 'todos',
+    dataInicio: '',
+    dataFim: ''
+  });
+
   // Removed unused state variables
 
   useEffect(() => {
