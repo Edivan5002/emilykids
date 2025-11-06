@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ShoppingCart, Plus, DollarSign, TrendingUp, Users, CreditCard, Search, Calendar, X, AlertCircle, Ban, Trash2, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
-import AutorizacaoModal from '../components/AutorizacaoModal';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
