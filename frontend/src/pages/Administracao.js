@@ -89,6 +89,30 @@ const Administracao = () => {
     }
   };
 
+  const handleDeleteOrcamentosAntigos = async () => {
+    if (!senhaMestra) {
+      toast.error('Digite a senha mestra');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post(`${API}/admin/delete-orcamentos-antigos`, {
+        dias: diasOrcamentos,
+        senha_mestra: senhaMestra
+      });
+      toast.success(response.data.message);
+      setSenhaMestra('');
+      setConfirmDialog({ open: false, action: null, data: {} });
+      fetchStats();
+      fetchLogsAuditoria();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao deletar orçamentos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLimparLogs = async () => {
     if (!senhaMestra) {
       toast.error('Digite a senha mestra');
