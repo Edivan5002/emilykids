@@ -7911,6 +7911,7 @@ async def admin_limpar_tudo(
         
         # PRESERVAR: Usuários, Roles (Papéis) e Permissões
         # NÃO deletar: usuarios, roles, user_roles, permissions
+        # LOGS: Todos os logs são deletados (incluindo o log desta ação que será gerado após)
         
         total = sum(deletados.values())
         
