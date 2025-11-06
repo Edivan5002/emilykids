@@ -509,15 +509,15 @@ const Estoque = () => {
 
                   {/* Lista de Produtos para Contagem */}
                   <div className="border rounded-lg overflow-hidden">
-                    <table className="w-full">
+                    <table className="w-full min-w-full">
                       <thead className="bg-gray-100">
                         <tr>
-                          <th className="text-left p-3">SKU</th>
+                          <th className="text-left p-3 hidden md:table-cell">SKU</th>
                           <th className="text-left p-3">Produto</th>
-                          <th className="text-center p-3">Estoque Sistema</th>
+                          <th className="text-center p-3 hidden sm:table-cell">Estoque Sistema</th>
                           <th className="text-center p-3">Contado</th>
-                          <th className="text-center p-3">Diferença</th>
-                          <th className="text-center p-3">Status</th>
+                          <th className="text-center p-3 hidden sm:table-cell">Diferença</th>
+                          <th className="text-center p-3 hidden lg:table-cell">Status</th>
                           <th className="text-center p-3">Ação</th>
                         </tr>
                       </thead>
