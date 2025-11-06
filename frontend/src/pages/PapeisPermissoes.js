@@ -466,30 +466,58 @@ const PapeisPermissoes = () => {
         <TabsContent value="history">
           <Card>
             <CardHeader>
-              <CardTitle>Histórico de Mudanças</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <History className="text-purple-600" size={24} />
+                Histórico de Mudanças ({permissionHistory.length})
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {permissionHistory.map((entry, idx) => (
-                  <div key={idx} className="p-3 border rounded-lg hover:bg-gray-50">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <History size={16} className="text-gray-400" />
-                        <span className="font-semibold">{entry.user_nome}</span>
-                        <Badge variant="outline">{entry.acao}</Badge>
+                  <div 
+                    key={idx} 
+                    className="p-4 border-2 rounded-lg hover:shadow-md transition-shadow bg-gradient-to-r from-white to-gray-50"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className={`p-2 rounded-lg ${getAcaoBadgeColor(entry.acao)}`}>
+                          {getAcaoIcon(entry.acao)}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-gray-900">{entry.user_nome}</span>
+                            <Badge className={`${getAcaoBadgeColor(entry.acao)} border`}>
+                              {entry.acao}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {entry.detalhes?.nome && `${entry.detalhes.nome}`}
+                            {entry.detalhes?.papel_nome && ` - Papel: ${entry.detalhes.papel_nome}`}
+                            {entry.detalhes?.user_target_nome && ` - Usuário: ${entry.detalhes.user_target_nome}`}
+                          </p>
+                        </div>
                       </div>
-                      <span className="text-xs text-gray-500">
-                        {new Date(entry.timestamp).toLocaleString('pt-BR')}
-                      </span>
+                      <div className="text-right">
+                        <span className="text-xs text-gray-500 block mb-2">
+                          {new Date(entry.timestamp).toLocaleString('pt-BR')}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleVerDetalhesHistorico(entry)}
+                        >
+                          <Eye size={16} className="mr-2" />
+                          Detalhes
+                        </Button>
+                      </div>
                     </div>
-                    <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto">
-                      {JSON.stringify(entry.detalhes, null, 2)}
-                    </pre>
                   </div>
                 ))}
                 {permissionHistory.length === 0 && (
                   <div className="text-center py-12 text-gray-500">
-                    Nenhum histórico registrado
+                    <History size={64} className="mx-auto mb-4 text-gray-300" />
+                    <p className="text-lg font-medium">Nenhum histórico registrado</p>
+                    <p className="text-sm">As mudanças em papéis e permissões aparecerão aqui</p>
                   </div>
                 )}
               </div>
