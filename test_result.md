@@ -817,6 +817,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Implementar Filtros no Módulo Orçamentos"
     - "Refatoração módulo Notas Fiscais - Cancelamento ao invés de Exclusão"
     - "Correção módulo Produtos - Erros ao cadastrar e dropdown vazio"
     - "Correção módulo Subcategorias - Inativos não aparecem"
