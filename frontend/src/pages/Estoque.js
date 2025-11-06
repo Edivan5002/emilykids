@@ -469,10 +469,20 @@ const Estoque = () => {
                         {inventarioAtivo.numero} - Iniciado em {new Date(inventarioAtivo.data_inicio).toLocaleString('pt-BR')}
                       </p>
                     </div>
-                    <Button variant="destructive" onClick={finalizarInventario}>
-                      <CheckCircle className="mr-2" size={16} />
-                      Finalizar Inventário
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        className="border-red-500 text-red-600 hover:bg-red-50"
+                        onClick={() => setCancelarDialog({ open: true, motivo: '' })}
+                      >
+                        <XCircle className="mr-2" size={16} />
+                        Cancelar Inventário
+                      </Button>
+                      <Button variant="default" onClick={finalizarInventario}>
+                        <CheckCircle className="mr-2" size={16} />
+                        Finalizar Inventário
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-4">
