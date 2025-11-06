@@ -315,7 +315,10 @@ const Administracao = () => {
                   <AlertTriangle size={20} />
                   Ações Críticas
                 </CardTitle>
-                <CardDescription>Use estas opções apenas se souber o que está fazendo</CardDescription>
+                <CardDescription>
+                  Use estas opções apenas se souber o que está fazendo. 
+                  <strong className="block mt-1">Nota:</strong> "Limpar Todo o Sistema" preserva Usuários e Papéis/Permissões.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
