@@ -115,6 +115,9 @@ const Estoque = () => {
   };
 
   const handleVerDetalhes = (movimentacao) => {
+    console.log('DEBUG: Abrindo detalhes da movimentação:', movimentacao);
+    console.log('DEBUG: Motivo:', movimentacao.motivo);
+    console.log('DEBUG: Tipo de referência:', movimentacao.referencia_tipo);
     setDetalhesMovimentacao(movimentacao);
     setIsDetalhesOpen(true);
   };
