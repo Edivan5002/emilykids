@@ -63,7 +63,6 @@ const PapeisPermissoes = () => {
     initializeRBAC();
     fetchRoles();
     fetchPermissions();
-    fetchGroups();
     fetchPermissionHistory();
   }, []);
 
