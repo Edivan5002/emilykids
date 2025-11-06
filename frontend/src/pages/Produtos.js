@@ -1043,7 +1043,7 @@ const Produtos = () => {
               </tr>
             ) : produtosFiltrados.length === 0 ? (
               <tr>
-                <td colSpan="10" className="text-center py-8 text-gray-500">
+                <td colSpan="11" className="text-center py-8 text-gray-500">
                   Nenhum produto encontrado
                 </td>
               </tr>
