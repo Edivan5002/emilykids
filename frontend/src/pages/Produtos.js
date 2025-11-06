@@ -1189,7 +1189,7 @@ const Produtos = () => {
             ) : (
               produtosFiltrados.map((p) => (
               <tr key={p.id}>
-                <td className="w-20">
+                <td className="w-20 hidden sm:table-cell">
                   {p.fotos && p.fotos.length > 0 ? (
                     <div className="relative">
                       <img 
@@ -1210,17 +1210,17 @@ const Produtos = () => {
                     </div>
                   )}
                 </td>
-                <td className="font-mono text-sm">{p.sku}</td>
+                <td className="font-mono text-sm hidden md:table-cell">{p.sku}</td>
                 <td className="font-medium">
                   {p.nome}
                   {p.em_destaque && <Badge variant="default" className="ml-2">Destaque</Badge>}
                   {p.tags && p.tags.map(tag => <Badge key={tag} variant="outline" className="ml-1">{tag}</Badge>)}
                 </td>
-                <td>{getMarcaNome(p.marca_id)}</td>
-                <td>{formatarMoeda(p.preco_custo)}</td>
+                <td className="hidden lg:table-cell">{getMarcaNome(p.marca_id)}</td>
+                <td className="hidden md:table-cell">{formatarMoeda(p.preco_custo)}</td>
                 <td>{formatarMoeda(p.preco_venda)}</td>
-                <td className="text-green-600 font-semibold">{p.margem_lucro?.toFixed(2)}%</td>
-                <td>
+                <td className="text-green-600 font-semibold hidden lg:table-cell">{p.margem_lucro?.toFixed(2)}%</td>
+                <td className="hidden sm:table-cell">
                   <span className={p.estoque_atual <= p.estoque_minimo ? 'text-red-600 font-semibold' : ''}>
                     {p.estoque_atual}
                   </span>
@@ -1231,17 +1231,17 @@ const Produtos = () => {
                   </span>
                 </td>
                 <td className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleVerHistorico(p.id)} title="Histórico de Preços">
+                  <div className="flex justify-end gap-1 sm:gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => handleVerHistorico(p.id)} title="Histórico de Preços" className="hidden sm:flex">
                       <History size={16} />
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar">
                       <Edit size={16} />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setToggleDialog({ open: true, id: p.id, nome: p.nome, ativo: p.ativo })} title={p.ativo ? 'Inativar' : 'Ativar'}>
+                    <Button variant="ghost" size="sm" onClick={() => setToggleDialog({ open: true, id: p.id, nome: p.nome, ativo: p.ativo })} title={p.ativo ? 'Inativar' : 'Ativar'} className="hidden sm:flex">
                       <Power size={16} className={p.ativo ? 'text-orange-500' : 'text-green-500'} />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setDeleteDialog({ open: true, id: p.id, nome: p.nome })} title="Excluir">
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteDialog({ open: true, id: p.id, nome: p.nome })} title="Excluir" className="hidden sm:flex">
                       <Trash2 size={16} className="text-red-500" />
                     </Button>
                   </div>
