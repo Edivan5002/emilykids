@@ -762,15 +762,13 @@ const Estoque = () => {
                       </p>
                     </div>
                   </div>
-                  {detalhesMovimentacao.user_id && (
-                    <div className="flex items-center gap-2">
-                      <User size={18} className="text-gray-500" />
-                      <div>
-                        <p className="text-sm text-gray-600">Usuário Responsável</p>
-                        <p className="font-medium">{getUsuarioNome(detalhesMovimentacao.user_id)}</p>
-                      </div>
+                  <div className="flex items-center gap-2">
+                    <User size={18} className="text-gray-500" />
+                    <div>
+                      <p className="text-sm text-gray-600">Usuário Responsável</p>
+                      <p className="font-medium">{getUsuarioNome(detalhesMovimentacao)}</p>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
 
