@@ -144,25 +144,20 @@ const NotasFiscais = () => {
     }
   };
 
-  const handleCancelar = async (notaId, confirmada) => {
-    const motivo = window.prompt(
-      confirmada 
-        ? 'Esta nota foi confirmada. Ao cancelar, o estoque será revertido.\n\nDigite o motivo do cancelamento:'
-        : 'Digite o motivo do cancelamento:'
-    );
-    
-    if (!motivo || motivo.trim() === '') {
+  const handleCancelar = async () => {
+    if (!cancelDialog.motivo || cancelDialog.motivo.trim() === '') {
       toast.error('Motivo do cancelamento é obrigatório');
       return;
     }
 
     try {
-      await axios.post(`${API}/notas-fiscais/${notaId}/cancelar`, { motivo: motivo.trim() });
+      await axios.post(`${API}/notas-fiscais/${cancelDialog.notaId}/cancelar`, { motivo: cancelDialog.motivo.trim() });
       toast.success(
-        confirmada 
+        cancelDialog.confirmada 
           ? 'Nota fiscal cancelada e estoque revertido com sucesso!' 
           : 'Nota fiscal cancelada com sucesso!'
       );
+      setCancelDialog({ open: false, notaId: null, confirmada: false, motivo: '' });
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao cancelar nota fiscal');
