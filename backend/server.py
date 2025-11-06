@@ -3498,8 +3498,18 @@ async def get_alertas_estoque(current_user: dict = Depends(get_current_user)):
     }
 
 @api_router.get("/estoque/movimentacoes")
-async def get_movimentacoes(current_user: dict = Depends(get_current_user)):
-    movimentacoes = await db.movimentacoes_estoque.find({}, {"_id": 0}).sort("timestamp", -1).to_list(100)
+async def get_movimentacoes(
+    page: int = 1,
+    limit: int = 100,
+    current_user: dict = Depends(get_current_user)
+):
+    """Lista movimentações de estoque com paginação opcional"""
+    # Se limit=0, retorna todos (mantém compatibilidade)
+    if limit == 0:
+        movimentacoes = await db.movimentacoes_estoque.find({}, {"_id": 0}).sort("timestamp", -1).to_list(10000)
+    else:
+        skip = (page - 1) * limit
+        movimentacoes = await db.movimentacoes_estoque.find({}, {"_id": 0}).sort("timestamp", -1).skip(skip).limit(limit).to_list(limit)
     
     # Enriquecer movimentações com nome do usuário
     for mov in movimentacoes:
