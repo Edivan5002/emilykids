@@ -3602,21 +3602,27 @@ async def get_produtos_mais_vendidos(
 @api_router.get("/produtos/relatorios/valor-estoque")
 async def get_valor_total_estoque(current_user: dict = Depends(require_permission("relatorios", "ler"))):
     """Calcula o valor total do estoque"""
-    produtos = await db.produtos.find({"ativo": True}, {"_id": 0}).to_list(1000)
+    produtos_ativos = await db.produtos.find({"ativo": True}, {"_id": 0}).to_list(1000)
     
-    valor_custo_total = sum(p.get("estoque_atual", 0) * p.get("preco_custo", 0) for p in produtos)
-    valor_venda_total = sum(p.get("estoque_atual", 0) * p.get("preco_venda", 0) for p in produtos)
-    total_produtos = len(produtos)
-    total_itens = sum(p.get("estoque_atual", 0) for p in produtos)
+    # Contar produtos ativos e inativos
+    total_produtos_ativos = len(produtos_ativos)
+    total_produtos_inativos = await db.produtos.count_documents({"ativo": False})
+    total_produtos = total_produtos_ativos + total_produtos_inativos
     
-    # Produtos com estoque baixo
-    produtos_estoque_baixo = [p for p in produtos if p.get("estoque_atual", 0) <= p.get("estoque_minimo", 0)]
+    valor_custo_total = sum(p.get("estoque_atual", 0) * p.get("preco_custo", 0) for p in produtos_ativos)
+    valor_venda_total = sum(p.get("estoque_atual", 0) * p.get("preco_venda", 0) for p in produtos_ativos)
+    total_itens = sum(p.get("estoque_atual", 0) for p in produtos_ativos)
+    
+    # Produtos com estoque baixo (apenas ativos)
+    produtos_estoque_baixo = [p for p in produtos_ativos if p.get("estoque_atual", 0) <= p.get("estoque_minimo", 0)]
     
     return {
         "valor_custo_total": round(valor_custo_total, 2),
         "valor_venda_total": round(valor_venda_total, 2),
         "margem_potencial": round(valor_venda_total - valor_custo_total, 2),
         "total_produtos": total_produtos,
+        "total_produtos_ativos": total_produtos_ativos,
+        "total_produtos_inativos": total_produtos_inativos,
         "total_itens_estoque": total_itens,
         "produtos_estoque_baixo": len(produtos_estoque_baixo),
         "produtos_estoque_baixo_lista": [{"id": p["id"], "nome": p["nome"], "estoque_atual": p.get("estoque_atual", 0)} for p in produtos_estoque_baixo[:10]]
