@@ -195,7 +195,7 @@ const Vendas = () => {
     try {
       await axios.post(`${API}/vendas/${vendaId}/cancelar`, { motivo: motivo.trim() });
       toast.success('Venda cancelada e estoque devolvido com sucesso!');
-      fetchVendas();
+      fetchData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao cancelar venda');
     }
