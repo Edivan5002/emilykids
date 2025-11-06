@@ -560,6 +560,76 @@ const Orcamentos = () => {
         </Card>
       </div>
 
+      {/* Filtros */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div>
+              <Label>Buscar</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 text-gray-400" size={18} />
+                <Input
+                  placeholder="ID ou Cliente"
+                  className="pl-10"
+                  value={filtros.busca}
+                  onChange={(e) => setFiltros({...filtros, busca: e.target.value})}
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Cliente</Label>
+              <Select value={filtros.cliente} onValueChange={(value) => setFiltros({...filtros, cliente: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  {clientes.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.nome} - {c.cpf_cnpj}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select value={filtros.status} onValueChange={(value) => setFiltros({...filtros, status: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="aberto">Aberto</SelectItem>
+                  <SelectItem value="vendido">Vendido</SelectItem>
+                  <SelectItem value="devolvido">Devolvido</SelectItem>
+                  <SelectItem value="cancelado">Cancelado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Data Início</Label>
+              <Input
+                type="date"
+                value={filtros.dataInicio}
+                onChange={(e) => setFiltros({...filtros, dataInicio: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label>Data Fim</Label>
+              <Input
+                type="date"
+                value={filtros.dataFim}
+                onChange={(e) => setFiltros({...filtros, dataFim: e.target.value})}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Lista de Orçamentos */}
       <div className="space-y-4">
         {orcamentosFiltrados.map((orcamento) => (
