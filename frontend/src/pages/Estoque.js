@@ -158,6 +158,26 @@ const Estoque = () => {
     }
   };
 
+  const cancelarInventarioConfirm = async () => {
+    if (!cancelarDialog.motivo.trim()) {
+      toast.error('O motivo do cancelamento é obrigatório');
+      return;
+    }
+
+    try {
+      await axios.delete(
+        `${API}/estoque/inventario/${inventarioAtivo.id}/cancelar`,
+        { params: { motivo: cancelarDialog.motivo.trim() } }
+      );
+      
+      toast.success('Inventário cancelado com sucesso');
+      setCancelarDialog({ open: false, motivo: '' });
+      await fetchInventarios();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao cancelar inventário');
+    }
+  };
+
   const handleAjusteClick = () => {
     if (user?.papel === 'admin' || user?.papel === 'gerente') {
       setIsAjusteOpen(true);
