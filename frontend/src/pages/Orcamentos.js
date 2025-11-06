@@ -282,11 +282,11 @@ const Orcamentos = () => {
     return true;
   });
 
-  // Estatísticas
-  const orcamentosAbertos = orcamentos.filter(o => o.status === 'aberto').length;
-  const orcamentosVendidos = orcamentos.filter(o => o.status === 'vendido').length;
-  const orcamentosDevolvidos = orcamentos.filter(o => o.status === 'devolvido').length;
-  const valorTotalAberto = orcamentos
+  // Estatísticas (baseadas na lista filtrada)
+  const orcamentosAbertos = orcamentosFiltrados.filter(o => o.status === 'aberto').length;
+  const orcamentosVendidos = orcamentosFiltrados.filter(o => o.status === 'vendido').length;
+  const orcamentosDevolvidos = orcamentosFiltrados.filter(o => o.status === 'devolvido').length;
+  const valorTotalAberto = orcamentosFiltrados
     .filter(o => o.status === 'aberto')
     .reduce((sum, o) => sum + o.total, 0);
 
