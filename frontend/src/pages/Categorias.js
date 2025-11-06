@@ -30,10 +30,36 @@ const Categorias = () => {
     fetchMarcas();
   }, []);
 
+  useEffect(() => {
+    let filtered = categorias;
+
+    // Filtro por busca (nome)
+    if (searchTerm) {
+      filtered = filtered.filter(c =>
+        c.nome.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filtro por marca
+    if (marcaFilter !== 'todas') {
+      filtered = filtered.filter(c => c.marca_id === marcaFilter);
+    }
+
+    // Filtro por status
+    if (statusFilter !== 'todos') {
+      filtered = filtered.filter(c => 
+        statusFilter === 'ativo' ? c.ativo : !c.ativo
+      );
+    }
+
+    setFilteredCategorias(filtered);
+  }, [searchTerm, marcaFilter, statusFilter, categorias]);
+
   const fetchCategorias = async () => {
     try {
       const response = await axios.get(`${API}/categorias?incluir_inativos=true`);
       setCategorias(response.data);
+      setFilteredCategorias(response.data);
     } catch (error) {
       toast.error('Erro ao carregar categorias');
     }
