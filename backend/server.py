@@ -6891,7 +6891,7 @@ async def get_dashboard_logs(current_user: dict = Depends(require_permission("lo
             "total_logs": total_logs,
             "total_erros": total_erros,
             "total_security": total_security,
-            "usuarios_ativos": usuarios_ativos
+            "usuarios_ativos": usuarios_ativos_count
         },
         "atividade_por_dia": atividade_por_dia,
         "logs_seguranca_recentes": logs_seguranca
