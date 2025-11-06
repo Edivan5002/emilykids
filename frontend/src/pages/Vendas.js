@@ -558,7 +558,23 @@ const Vendas = () => {
           </Card>
 
           <div className="mt-6 space-y-4">
-            {vendasFiltradas.map((venda) => (
+            {loading ? (
+              <Card>
+                <CardContent className="p-8">
+                  <div className="flex flex-col items-center justify-center space-y-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <p className="text-gray-600">Carregando vendas...</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : vendasFiltradas.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center text-gray-500">
+                  Nenhuma venda encontrada
+                </CardContent>
+              </Card>
+            ) : (
+              vendasFiltradas.map((venda) => (
               <Card key={venda.id} data-testid={`venda-${venda.id}`} className={venda.cancelada || venda.status_venda === 'cancelada' ? 'border-red-300 bg-red-50' : ''}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
