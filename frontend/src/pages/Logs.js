@@ -858,16 +858,17 @@ const Logs = () => {
                           )}
                         </div>
                         
-                        {log.detalhes && (
-                          <details className="mt-3">
-                            <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-900">
-                              Ver detalhes
-                            </summary>
-                            <pre className="mt-2 p-2 bg-white rounded text-xs overflow-auto">
-                              {JSON.stringify(log.detalhes, null, 2)}
-                            </pre>
-                          </details>
-                        )}
+                        <div className="mt-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleVerDetalhes(log)}
+                            className="w-full sm:w-auto"
+                          >
+                            <Eye size={16} className="mr-2" />
+                            Ver Detalhes Completos
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
