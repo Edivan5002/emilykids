@@ -1,71 +1,135 @@
 <analysis>
-The trajectory details the transition of the application from an AI engineer to a human expert. Initially, the AI engineer resolved a Role-Based Access Control (RBAC) bug, primarily by correcting  field inconsistencies in MongoDB via  and updating  to synchronize  with  during user creation, and subsequently enhancing  to display user roles. This was followed by initial work on the Clientes module to display inactive clients and enforce conditional inactivation.
+The trajectory details a comprehensive refactoring and enhancement effort across multiple modules of the Emily Kids application. Initially, the focus was on critical bug fixes related to form submissions (e.g., empty strings for optional fields causing 422 errors) in Fornecedores and Clientes modules, identified and resolved by sanitizing frontend data. This set a pattern for subsequent module improvements.
 
-A new, explicit user request then redirected focus to the Fornecedores module. The task involved fixing registration/editing errors, displaying inactive suppliers, and implementing conditional inactivation based on associations with other modules (budgets, sales, invoices, products). The AI engineer systematically reviewed backend  endpoints and  models, along with the frontend . Multiple updates were made to  to address listing, form, and table issues, and  was updated to incorporate product dependency validation for supplier inactivation. After successful backend testing, the user requested an increase in the supplier modal window size, which was also implemented in . The current state involves verifying these recent UI changes via a screenshot.
+A significant portion of the work involved implementing consistent logic for displaying inactive items and enforcing dependency-based inactivation/deletion across Marcas, Categorias, Subcategorias, and Produtos. This required both frontend modifications to fetch inactive items and backend updates to  to add robust validation logic.
+
+Further enhancements included redesigning the Notas Fiscais and Vendas modules to replace deletion with a cancellation mechanism, complete with stock reversal and status updates. UI/UX improvements such as adding search/filter functionalities to master data modules (Clientes, Fornecedores, Marcas, Categorias, Subcategorias) and creating professional detail modals for Estoque (movements and manual adjustments) and Logs were also implemented. A persistent issue with displaying the motivo (reason) in the Estoque adjustment modal led to backend model and endpoint modifications for proper data enrichment. The final task in the trajectory began with the user requesting an update to the Vendas module to display associated budget IDs for converted sales, which the AI engineer was starting to investigate.
 </analysis>
 
 <product_requirements>
-The Emily Kids application is a comprehensive system for sales, inventory, and business intelligence. It features JWT-based RBAC with granular permissions across 74 endpoints, secure authentication, password recovery, and admin-specific module visibility. Key functionalities include detailed user interaction logging, CRUD operations for master data (Clients, Suppliers, Brands, Categories, Subcategories, Products) with dependency-based inactivation, and filtering inactive data from active listings. The system also handles stock control, purchase invoice registration, intelligent budgeting with stock reservation, and sales with stock deduction. Reporting covers sales, budgets, stock, invoices, returns, dashboards, and AI for demand forecasting. User management is integrated, and critical deletions require supervisor/admin authorization.
+The Emily Kids application is an integrated sales, inventory, and business intelligence system with JWT-based RBAC. It supports CRUD for master data (Clients, Suppliers, Brands, Categories, Subcategories, Products), stock control, invoicing, budgeting, and sales, with a focus on conditional inactivation/deletion based on inter-module dependencies.
 
-**New Requirements Addressed/Being Addressed:**
-1.  **Clientes Module (partially addressed, then paused):** Inactive clients must now appear in the listing. Additionally, a client should only be inactivatable if they have no existing associations with other system modules, such as budgets or sales.
-2.  **Fornecedores Module (currently active):** Resolve errors in supplier registration and editing. Inactive suppliers must appear in the listing. A supplier should only be inactivatable if they have no existing associations with other system modules (e.g., budgets, sales, notes fiscais, products). The registration and editing modal window for suppliers needs to be increased in size.
+**Key enhancements addressed in the trajectory:**
+*   **Fornecedores & Clientes**: Resolved registration/editing errors (frontend sending empty strings), implemented inactive item display, and robust dependency validation for inactivation/deletion against modules like products, budgets, and sales. Modal window size increased for Fornecedores.
+*   **Marcas, Categorias, Subcategorias**: Implemented display of inactive items and dependency-based inactivation/deletion.
+*   **Produtos**: Resolved registration errors, displayed inactive products, and enforced dependency-based inactivation/deletion. Ensured fornecedor preferencial dropdown displays active suppliers correctly.
+*   **Notas Fiscais**: Replaced excluir (delete) with cancelar (cancel) button, with logic for stock reversal and status update to cancelada.
+*   **Vendas**: Replaced excluir (delete) with cancelar (cancel) button, with stock return logic and status cancelada. Dashboard adjusted to separate vendas efetivadas (effective sales) and vendas canceladas.
+*   **Estoque**: Implemented professional detail modals for histórico de movimentações and ajustes manuais, displaying user names instead of IDs, and correctly showing the adjustment motivo (reason). Modal height adjusted.
+*   **Logs**: Implemented professional detail modals for log entries.
+*   **Search/Filter**: Added search by name, CPF/CNPJ, and status filters across Clientes, Fornecedores, Marcas, Categorias, and Subcategorias modules.
 </product_requirements>
 
 <key_technical_concepts>
--   **FastAPI**: Python framework for backend APIs.
--   **React**: JavaScript library for frontend UI.
--   **MongoDB**: NoSQL database for data persistence using UUIDs.
--   **JWT**: JSON Web Tokens for authentication.
--   **Role-Based Access Control (RBAC)**: Granular permission system.
--   **Pydantic**: Data validation/serialization for FastAPI.
--   **Shadcn UI & Tailwind CSS**: Frontend styling.
+-   **FastAPI**: Python framework for backend APIs and logic.
+-   **React**: JavaScript library for dynamic frontend UI.
+-   **MongoDB**: NoSQL database for data storage, using UUIDs for IDs.
+-   **Pydantic**: Data validation and serialization for FastAPI models.
+-   **Axios**: HTTP client for frontend-backend communication.
+-   **Shadcn UI & Tailwind CSS**: Frontend styling and UI components.
+-   **Role-Based Access Control (RBAC)**: Implemented for granular permissions.
 </key_technical_concepts>
 
 <code_architecture>
 
+
 -   
-    -   **Summary**: Core FastAPI backend, managing API endpoints, authentication, RBAC, and database interactions.
-    -   **Changes**:  endpoint was modified to ensure  (legacy role string) synchronizes with  for RBAC. It also received edits related to the Clientes module (listing/status toggle) and, most recently, was updated to include dependency validation logic for  (supplier ID) within product documents, a key component for conditional supplier inactivation.
+    -   **Summary**: Central FastAPI backend. Handles API endpoints, authentication, RBAC, and database interactions.
+    -   **Changes**:
+        -   Modified  (earlier in trajectory, not shown in detail here) for  and  synchronization.
+        -   Updated  and  (and their  counterparts) endpoints by adjusting Pydantic models for optional fields to handle empty strings from frontend as .
+        -   Enhanced  related endpoints for listing, status toggle, and deletion to include robust dependency validation (checking ,  association).
+        -   Enhanced  delete endpoint for  and  dependencies.
+        -   Updated  delete and toggle-status endpoints to validate  and  dependencies.
+        -   Updated  delete and toggle-status endpoints to validate  and  dependencies.
+        -   Updated  delete and toggle-status endpoints to validate  dependencies.
+        -   Updated  delete and toggle-status endpoints to validate , , and  dependencies.
+        -   Confirmed  endpoint logic for stock reversal.
+        -   Confirmed  endpoint logic for stock return.
+        -   Modified  endpoint to enrich movement data with  by performing a lookup on .
+        -   Modified  Pydantic model to include an   field.
+        -   Updated  to explicitly save the  field to the  document.
 -   
-    -   **Summary**: Defines the primary application layout and navigation structure, conditionally rendering menu items based on the authenticated user's .
-    -   **Changes**: No direct code changes, but its RBAC logic was the target of the initial  field correction.
+    -   **Summary**: UI for managing client accounts.
+    -   **Changes**:
+        -   Implemented frontend data sanitization to convert empty strings to  for optional fields during client creation/editing.
+        -   Added search/filter functionality for , , and .
+        -   Adjusted  to include  for listing.
 -   
-    -   **Summary**: Manages user authentication state and provides global access to user information, including their .
-    -   **Changes**: No changes.
+    -   **Summary**: UI for managing supplier accounts.
+    -   **Changes**:
+        -   Implemented frontend data sanitization to convert empty strings to  for optional fields during supplier creation/editing.
+        -   Increased the size of the supplier registration/editing modal window.
+        -   Added search/filter functionality for , , and .
+        -   Adjusted  to include  for listing.
 -   
-    -   **Summary**: Frontend UI for displaying and managing user accounts.
-    -   **Changes**: Modified to display the user's  (role) beneath their email address in the user listing, improving user clarity.
+    -   **Summary**: UI for managing brand accounts.
+    -   **Changes**:
+        -   Adjusted  to include  for listing inactive brands.
+        -   Added search/filter functionality for  and .
 -   
-    -   **Summary**: Frontend UI for displaying and managing client accounts.
-    -   **Changes**: It was under review and slated for modification to display inactive clients and integrate conditional inactivation, but work was temporarily suspended to prioritize the Fornecedores module.
+    -   **Summary**: UI for managing categories.
+    -   **Changes**:
+        -   Adjusted  to include  for listing.
+        -   Added search/filter functionality for , , and .
 -   
-    -   **Summary**: Frontend UI for displaying and managing supplier accounts.
-    -   **Changes**: Received multiple significant updates to resolve errors in supplier registration and editing, ensure inactive suppliers are displayed in the listing, update the data table and form components, and increase the size of the supplier registration/editing modal window as explicitly requested by the user.
+    -   **Summary**: UI for managing subcategories.
+    -   **Changes**:
+        -   Adjusted  to include  for listing.
+        -   Added search/filter functionality for , , , and .
 -   
-    -   **Summary**: Holds environment variables for backend configuration, including  and .
-    -   **Changes**: No changes.  was utilized during initial debugging.
+    -   **Summary**: UI for managing product accounts.
+    -   **Changes**:
+        -   Adjusted  to include  for listing inactive products.
+        -   Modified  call to include  to populate the  dropdown correctly.
+        -   Ensured  displays  instead of  and forces black text in the UI.
+        -   Implemented comprehensive frontend data sanitization for all optional fields during product creation/editing.
 -   
-    -   **Summary**: Documentation for testing protocols, user problem statements, and logs of previous agent communications.
-    -   **Changes**: Continuously updated to document progress on both the Clientes and Fornecedores modules, detailing problem statements, verification steps, and testing agent interactions.
+    -   **Summary**: UI for managing invoices.
+    -   **Changes**:
+        -   Removed the DELETE button and implemented a CANCELAR button.
+        -   Added logic to disable Confirmar and Atualizar Estoque actions for cancelled notes.
+        -   Adjusted status display logic to correctly show Cancelada status and filter cancelled notes from Notas Pendentes statistics.
+        -   Added a new card for Notas Canceladas in statistics.
+        -   Removed  references.
+-   
+    -   **Summary**: UI for managing sales.
+    -   **Changes**:
+        -   Removed the DELETE button and implemented a CANCELAR button.
+        -   Added logic to disable actions for cancelled sales.
+        -   Adjusted status display logic to correctly show Cancelada status with a badge and display the cancellation .
+        -   Refactored sales dashboard to separate Total de Vendas, Faturamento, and Ticket Médio into Vendas Efetivadas and Vendas Canceladas.
+        -   Adjusted calculations for top products and top clients to only consider Vendas Efetivadas.
+-   
+    -   **Summary**: UI for managing stock, including movement history and manual adjustments.
+    -   **Changes**:
+        -   Implemented a professional Ver Detalhes modal for both Histórico de Movimentações and Ajustes Manuais.
+        -   Modified the modal to display the  instead of  for movements and adjustments.
+        -   Added dynamic header, badge, and prominent reason display for manual adjustments within the detail modal.
+        -   Adjusted modal height and added scroll for better usability.
+        -   Ensured  for manual adjustments is correctly captured and displayed.
+-   
+    -   **Summary**: UI for displaying application logs.
+    -   **Changes**:
+        -   Implemented a professional Ver Detalhes modal for individual log entries.
+        -   Added states and functions to manage the visibility and content of the log detail modal.
+-   
+    -   **Summary**: Documents testing protocols, user problem statements, and agent communications.
+    -   **Changes**: Continuously updated to reflect problems, solutions, testing progress, and communications for all modules addressed.
+
 </code_architecture>
 
 <pending_tasks>
--   Implement frontend for the improved Notas Fiscais, Orçamentos, and Vendas modules.
--   Verify Clientes module: inactive client display and conditional inactivation.
--   For Fornecedores module: Conduct thorough frontend testing and verification for listing, editing, conditional inactivation, and modal resizing.
+-   Frontend testing and verification for Marcas, Categorias, Subcategorias, Produtos, Notas Fiscais, Vendas, Estoque, and Logs modules to ensure all implemented changes (display of inactive items, conditional inactivation, search filters, detail modals, cancellation logic, dashboard updates) are working correctly.
+-   Implement the display of original budget ID information for sales that were converted from an existing budget in the Vendas module list.
 </pending_tasks>
 
 <current_work>
-Immediately prior to this summary, the AI engineer was addressing a new user request concerning the Fornecedores (Suppliers) module. The task involved resolving errors in supplier registration and editing, ensuring inactive suppliers appear in the listing, implementing a dependency check to prevent inactivation if associated with other system modules (specifically Produtos was verified in backend searches), and adjusting the size of the registration/editing modal window.
+Immediately prior to this summary, the AI engineer was addressing a user request for the Vendas (Sales) module. The user explicitly requested: no módulo vendas em lista de vendas em todos os orçamentos que foram convertidos em vendas deve vir a informação orçamento com id convertido em vendas. This means that for any sale that originated from an Orçamento (Budget), the sales listing in the frontend should display the associated budget ID.
 
-The engineer performed a detailed review of backend endpoints in  and frontend UI in . Multiple frontend edits were successfully applied to  to update the listing, form, and table functionalities. The backend  was modified to incorporate the necessary dependency validation for supplier inactivation.
-
-After these modifications, backend changes for the Fornecedores module were tested using the  agent, which reported FORNECEDORES MODULE TESTING SETUP COMPLETE. Following this, the user explicitly requested to ajuste a modal de cadastro e edição do fornecedor aumentando a janela (adjust the supplier registration and editing modal by increasing the window size), which was promptly implemented via another edit to .
-
-The current state is that all requested backend logic and initial frontend changes (including the modal resize) for the Fornecedores module have been implemented. The engineer just took a screenshot to visually verify the recent UI adjustments.
+The AI engineer acknowledged this request and stated the first step would be to verificar se o modelo de venda já tem essa referência (check if the sales model already has this reference) in the backend. This indicates the current work is in the initial investigation phase, focusing on understanding the existing data model in  to determine how to retrieve and display this information. No code changes have been made yet regarding this specific request.
 </current_work>
 
 <optional_next_step>
-Visually verify the updated Fornecedores module UI, focusing on the resized modal as requested by the user: ajuste a modal de cadastro e edição do fornecedor aumentando a janela.
+Verify the backend  model in  to check if it contains a field referencing the original budget ID.
 </optional_next_step>

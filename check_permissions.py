@@ -6,7 +6,7 @@ Check current role permissions
 import requests
 import json
 
-BACKEND_URL = "https://inactive-supplier-ui.preview.emergentagent.com/api"
+BACKEND_URL = "https://emily-kids-erp.preview.emergentagent.com/api"
 
 def check_permissions():
     # Login as admin
