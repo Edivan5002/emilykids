@@ -21,7 +21,6 @@ const Estoque = () => {
   const [alertas, setAlertas] = useState(null);
   const [marcas, setMarcas] = useState([]);
   const [categorias, setCategorias] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
   const [isAjusteOpen, setIsAjusteOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showAutorizacao, setShowAutorizacao] = useState(false);
