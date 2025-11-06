@@ -562,7 +562,7 @@ const Orcamentos = () => {
 
       {/* Lista de Orçamentos */}
       <div className="space-y-4">
-        {orcamentos.map((orcamento) => (
+        {orcamentosFiltrados.map((orcamento) => (
           <Card key={orcamento.id} data-testid={`orcamento-${orcamento.id}`}>
             <CardHeader>
               <div className="flex items-center justify-between">
