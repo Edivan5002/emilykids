@@ -27,10 +27,31 @@ const Marcas = () => {
     fetchMarcas();
   }, []);
 
+  useEffect(() => {
+    let filtered = marcas;
+
+    // Filtro por busca (nome)
+    if (searchTerm) {
+      filtered = filtered.filter(m =>
+        m.nome.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filtro por status
+    if (statusFilter !== 'todos') {
+      filtered = filtered.filter(m => 
+        statusFilter === 'ativo' ? m.ativo : !m.ativo
+      );
+    }
+
+    setFilteredMarcas(filtered);
+  }, [searchTerm, statusFilter, marcas]);
+
   const fetchMarcas = async () => {
     try {
       const response = await axios.get(`${API}/marcas?incluir_inativos=true`);
       setMarcas(response.data);
+      setFilteredMarcas(response.data);
     } catch (error) {
       toast.error('Erro ao carregar marcas');
     }
