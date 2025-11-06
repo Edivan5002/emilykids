@@ -331,6 +331,7 @@ const Administracao = () => {
                   <Button
                     variant="destructive"
                     onClick={() => openConfirmDialog('limparTudo')}
+                    title="Remove todos os dados exceto Usuários e Papéis/Permissões"
                   >
                     <XCircle size={16} className="mr-2" />
                     Limpar Todo o Sistema
