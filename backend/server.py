@@ -1760,11 +1760,22 @@ class UserUpdate(BaseModel):
     senha: Optional[str] = None
 
 @api_router.get("/usuarios", response_model=List[User])
-async def get_usuarios(current_user: dict = Depends(require_permission("usuarios", "ler"))):
+async def get_usuarios(
+    page: int = 1,
+    limit: int = 100,
+    current_user: dict = Depends(require_permission("usuarios", "ler"))
+):
+    """Lista usuários com paginação opcional (apenas admin)"""
     if current_user.get("papel") != "admin":
         raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
     
-    usuarios = await db.users.find({}, {"_id": 0}).to_list(1000)
+    # Se limit=0, retorna todos (mantém compatibilidade)
+    if limit == 0:
+        usuarios = await db.users.find({}, {"_id": 0}).to_list(10000)
+    else:
+        skip = (page - 1) * limit
+        usuarios = await db.users.find({}, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    
     return usuarios
 
 
