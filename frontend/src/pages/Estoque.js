@@ -524,9 +524,9 @@ const Estoque = () => {
                       <tbody>
                         {inventarioAtivo.itens.map((item, idx) => (
                           <tr key={idx} className={item.estoque_contado !== null ? 'bg-green-50' : ''}>
-                            <td className="p-3 font-mono text-sm">{item.produto_sku}</td>
+                            <td className="p-3 font-mono text-sm hidden md:table-cell">{item.produto_sku}</td>
                             <td className="p-3">{item.produto_nome}</td>
-                            <td className="p-3 text-center font-semibold">{item.estoque_sistema}</td>
+                            <td className="p-3 text-center font-semibold hidden sm:table-cell">{item.estoque_sistema}</td>
                             <td className="p-3 text-center">
                               {item.estoque_contado !== null ? (
                                 <span className="font-semibold text-green-600">{item.estoque_contado}</span>
@@ -534,7 +534,7 @@ const Estoque = () => {
                                 <span className="text-gray-400">-</span>
                               )}
                             </td>
-                            <td className="p-3 text-center">
+                            <td className="p-3 text-center hidden sm:table-cell">
                               {item.diferenca !== null && item.diferenca !== 0 ? (
                                 <span className={`font-semibold ${item.diferenca > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                   {item.diferenca > 0 ? '+' : ''}{item.diferenca}
@@ -545,7 +545,7 @@ const Estoque = () => {
                                 <span className="text-gray-400">-</span>
                               )}
                             </td>
-                            <td className="p-3 text-center">
+                            <td className="p-3 text-center hidden lg:table-cell">
                               {item.estoque_contado !== null ? (
                                 <span className="text-xs bg-green-500 text-white px-2 py-1 rounded">Contado</span>
                               ) : (
