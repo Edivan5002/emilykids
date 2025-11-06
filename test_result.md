@@ -799,11 +799,13 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Exibir ID do Orçamento Convertido na Lista de Vendas"
     - "Refatoração módulo Notas Fiscais - Cancelamento ao invés de Exclusão"
     - "Correção módulo Produtos - Erros ao cadastrar e dropdown vazio"
     - "Correção módulo Subcategorias - Inativos não aparecem"
     - "Correção módulo Categorias - Inativos não aparecem"
     - "Correção módulo Marcas - Inativos não aparecem e validações incompletas"
+    - "Melhoria módulo Estoque - Visualização de Detalhes Profissional"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
