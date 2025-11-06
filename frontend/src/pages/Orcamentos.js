@@ -242,6 +242,46 @@ const Orcamentos = () => {
     return produto?.nome || 'Produto';
   };
 
+  // FILTROS E CÁLCULOS
+  const orcamentosFiltrados = orcamentos.filter(o => {
+    // Busca
+    if (filtros.busca) {
+      const busca = filtros.busca.toLowerCase();
+      const cliente = clientes.find(c => c.id === o.cliente_id);
+      if (!o.id.toLowerCase().includes(busca) && 
+          !cliente?.nome.toLowerCase().includes(busca)) {
+        return false;
+      }
+    }
+
+    // Cliente
+    if (filtros.cliente && filtros.cliente !== 'todos' && o.cliente_id !== filtros.cliente) {
+      return false;
+    }
+
+    // Status
+    if (filtros.status && filtros.status !== 'todos' && o.status !== filtros.status) {
+      return false;
+    }
+
+    // Data início
+    if (filtros.dataInicio) {
+      const orcData = new Date(o.created_at);
+      const dataInicio = new Date(filtros.dataInicio);
+      if (orcData < dataInicio) return false;
+    }
+
+    // Data fim
+    if (filtros.dataFim) {
+      const orcData = new Date(o.created_at);
+      const dataFim = new Date(filtros.dataFim);
+      dataFim.setHours(23, 59, 59);
+      if (orcData > dataFim) return false;
+    }
+
+    return true;
+  });
+
   // Estatísticas
   const orcamentosAbertos = orcamentos.filter(o => o.status === 'aberto').length;
   const orcamentosVendidos = orcamentos.filter(o => o.status === 'vendido').length;
