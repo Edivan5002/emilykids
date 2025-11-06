@@ -125,6 +125,32 @@ const PapeisPermissoes = () => {
     }
   };
 
+  const handleVerDetalhesHistorico = (entry) => {
+    setDetalhesHistorico(entry);
+    setIsDetalhesOpen(true);
+  };
+
+  const getAcaoBadgeColor = (acao) => {
+    const colors = {
+      'criar': 'bg-green-100 text-green-800 border-green-300',
+      'editar': 'bg-blue-100 text-blue-800 border-blue-300',
+      'deletar': 'bg-red-100 text-red-800 border-red-300',
+      'atribuir': 'bg-purple-100 text-purple-800 border-purple-300',
+      'remover': 'bg-orange-100 text-orange-800 border-orange-300',
+      'atualizar': 'bg-yellow-100 text-yellow-800 border-yellow-300'
+    };
+    return colors[acao.toLowerCase()] || 'bg-gray-100 text-gray-800 border-gray-300';
+  };
+
+  const getAcaoIcon = (acao) => {
+    const acaoLower = acao.toLowerCase();
+    if (acaoLower.includes('criar')) return <Plus size={16} />;
+    if (acaoLower.includes('editar') || acaoLower.includes('atualizar')) return <FileEdit size={16} />;
+    if (acaoLower.includes('deletar') || acaoLower.includes('remover')) return <Trash2 size={16} />;
+    if (acaoLower.includes('atribuir')) return <UserCog size={16} />;
+    return <History size={16} />;
+  };
+
   const handleCreateRole = async () => {
     try {
       await axios.post(`${API}/roles`, roleForm);
