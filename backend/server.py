@@ -7660,7 +7660,7 @@ async def admin_delete_vendas_antigas(
             user_nome=current_user["nome"],
             tela="administracao",
             acao="deletar_vendas_antigas",
-            detalhes={"dias": dias, "vendas_deletadas": result.deleted_count}
+            detalhes={"dias": request.dias, "vendas_deletadas": result.deleted_count}
         )
         
         return {
