@@ -635,7 +635,23 @@ const Orcamentos = () => {
 
       {/* Lista de Orçamentos */}
       <div className="space-y-4">
-        {orcamentosFiltrados.map((orcamento) => (
+        {loading ? (
+          <Card>
+            <CardContent className="p-8">
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <p className="text-gray-600">Carregando orçamentos...</p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : orcamentosFiltrados.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center text-gray-500">
+              Nenhum orçamento encontrado
+            </CardContent>
+          </Card>
+        ) : (
+          orcamentosFiltrados.map((orcamento) => (
           <Card key={orcamento.id} data-testid={`orcamento-${orcamento.id}`}>
             <CardHeader>
               <div className="flex items-center justify-between">
