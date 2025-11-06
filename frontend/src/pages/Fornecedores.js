@@ -43,10 +43,32 @@ const Fornecedores = () => {
     fetchFornecedores();
   }, []);
 
+  useEffect(() => {
+    let filtered = fornecedores;
+
+    // Filtro por busca (razão social ou CNPJ)
+    if (searchTerm) {
+      filtered = filtered.filter(f =>
+        f.razao_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        f.cnpj.includes(searchTerm)
+      );
+    }
+
+    // Filtro por status
+    if (statusFilter !== 'todos') {
+      filtered = filtered.filter(f => 
+        statusFilter === 'ativo' ? f.ativo : !f.ativo
+      );
+    }
+
+    setFilteredFornecedores(filtered);
+  }, [searchTerm, statusFilter, fornecedores]);
+
   const fetchFornecedores = async () => {
     try {
       const response = await axios.get(`${API}/fornecedores?incluir_inativos=true`);
       setFornecedores(response.data);
+      setFilteredFornecedores(response.data);
     } catch (error) {
       toast.error('Erro ao carregar fornecedores');
     }
