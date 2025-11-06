@@ -847,16 +847,6 @@ const Vendas = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Autorização */}
-      <AutorizacaoModal
-        isOpen={showAutorizacao}
-        onClose={() => {
-          setShowAutorizacao(false);
-          setVendaParaExcluir(null);
-        }}
-        onAutorizado={handleAutorizacaoSucesso}
-        acao="excluir esta venda"
-      />
     </div>
   );
 };
