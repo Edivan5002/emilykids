@@ -338,9 +338,9 @@ const Estoque = () => {
                   return (
                     <div key={mov.id} className="p-4 border rounded-lg hover:bg-gray-50">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-1">
                           {getTipoIcon(mov.tipo)}
-                          <div>
+                          <div className="flex-1">
                             <p className="font-medium">{produto?.nome || 'Produto'}</p>
                             <p className="text-sm text-gray-600">
                               {mov.referencia_tipo === 'nota_fiscal' && 'Entrada por Nota Fiscal'}
@@ -349,16 +349,27 @@ const Estoque = () => {
                               {mov.referencia_tipo === 'devolucao' && 'Entrada por Devolução'}
                               {mov.referencia_tipo === 'devolucao_venda' && 'Devolução de Venda'}
                               {mov.referencia_tipo === 'ajuste_manual' && 'Ajuste Manual'}
+                              {mov.referencia_tipo === 'cancelamento_nota_fiscal' && 'Cancelamento de Nota Fiscal'}
                             </p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className={`text-lg font-bold ${getTipoColor(mov.tipo)}`}>
-                            {mov.tipo === 'entrada' ? '+' : '-'}{mov.quantidade}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(mov.timestamp).toLocaleString('pt-BR')}
-                          </p>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <p className={`text-lg font-bold ${getTipoColor(mov.tipo)}`}>
+                              {mov.tipo === 'entrada' ? '+' : '-'}{mov.quantidade}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {new Date(mov.timestamp).toLocaleString('pt-BR')}
+                            </p>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleVerDetalhes(mov)}
+                            title="Ver detalhes"
+                          >
+                            <Eye size={16} />
+                          </Button>
                         </div>
                       </div>
                     </div>
