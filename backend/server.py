@@ -7592,6 +7592,26 @@ async def relatorio_auditoria(
 
 # ========== ENDPOINTS ADMINISTRATIVOS ==========
 
+# Modelos Pydantic para Admin
+class AdminDeleteVendasRequest(BaseModel):
+    dias: int
+    senha_mestra: str
+
+class AdminLimparLogsRequest(BaseModel):
+    dias: int
+    senha_mestra: str
+
+class AdminResetarModuloRequest(BaseModel):
+    modulo: str
+    senha_mestra: str
+
+class AdminRemoverTesteRequest(BaseModel):
+    senha_mestra: str
+
+class AdminLimparTudoRequest(BaseModel):
+    senha_mestra: str
+    confirmar: str
+
 @api_router.post("/admin/estatisticas")
 async def admin_get_estatisticas(current_user: dict = Depends(require_permission("admin", "ler"))):
     """Retorna estatísticas gerais do sistema para o painel administrativo"""
