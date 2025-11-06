@@ -3338,6 +3338,82 @@ async def delete_produto(produto_id: str, current_user: dict = Depends(require_p
     )
     return {"message": "Produto excluído com sucesso"}
 
+@api_router.post("/produtos/{produto_id}/upload-imagem")
+async def upload_imagem_produto(
+    produto_id: str,
+    imagem: dict,
+    current_user: dict = Depends(require_permission("produtos", "editar"))
+):
+    """Upload de imagem para produto (base64)"""
+    # Verificar se o produto existe
+    produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    
+    # Validar imagem base64
+    imagem_base64 = imagem.get("imagem")
+    if not imagem_base64:
+        raise HTTPException(status_code=400, detail="Imagem não fornecida")
+    
+    # Verificar se já tem fotos, se não, criar lista
+    fotos_atuais = produto.get("fotos", [])
+    if fotos_atuais is None:
+        fotos_atuais = []
+    
+    # Adicionar nova foto
+    fotos_atuais.append(imagem_base64)
+    
+    # Atualizar produto
+    await db.produtos.update_one(
+        {"id": produto_id},
+        {"$set": {"fotos": fotos_atuais}}
+    )
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="produtos",
+        acao="upload_imagem",
+        detalhes={"produto_id": produto_id, "total_fotos": len(fotos_atuais)}
+    )
+    
+    return {"message": "Imagem enviada com sucesso", "total_fotos": len(fotos_atuais)}
+
+@api_router.delete("/produtos/{produto_id}/imagem/{indice}")
+async def deletar_imagem_produto(
+    produto_id: str,
+    indice: int,
+    current_user: dict = Depends(require_permission("produtos", "editar"))
+):
+    """Remove uma imagem específica do produto"""
+    produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    
+    fotos = produto.get("fotos", [])
+    if not fotos or indice >= len(fotos) or indice < 0:
+        raise HTTPException(status_code=404, detail="Imagem não encontrada")
+    
+    # Remover imagem
+    fotos.pop(indice)
+    
+    await db.produtos.update_one(
+        {"id": produto_id},
+        {"$set": {"fotos": fotos}}
+    )
+    
+    await log_action(
+        ip="0.0.0.0",
+        user_id=current_user["id"],
+        user_nome=current_user["nome"],
+        tela="produtos",
+        acao="deletar_imagem",
+        detalhes={"produto_id": produto_id, "indice": indice}
+    )
+    
+    return {"message": "Imagem removida com sucesso"}
+
 @api_router.put("/produtos/{produto_id}/toggle-status")
 async def toggle_produto_status(produto_id: str, current_user: dict = Depends(require_permission("produtos", "editar"))):
     # Verificar se o produto existe
