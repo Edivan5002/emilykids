@@ -651,6 +651,153 @@ const Administracao = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de Detalhes do Log */}
+      <Dialog open={detalhesDialog.open} onOpenChange={(open) => setDetalhesDialog({ open, log: null })}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Activity className="text-blue-600" size={24} />
+              Detalhes da Ação Administrativa
+            </DialogTitle>
+          </DialogHeader>
+
+          {detalhesDialog.log && (
+            <div className="space-y-6">
+              {/* Informações Principais */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Informações da Ação</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Ação Realizada</p>
+                      <Badge 
+                        variant={detalhesDialog.log.acao.includes('limpar_tudo') ? 'destructive' : 'default'}
+                        className="text-base px-3 py-1"
+                      >
+                        {detalhesDialog.log.acao}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Data e Hora</p>
+                      <p className="font-medium flex items-center gap-2">
+                        <Clock size={16} className="text-gray-500" />
+                        {new Date(detalhesDialog.log.timestamp).toLocaleString('pt-BR')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Usuário Responsável</p>
+                      <p className="font-semibold text-lg flex items-center gap-2">
+                        <Users size={16} className="text-blue-600" />
+                        {detalhesDialog.log.user_nome}
+                      </p>
+                    </div>
+                    {detalhesDialog.log.user_id && (
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">ID do Usuário</p>
+                        <p className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                          {detalhesDialog.log.user_id}
+                        </p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Tela</p>
+                      <Badge variant="outline">{detalhesDialog.log.tela}</Badge>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Severidade</p>
+                      <Badge 
+                        variant={
+                          detalhesDialog.log.severidade === 'ERROR' ? 'destructive' : 
+                          detalhesDialog.log.severidade === 'WARNING' ? 'outline' : 
+                          'default'
+                        }
+                      >
+                        {detalhesDialog.log.severidade || 'INFO'}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Detalhes da Operação */}
+              {detalhesDialog.log.detalhes && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Detalhes da Operação</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {Object.entries(detalhesDialog.log.detalhes).map(([key, value]) => (
+                        <div key={key} className="border-b pb-3 last:border-b-0">
+                          <p className="text-sm font-semibold text-gray-700 mb-1 capitalize">
+                            {key.replace(/_/g, ' ')}
+                          </p>
+                          <div className="bg-gray-50 p-3 rounded-lg">
+                            {typeof value === 'object' ? (
+                              <pre className="text-xs text-gray-800 overflow-auto">
+                                {JSON.stringify(value, null, 2)}
+                              </pre>
+                            ) : (
+                              <p className="text-sm text-gray-800">{String(value)}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Informações Técnicas */}
+              {(detalhesDialog.log.metodo_http || detalhesDialog.log.ip) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Informações Técnicas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {detalhesDialog.log.ip && (
+                        <div>
+                          <p className="text-sm text-gray-600 mb-1">Endereço IP</p>
+                          <p className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                            {detalhesDialog.log.ip}
+                          </p>
+                        </div>
+                      )}
+                      {detalhesDialog.log.metodo_http && (
+                        <div>
+                          <p className="text-sm text-gray-600 mb-1">Método HTTP</p>
+                          <Badge variant="outline">{detalhesDialog.log.metodo_http}</Badge>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* JSON Completo (Expandível) */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Dados Completos (JSON)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <details className="cursor-pointer">
+                    <summary className="text-sm text-gray-600 hover:text-gray-900 font-medium mb-2">
+                      Clique para expandir/recolher
+                    </summary>
+                    <pre className="text-xs bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto max-h-96 font-mono">
+                      {JSON.stringify(detalhesDialog.log, null, 2)}
+                    </pre>
+                  </details>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
