@@ -614,27 +614,39 @@ const Estoque = () => {
                 <div className="space-y-2">
                   {inventarios.filter(inv => inv.status !== 'em_andamento').length > 0 ? (
                     inventarios.filter(inv => inv.status !== 'em_andamento').map(inv => (
-                      <div key={inv.id} className="border rounded-lg p-4 flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <span className="font-semibold">{inv.numero}</span>
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              inv.status === 'concluido' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                            }`}>
-                              {inv.status === 'concluido' ? 'Concluído' : 'Cancelado'}
-                            </span>
+                      <div key={inv.id} className="border rounded-lg p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <span className="font-semibold">{inv.numero}</span>
+                              <span className={`text-xs px-2 py-1 rounded ${
+                                inv.status === 'concluido' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                              }`}>
+                                {inv.status === 'concluido' ? 'Concluído' : 'Cancelado'}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {new Date(inv.data_inicio).toLocaleDateString('pt-BR')} - 
+                              {inv.data_conclusao && ` ${new Date(inv.data_conclusao).toLocaleDateString('pt-BR')}`}
+                            </p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              {inv.total_produtos} produtos • {inv.total_divergencias} divergências
+                            </p>
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {new Date(inv.data_inicio).toLocaleDateString('pt-BR')} - 
-                            {inv.data_conclusao && ` ${new Date(inv.data_conclusao).toLocaleDateString('pt-BR')}`}
-                          </p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {inv.total_produtos} produtos • {inv.total_divergencias} divergências
-                          </p>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-500">Responsável:</p>
+                            <p className="text-sm font-medium">{inv.responsavel_nome}</p>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm text-gray-500">Responsável:</p>
-                          <p className="text-sm font-medium">{inv.responsavel_nome}</p>
+                        <div className="flex justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleVerDetalhesInventario(inv)}
+                          >
+                            <Eye size={16} className="mr-2" />
+                            Ver Detalhes
+                          </Button>
                         </div>
                       </div>
                     ))
