@@ -407,16 +407,16 @@ const Estoque = () => {
 
               {/* Tabela de Produtos */}
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full min-w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="text-left p-3 text-sm font-semibold">SKU</th>
+                      <th className="text-left p-3 text-sm font-semibold hidden md:table-cell">SKU</th>
                       <th className="text-left p-3 text-sm font-semibold">Produto</th>
-                      <th className="text-left p-3 text-sm font-semibold">Marca</th>
-                      <th className="text-left p-3 text-sm font-semibold">Categoria</th>
+                      <th className="text-left p-3 text-sm font-semibold hidden lg:table-cell">Marca</th>
+                      <th className="text-left p-3 text-sm font-semibold hidden lg:table-cell">Categoria</th>
                       <th className="text-center p-3 text-sm font-semibold">Estoque Atual</th>
-                      <th className="text-center p-3 text-sm font-semibold">Mínimo</th>
-                      <th className="text-center p-3 text-sm font-semibold">Máximo</th>
+                      <th className="text-center p-3 text-sm font-semibold hidden sm:table-cell">Mínimo</th>
+                      <th className="text-center p-3 text-sm font-semibold hidden sm:table-cell">Máximo</th>
                       <th className="text-left p-3 text-sm font-semibold">Status</th>
                     </tr>
                   </thead>
