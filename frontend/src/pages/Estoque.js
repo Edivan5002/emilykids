@@ -179,6 +179,16 @@ const Estoque = () => {
     }
   };
 
+  const handleVerDetalhesInventario = async (inventario) => {
+    try {
+      // Buscar detalhes completos do inventário
+      const response = await axios.get(`${API}/estoque/inventario/${inventario.id}`);
+      setDetalhesInventarioDialog({ open: true, inventario: response.data });
+    } catch (error) {
+      toast.error('Erro ao buscar detalhes do inventário');
+    }
+  };
+
   const handleAjusteClick = () => {
     if (user?.papel === 'admin' || user?.papel === 'gerente') {
       setIsAjusteOpen(true);
