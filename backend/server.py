@@ -7878,7 +7878,7 @@ async def admin_limpar_tudo(
     request: AdminLimparTudoRequest,
     current_user: dict = Depends(require_permission("admin", "deletar"))
 ):
-    """CUIDADO: Limpa TODOS os dados do sistema (exceto usuários admin)"""
+    """CUIDADO: Limpa TODOS os dados do sistema (exceto Usuários e Papéis/Permissões)"""
     if request.senha_mestra != os.environ.get('ADMIN_MASTER_PASSWORD'):
         raise HTTPException(status_code=403, detail="Senha mestra incorreta")
     
@@ -7910,7 +7910,8 @@ async def admin_limpar_tudo(
         deletados["logs"] = (await db.logs.delete_many({"timestamp": {"$lt": data_limite}})).deleted_count
         deletados["logs_seguranca"] = (await db.logs_seguranca.delete_many({"timestamp": {"$lt": data_limite}})).deleted_count
         
-        # NÃO deletar usuários admin
+        # PRESERVAR: Usuários, Roles (Papéis) e Permissões
+        # NÃO deletar: usuarios, roles, user_roles, permissions
         
         total = sum(deletados.values())
         
