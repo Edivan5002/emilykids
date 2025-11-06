@@ -921,6 +921,53 @@ const Vendas = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog de Cancelamento */}
+      <Dialog open={cancelDialog.open} onOpenChange={(open) => setCancelDialog({ ...cancelDialog, open })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Cancelar Venda</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-900">
+                ⚠️ <strong>Atenção:</strong> Esta ação é irreversível!
+              </p>
+              <ul className="mt-2 text-sm text-red-800 list-disc list-inside">
+                <li>A venda será cancelada</li>
+                <li>O estoque será devolvido automaticamente</li>
+                <li>Esta ação não pode ser desfeita</li>
+              </ul>
+            </div>
+            <div>
+              <Label htmlFor="motivo">Motivo do Cancelamento *</Label>
+              <textarea
+                id="motivo"
+                className="w-full mt-1 p-2 border rounded-md"
+                rows="3"
+                placeholder="Digite o motivo do cancelamento..."
+                value={cancelDialog.motivo}
+                onChange={(e) => setCancelDialog({ ...cancelDialog, motivo: e.target.value })}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => setCancelDialog({ open: false, vendaId: null, motivo: '' })}
+              >
+                Voltar
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={handleCancelarVenda}
+                disabled={!cancelDialog.motivo.trim()}
+              >
+                Confirmar Cancelamento
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 };
