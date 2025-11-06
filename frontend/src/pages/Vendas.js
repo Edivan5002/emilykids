@@ -534,15 +534,23 @@ const Vendas = () => {
 
           <div className="mt-6 space-y-4">
             {vendasFiltradas.map((venda) => (
-              <Card key={venda.id} data-testid={`venda-${venda.id}`}>
+              <Card key={venda.id} data-testid={`venda-${venda.id}`} className={venda.cancelada || venda.status_venda === 'cancelada' ? 'border-red-300 bg-red-50' : ''}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">
+                    <CardTitle className="text-lg flex items-center gap-2">
                       Venda #{venda.id.slice(0, 8)}
+                      {(venda.cancelada || venda.status_venda === 'cancelada') && (
+                        <span className="badge badge-danger flex items-center gap-1">
+                          <Ban size={14} />
+                          CANCELADA
+                        </span>
+                      )}
                     </CardTitle>
-                    <span className={`badge ${getFormaPagamentoColor(venda.forma_pagamento)}`}>
-                      {getFormaPagamentoLabel(venda.forma_pagamento)}
-                    </span>
+                    {!venda.cancelada && venda.status_venda !== 'cancelada' && (
+                      <span className={`badge ${getFormaPagamentoColor(venda.forma_pagamento)}`}>
+                        {getFormaPagamentoLabel(venda.forma_pagamento)}
+                      </span>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
