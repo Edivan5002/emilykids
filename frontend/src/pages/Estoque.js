@@ -737,13 +737,25 @@ const Estoque = () => {
               </div>
 
               {/* Informações de Ajuste Manual */}
-              {detalhesMovimentacao.referencia_tipo === 'ajuste_manual' && detalhesMovimentacao.motivo && (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
-                    <AlertCircle size={18} />
-                    Motivo do Ajuste
-                  </h3>
-                  <p className="text-blue-800">{detalhesMovimentacao.motivo}</p>
+              {detalhesMovimentacao.referencia_tipo === 'ajuste_manual' && (
+                <div className="p-5 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-blue-500 rounded-lg">
+                      <AlertCircle size={20} className="text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-blue-900 text-lg mb-2">
+                        Motivo do Ajuste Manual
+                      </h3>
+                      {detalhesMovimentacao.motivo ? (
+                        <p className="text-blue-900 leading-relaxed bg-white p-3 rounded border border-blue-200">
+                          {detalhesMovimentacao.motivo}
+                        </p>
+                      ) : (
+                        <p className="text-blue-700 italic">Nenhum motivo foi registrado para este ajuste.</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
