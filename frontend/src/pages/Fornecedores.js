@@ -277,6 +277,30 @@ const Fornecedores = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Filtros */}
+      <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <Input
+            placeholder="Buscar por razão social ou CNPJ..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os status</SelectItem>
+            <SelectItem value="ativo">Apenas Ativos</SelectItem>
+            <SelectItem value="inativo">Apenas Inativos</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="table-container">
         <table>
           <thead>
@@ -291,7 +315,7 @@ const Fornecedores = () => {
             </tr>
           </thead>
           <tbody>
-            {fornecedores.map((f) => (
+            {filteredFornecedores.map((f) => (
               <tr key={f.id}>
                 <td className="font-medium">{f.razao_social}</td>
                 <td>{f.cnpj}</td>
