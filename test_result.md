@@ -776,6 +776,21 @@ frontend:
         agent: "testing"
         comment: "✅ TESTADO E FUNCIONANDO: Validações de dependência implementadas corretamente no backend. Fornecedor só pode ser inativado se não tiver notas fiscais pendentes ou produtos ativos vinculados. Endpoint PUT /fornecedores/{id}/toggle-status funciona corretamente com validações apropriadas."
 
+  - task: "Exibir ID do Orçamento Convertido na Lista de Vendas"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Vendas.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "REQUISITO: 'no módulo vendas em lista de vendas em todos os orçamentos que foram convertidos em vendas deve vir a informação orçamento com id convertido em vendas' - Vendas originadas de orçamentos devem exibir o ID do orçamento de origem."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTAÇÃO CONCLUÍDA: (1) BACKEND JÁ POSSUÍA: Modelo Venda já tem campo orcamento_id (linha 578 server.py); Endpoint GET /vendas já retorna esse campo; Conversão de orçamento (POST /orcamentos/{id}/converter-venda) já salva orcamento_id na venda; (2) FRONTEND IMPLEMENTADO: Adicionada seção visual destacada na listagem de vendas (após Frete, antes de Itens); Card azul com ícone ShoppingCart exibindo 'Convertido de Orçamento' e ID do orçamento (primeiros 8 caracteres); Seção só aparece quando venda.orcamento_id existe; Estilo consistente com demais informações da venda. RESULTADO: Vendas convertidas de orçamentos agora exibem claramente a origem na listagem."
+
 metadata:
   created_by: "main_agent"
   version: "7.0"
