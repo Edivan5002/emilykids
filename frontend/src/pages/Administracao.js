@@ -363,6 +363,15 @@ const Administracao = () => {
                 </p>
               </div>
 
+              {stats && (
+                <Alert>
+                  <ShoppingCart className="h-4 w-4" />
+                  <AlertDescription>
+                    Total de vendas no sistema: <strong>{stats.vendas}</strong>
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <Button 
                 onClick={() => openConfirmDialog('deleteVendas')}
                 variant="destructive"
