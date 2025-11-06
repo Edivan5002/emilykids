@@ -7722,6 +7722,7 @@ async def admin_resetar_modulo(
         "vendas": "vendas",
         "orcamentos": "orcamentos",
         "notas_fiscais": "notas_fiscais",
+        "produtos": "produtos",
         "movimentacoes_estoque": "movimentacoes_estoque",
         "inventarios": "inventarios",
         "logs": "logs"
