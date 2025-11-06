@@ -426,28 +426,49 @@ const Produtos = () => {
     }));
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
 
-    // Validar tipo de arquivo
-    if (!file.type.startsWith('image/')) {
-      toast.error('Por favor, selecione apenas arquivos de imagem');
-      return;
+    setUploadingImage(true);
+    const compressedImages = [];
+
+    try {
+      for (const file of files) {
+        // Validar tipo de arquivo
+        if (!file.type.startsWith('image/')) {
+          toast.error(`${file.name} não é uma imagem válida`);
+          continue;
+        }
+
+        // Comprimir imagem
+        const options = {
+          maxSizeMB: 0.5, // Máximo 500KB
+          maxWidthOrHeight: 1024, // Máximo 1024px
+          useWebWorker: true,
+          fileType: 'image/jpeg'
+        };
+
+        const compressedFile = await imageCompression(file, options);
+        
+        // Converter para base64
+        const reader = new FileReader();
+        const base64Promise = new Promise((resolve) => {
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(compressedFile);
+        });
+        
+        const base64 = await base64Promise;
+        compressedImages.push(base64);
+      }
+
+      setPreviewImages(compressedImages);
+      toast.success(`${compressedImages.length} imagem(ns) processada(s) e comprimida(s)!`);
+    } catch (error) {
+      toast.error('Erro ao processar imagens: ' + error.message);
+    } finally {
+      setUploadingImage(false);
     }
-
-    // Validar tamanho (máximo 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('A imagem deve ter no máximo 2MB');
-      return;
-    }
-
-    // Converter para base64
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreviewImage(reader.result);
-    };
-    reader.readAsDataURL(file);
   };
 
   const uploadImageToProduct = async () => {
