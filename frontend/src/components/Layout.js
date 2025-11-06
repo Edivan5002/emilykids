@@ -101,11 +101,21 @@ const Layout = ({ children }) => {
   };
 
   return (
-    <div className="flex h-screen" style={{backgroundColor: '#F5F2E9'}}>
+    <div className="flex h-screen overflow-hidden" style={{backgroundColor: '#F5F2E9'}}>
+      {/* Backdrop para mobile */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <div
         className={`sidebar fixed top-0 left-0 h-full z-40 transition-all duration-300 ${
-          sidebarOpen ? 'w-64' : 'w-20'
+          isMobile
+            ? sidebarOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full'
+            : sidebarOpen ? 'w-64' : 'w-20'
         }`}
         style={{backgroundColor: '#F5F2E9'}}
       >
