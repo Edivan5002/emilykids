@@ -525,6 +525,46 @@ const Produtos = () => {
     }
   };
 
+  const definirImagemPrincipal = async (indice) => {
+    if (!editingId) {
+      // Se está criando, apenas atualiza estado local
+      setFotoPrincipalIndex(indice);
+      toast.success('Imagem principal definida! Salve o produto para confirmar.');
+      return;
+    }
+
+    // Se está editando, atualiza no servidor
+    try {
+      await axios.put(`${API}/produtos/${editingId}/imagem-principal/${indice}`);
+      toast.success('Imagem principal definida com sucesso!');
+      setFotoPrincipalIndex(indice);
+      fetchData();
+    } catch (error) {
+      toast.error('Erro ao definir imagem principal: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const handleReordenarImagens = async (novaOrdem) => {
+    if (!editingId) {
+      // Se está criando, apenas atualiza ordem local
+      setFormData(prev => ({
+        ...prev,
+        fotos: novaOrdem.map(item => item.foto)
+      }));
+      return;
+    }
+
+    // Se está editando, atualiza no servidor
+    try {
+      const indices = novaOrdem.map(item => item.originalIndex);
+      await axios.put(`${API}/produtos/${editingId}/reordenar-imagens`, { indices });
+      toast.success('Imagens reordenadas com sucesso!');
+      fetchData();
+    } catch (error) {
+      toast.error('Erro ao reordenar imagens: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
   const getMarcaNome = (marca_id) => {
     const marca = marcas.find(m => m.id === marca_id);
     return marca ? marca.nome : '-';
