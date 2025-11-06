@@ -7590,6 +7590,307 @@ async def relatorio_auditoria(
         "logs_recentes": logs[:50]  # Últimos 50 logs
     }
 
+# ========== ENDPOINTS ADMINISTRATIVOS ==========
+
+@api_router.post("/admin/estatisticas")
+async def admin_get_estatisticas(current_user: dict = Depends(require_permission("admin", "ler"))):
+    """Retorna estatísticas gerais do sistema para o painel administrativo"""
+    try:
+        stats = {
+            "vendas": await db.vendas.count_documents({}),
+            "vendas_canceladas": await db.vendas.count_documents({"$or": [{"cancelada": True}, {"status": "cancelada"}]}),
+            "orcamentos": await db.orcamentos.count_documents({}),
+            "notas_fiscais": await db.notas_fiscais.count_documents({}),
+            "produtos": await db.produtos.count_documents({}),
+            "clientes": await db.clientes.count_documents({}),
+            "fornecedores": await db.fornecedores.count_documents({}),
+            "logs": await db.logs.count_documents({}),
+            "logs_seguranca": await db.logs_seguranca.count_documents({}),
+            "usuarios": await db.usuarios.count_documents({}),
+            "movimentacoes_estoque": await db.movimentacoes_estoque.count_documents({}),
+            "inventarios": await db.inventarios.count_documents({})
+        }
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/admin/delete-vendas-antigas")
+async def admin_delete_vendas_antigas(
+    dias: int,
+    senha_mestra: str,
+    current_user: dict = Depends(require_permission("admin", "deletar"))
+):
+    """Deleta vendas mais antigas que X dias"""
+    # Verificar senha mestra
+    if senha_mestra != os.environ.get('ADMIN_MASTER_PASSWORD'):
+        raise HTTPException(status_code=403, detail="Senha mestra incorreta")
+    
+    try:
+        data_limite = (datetime.now(timezone.utc) - timedelta(days=dias)).isoformat()
+        
+        # Contar antes de deletar
+        count = await db.vendas.count_documents({"created_at": {"$lt": data_limite}})
+        
+        # Deletar vendas antigas
+        result = await db.vendas.delete_many({"created_at": {"$lt": data_limite}})
+        
+        # Log de auditoria
+        await log_action(
+            ip="0.0.0.0",
+            user_id=current_user["id"],
+            user_nome=current_user["nome"],
+            tela="administracao",
+            acao="deletar_vendas_antigas",
+            detalhes={"dias": dias, "vendas_deletadas": result.deleted_count}
+        )
+        
+        return {
+            "success": True,
+            "message": f"{result.deleted_count} vendas deletadas",
+            "deletadas": result.deleted_count
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/admin/limpar-logs")
+async def admin_limpar_logs(
+    dias: int,
+    senha_mestra: str,
+    current_user: dict = Depends(require_permission("admin", "deletar"))
+):
+    """Limpa logs mais antigos que X dias"""
+    if senha_mestra != os.environ.get('ADMIN_MASTER_PASSWORD'):
+        raise HTTPException(status_code=403, detail="Senha mestra incorreta")
+    
+    try:
+        data_limite = (datetime.now(timezone.utc) - timedelta(days=dias)).isoformat()
+        
+        # Deletar logs antigos
+        result_logs = await db.logs.delete_many({"timestamp": {"$lt": data_limite}})
+        result_security = await db.logs_seguranca.delete_many({"timestamp": {"$lt": data_limite}})
+        
+        total = result_logs.deleted_count + result_security.deleted_count
+        
+        # Log de auditoria
+        await log_action(
+            ip="0.0.0.0",
+            user_id=current_user["id"],
+            user_nome=current_user["nome"],
+            tela="administracao",
+            acao="limpar_logs",
+            detalhes={"dias": dias, "logs_deletados": result_logs.deleted_count, "logs_seguranca_deletados": result_security.deleted_count}
+        )
+        
+        return {
+            "success": True,
+            "message": f"{total} logs deletados",
+            "logs_sistema": result_logs.deleted_count,
+            "logs_seguranca": result_security.deleted_count,
+            "total": total
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/admin/resetar-modulo")
+async def admin_resetar_modulo(
+    modulo: str,
+    senha_mestra: str,
+    current_user: dict = Depends(require_permission("admin", "deletar"))
+):
+    """Reseta completamente um módulo (deleta todos os dados)"""
+    if senha_mestra != os.environ.get('ADMIN_MASTER_PASSWORD'):
+        raise HTTPException(status_code=403, detail="Senha mestra incorreta")
+    
+    modulos_validos = {
+        "vendas": "vendas",
+        "orcamentos": "orcamentos",
+        "notas_fiscais": "notas_fiscais",
+        "movimentacoes_estoque": "movimentacoes_estoque",
+        "inventarios": "inventarios",
+        "logs": "logs"
+    }
+    
+    if modulo not in modulos_validos:
+        raise HTTPException(status_code=400, detail="Módulo inválido")
+    
+    try:
+        collection_name = modulos_validos[modulo]
+        
+        # Contar antes
+        count = await db[collection_name].count_documents({})
+        
+        # Deletar tudo
+        result = await db[collection_name].delete_many({})
+        
+        # Log de auditoria
+        await log_action(
+            ip="0.0.0.0",
+            user_id=current_user["id"],
+            user_nome=current_user["nome"],
+            tela="administracao",
+            acao="resetar_modulo",
+            detalhes={"modulo": modulo, "registros_deletados": result.deleted_count}
+        )
+        
+        return {
+            "success": True,
+            "message": f"Módulo '{modulo}' resetado: {result.deleted_count} registros deletados",
+            "deletados": result.deleted_count
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/admin/remover-dados-teste")
+async def admin_remover_dados_teste(
+    senha_mestra: str,
+    current_user: dict = Depends(require_permission("admin", "deletar"))
+):
+    """Remove dados de teste baseado em critérios (emails de teste, nomes genéricos, etc)"""
+    if senha_mestra != os.environ.get('ADMIN_MASTER_PASSWORD'):
+        raise HTTPException(status_code=403, detail="Senha mestra incorreta")
+    
+    try:
+        deletados = {}
+        
+        # Clientes de teste (emails teste, cpf/cnpj padrões)
+        result_clientes = await db.clientes.delete_many({
+            "$or": [
+                {"email": {"$regex": "teste|test|demo", "$options": "i"}},
+                {"nome": {"$regex": "teste|test|demo", "$options": "i"}},
+                {"cpf_cnpj": {"$in": ["00000000000", "11111111111", "00000000000000", "11111111111111"]}}
+            ]
+        })
+        deletados["clientes"] = result_clientes.deleted_count
+        
+        # Fornecedores de teste
+        result_fornecedores = await db.fornecedores.delete_many({
+            "$or": [
+                {"email": {"$regex": "teste|test|demo", "$options": "i"}},
+                {"razao_social": {"$regex": "teste|test|demo", "$options": "i"}},
+                {"cnpj": {"$in": ["00000000000000", "11111111111111"]}}
+            ]
+        })
+        deletados["fornecedores"] = result_fornecedores.deleted_count
+        
+        # Produtos de teste
+        result_produtos = await db.produtos.delete_many({
+            "$or": [
+                {"nome": {"$regex": "teste|test|demo", "$options": "i"}},
+                {"sku": {"$regex": "TEST|DEMO", "$options": "i"}}
+            ]
+        })
+        deletados["produtos"] = result_produtos.deleted_count
+        
+        # Usuários de teste (exceto admin principal)
+        result_usuarios = await db.usuarios.delete_many({
+            "$and": [
+                {"$or": [
+                    {"email": {"$regex": "teste|test|demo", "$options": "i"}},
+                    {"nome": {"$regex": "teste|test|demo", "$options": "i"}}
+                ]},
+                {"papel": {"$ne": "admin"}}  # Não deletar admin
+            ]
+        })
+        deletados["usuarios"] = result_usuarios.deleted_count
+        
+        total = sum(deletados.values())
+        
+        # Log de auditoria
+        await log_action(
+            ip="0.0.0.0",
+            user_id=current_user["id"],
+            user_nome=current_user["nome"],
+            tela="administracao",
+            acao="remover_dados_teste",
+            detalhes={"deletados": deletados, "total": total}
+        )
+        
+        return {
+            "success": True,
+            "message": f"Dados de teste removidos: {total} registros",
+            "detalhes": deletados,
+            "total": total
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/admin/limpar-tudo")
+async def admin_limpar_tudo(
+    senha_mestra: str,
+    confirmar: str,
+    current_user: dict = Depends(require_permission("admin", "deletar"))
+):
+    """CUIDADO: Limpa TODOS os dados do sistema (exceto usuários admin)"""
+    if senha_mestra != os.environ.get('ADMIN_MASTER_PASSWORD'):
+        raise HTTPException(status_code=403, detail="Senha mestra incorreta")
+    
+    if confirmar != "LIMPAR TUDO":
+        raise HTTPException(status_code=400, detail="Confirmação inválida. Digite 'LIMPAR TUDO'")
+    
+    try:
+        deletados = {}
+        
+        # Deletar vendas e orçamentos
+        deletados["vendas"] = (await db.vendas.delete_many({})).deleted_count
+        deletados["orcamentos"] = (await db.orcamentos.delete_many({})).deleted_count
+        deletados["notas_fiscais"] = (await db.notas_fiscais.delete_many({})).deleted_count
+        
+        # Deletar estoque
+        deletados["movimentacoes_estoque"] = (await db.movimentacoes_estoque.delete_many({})).deleted_count
+        deletados["inventarios"] = (await db.inventarios.delete_many({})).deleted_count
+        
+        # Deletar produtos e cadastros
+        deletados["produtos"] = (await db.produtos.delete_many({})).deleted_count
+        deletados["clientes"] = (await db.clientes.delete_many({})).deleted_count
+        deletados["fornecedores"] = (await db.fornecedores.delete_many({})).deleted_count
+        deletados["marcas"] = (await db.marcas.delete_many({})).deleted_count
+        deletados["categorias"] = (await db.categorias.delete_many({})).deleted_count
+        deletados["subcategorias"] = (await db.subcategorias.delete_many({})).deleted_count
+        
+        # Deletar logs antigos (manter últimos 7 dias)
+        data_limite = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        deletados["logs"] = (await db.logs.delete_many({"timestamp": {"$lt": data_limite}})).deleted_count
+        deletados["logs_seguranca"] = (await db.logs_seguranca.delete_many({"timestamp": {"$lt": data_limite}})).deleted_count
+        
+        # NÃO deletar usuários admin
+        
+        total = sum(deletados.values())
+        
+        # Log de auditoria crítico
+        await log_action(
+            ip="0.0.0.0",
+            user_id=current_user["id"],
+            user_nome=current_user["nome"],
+            tela="administracao",
+            acao="limpar_tudo_sistema",
+            detalhes={"deletados": deletados, "total": total, "CRITICO": True}
+        )
+        
+        return {
+            "success": True,
+            "message": f"Sistema limpo: {total} registros deletados",
+            "detalhes": deletados,
+            "total": total
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/admin/logs-auditoria")
+async def admin_get_logs_auditoria(
+    limit: int = 50,
+    current_user: dict = Depends(require_permission("admin", "ler"))
+):
+    """Retorna logs de auditoria das ações administrativas"""
+    try:
+        logs = await db.logs.find(
+            {"tela": "administracao"},
+            {"_id": 0}
+        ).sort("timestamp", -1).limit(limit).to_list(limit)
+        
+        return {"logs": logs, "total": len(logs)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 app.include_router(api_router)
 
 app.add_middleware(
