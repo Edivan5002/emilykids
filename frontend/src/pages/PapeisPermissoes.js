@@ -259,10 +259,6 @@ const PapeisPermissoes = () => {
             <Key size={16} className="mr-2" />
             Permissões
           </TabsTrigger>
-          <TabsTrigger value="groups">
-            <Users size={16} className="mr-2" />
-            Grupos
-          </TabsTrigger>
           <TabsTrigger value="history">
             <History size={16} className="mr-2" />
             Histórico
