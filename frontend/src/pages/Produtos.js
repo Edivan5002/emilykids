@@ -28,6 +28,7 @@ const Produtos = () => {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, nome: '' });
   const [toggleDialog, setToggleDialog] = useState({ open: false, id: null, nome: '', ativo: false });
   const [historicoDialog, setHistoricoDialog] = useState({ open: false, produto_id: null, historico: [] });
+  const [loading, setLoading] = useState(false);
   const [relatorios, setRelatorios] = useState(null);
   
   // Filtros
