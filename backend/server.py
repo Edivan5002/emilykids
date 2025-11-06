@@ -3501,16 +3501,19 @@ async def ajuste_manual_estoque(request: AjusteEstoqueRequest, current_user: dic
     )
     
     # Registrar movimentação
-    movimentacao = MovimentacaoEstoque(
-        produto_id=request.produto_id,
-        tipo=tipo_movimentacao,
-        quantidade=abs(request.quantidade),
-        referencia_tipo="ajuste_manual",
-        referencia_id=f"ajuste_{datetime.now(timezone.utc).timestamp()}",
-        user_id=current_user["id"],
-        motivo=request.motivo
-    )
-    await db.movimentacoes_estoque.insert_one(movimentacao.model_dump())
+    movimentacao_dict = {
+        "id": str(uuid.uuid4()),
+        "produto_id": request.produto_id,
+        "tipo": tipo_movimentacao,
+        "quantidade": abs(request.quantidade),
+        "referencia_tipo": "ajuste_manual",
+        "referencia_id": f"ajuste_{datetime.now(timezone.utc).timestamp()}",
+        "user_id": current_user["id"],
+        "motivo": request.motivo if request.motivo else None,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.movimentacoes_estoque.insert_one(movimentacao_dict)
     
     # Log da ação
     await log_action(
