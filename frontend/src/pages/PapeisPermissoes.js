@@ -181,30 +181,6 @@ const PapeisPermissoes = () => {
     }
   };
 
-  const handleCreateGroup = async () => {
-    try {
-      await axios.post(`${API}/user-groups`, groupForm);
-      toast.success('Grupo criado com sucesso!');
-      setIsGroupModalOpen(false);
-      setGroupForm({ nome: '', descricao: '', user_ids: [], role_ids: [] });
-      fetchGroups();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao criar grupo');
-    }
-  };
-
-  const handleDeleteGroup = async (groupId) => {
-    if (!window.confirm('Tem certeza que deseja deletar este grupo?')) return;
-    
-    try {
-      await axios.delete(`${API}/user-groups/${groupId}`);
-      toast.success('Grupo deletado com sucesso!');
-      fetchGroups();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao deletar grupo');
-    }
-  };
-
   const resetRoleForm = () => {
     setRoleForm({
       nome: '',
