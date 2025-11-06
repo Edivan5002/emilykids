@@ -600,9 +600,10 @@ const Produtos = () => {
             </DialogHeader>
             <form onSubmit={handleSubmit}>
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-6">
                   <TabsTrigger value="basico">Básico</TabsTrigger>
                   <TabsTrigger value="precos">Preços</TabsTrigger>
+                  <TabsTrigger value="imagens">Imagens</TabsTrigger>
                   <TabsTrigger value="variacoes">Variações</TabsTrigger>
                   <TabsTrigger value="extras">Extras</TabsTrigger>
                   <TabsTrigger value="kits">Kits</TabsTrigger>
