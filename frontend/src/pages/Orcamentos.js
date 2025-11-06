@@ -603,15 +603,7 @@ const Orcamentos = () => {
         )}
       </div>
 
-      <AutorizacaoModal
-        isOpen={showAutorizacao}
-        onClose={() => {
-          setShowAutorizacao(false);
-          setOrcamentoParaExcluir(null);
-        }}
-        onAutorizado={handleAutorizacaoSucesso}
-        acao="excluir este orçamento"
-      />
+      {/* AutorizacaoModal removed */}
     </div>
   );
 };
