@@ -319,6 +319,7 @@ const Produtos = () => {
       descricao: produto.descricao || '',
       ativo: produto.ativo
     });
+    setFotoPrincipalIndex(produto.foto_principal_index || 0);
     setIsOpen(true);
   };
 
