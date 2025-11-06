@@ -317,7 +317,7 @@ const Administracao = () => {
                 </CardTitle>
                 <CardDescription>
                   Use estas opções apenas se souber o que está fazendo. 
-                  <strong className="block mt-1">Nota:</strong> "Limpar Todo o Sistema" preserva Usuários e Papéis/Permissões.
+                  <strong className="block mt-1">Nota:</strong> "Limpar Todo o Sistema" preserva APENAS Usuários e Papéis/Permissões. TODOS os outros dados, incluindo logs, serão deletados permanentemente.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
