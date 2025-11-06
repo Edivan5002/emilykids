@@ -34,12 +34,25 @@ const Clientes = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = clientes.filter(c =>
-      c.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.cpf_cnpj.includes(searchTerm)
-    );
+    let filtered = clientes;
+
+    // Filtro por busca (nome ou CPF/CNPJ)
+    if (searchTerm) {
+      filtered = filtered.filter(c =>
+        c.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.cpf_cnpj.includes(searchTerm)
+      );
+    }
+
+    // Filtro por status
+    if (statusFilter !== 'todos') {
+      filtered = filtered.filter(c => 
+        statusFilter === 'ativo' ? c.ativo : !c.ativo
+      );
+    }
+
     setFilteredClientes(filtered);
-  }, [searchTerm, clientes]);
+  }, [searchTerm, statusFilter, clientes]);
 
   const fetchClientes = async () => {
     try {
