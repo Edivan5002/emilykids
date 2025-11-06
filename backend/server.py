@@ -7759,11 +7759,11 @@ async def admin_resetar_modulo(
 
 @api_router.post("/admin/remover-dados-teste")
 async def admin_remover_dados_teste(
-    senha_mestra: str,
+    request: AdminRemoverTesteRequest,
     current_user: dict = Depends(require_permission("admin", "deletar"))
 ):
     """Remove dados de teste baseado em critérios (emails de teste, nomes genéricos, etc)"""
-    if senha_mestra != os.environ.get('ADMIN_MASTER_PASSWORD'):
+    if request.senha_mestra != os.environ.get('ADMIN_MASTER_PASSWORD'):
         raise HTTPException(status_code=403, detail="Senha mestra incorreta")
     
     try:
