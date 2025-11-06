@@ -90,13 +90,14 @@ const Produtos = () => {
   }, [filtros, produtos]);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const [prodRes, marcaRes, catRes, subRes, fornRes] = await Promise.all([
-        axios.get(`${API}/produtos?incluir_inativos=true`),
-        axios.get(`${API}/marcas`),
-        axios.get(`${API}/categorias`),
-        axios.get(`${API}/subcategorias`),
-        axios.get(`${API}/fornecedores?incluir_inativos=true`)
+        axios.get(`${API}/produtos?incluir_inativos=true&limit=0`),
+        axios.get(`${API}/marcas?limit=0`),
+        axios.get(`${API}/categorias?limit=0`),
+        axios.get(`${API}/subcategorias?limit=0`),
+        axios.get(`${API}/fornecedores?incluir_inativos=true&limit=0`)
       ]);
       setProdutos(prodRes.data);
       setProdutosFiltrados(prodRes.data);
@@ -105,7 +106,9 @@ const Produtos = () => {
       setSubcategorias(subRes.data.filter(s => s.ativo));
       setFornecedores(fornRes.data.filter(f => f.ativo));
     } catch (error) {
-      toast.error('Erro ao carregar dados');
+      toast.error('Erro ao carregar dados. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
