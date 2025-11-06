@@ -21,8 +21,6 @@ const Orcamentos = () => {
   const [produtos, setProdutos] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showAutorizacao, setShowAutorizacao] = useState(false);
-  const [orcamentoParaExcluir, setOrcamentoParaExcluir] = useState(null);
 
   const [formData, setFormData] = useState({
     cliente_id: '',
