@@ -568,7 +568,7 @@ const NotasFiscais = () => {
                       </Button>
                       <Button
                         variant="outline"
-                        onClick={() => handleCancelar(nota.id, nota.confirmado)}
+                        onClick={() => setCancelDialog({ open: true, notaId: nota.id, confirmada: nota.confirmado, motivo: '' })}
                         className="border-orange-500 text-orange-600 hover:bg-orange-50"
                         data-testid={`cancelar-nf-${nota.id}`}
                       >
@@ -588,7 +588,7 @@ const NotasFiscais = () => {
                       </div>
                       <Button
                         variant="outline"
-                        onClick={() => handleCancelar(nota.id, nota.confirmado)}
+                        onClick={() => setCancelDialog({ open: true, notaId: nota.id, confirmada: nota.confirmado, motivo: '' })}
                         className="border-orange-500 text-orange-600 hover:bg-orange-50"
                         data-testid={`cancelar-nf-confirmada-${nota.id}`}
                       >
