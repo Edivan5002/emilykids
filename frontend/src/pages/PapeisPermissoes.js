@@ -18,7 +18,10 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  History
+  History,
+  Eye,
+  UserCog,
+  FileEdit
 } from 'lucide-react';
 import { toast } from 'sonner';
 
