@@ -34,6 +34,7 @@ const Administracao = () => {
   const [senhaMestra, setSenhaMestra] = useState('');
   const [logsAuditoria, setLogsAuditoria] = useState([]);
   const [confirmDialog, setConfirmDialog] = useState({ open: false, action: null, data: {} });
+  const [detalhesDialog, setDetalhesDialog] = useState({ open: false, log: null });
   
   // Estados para cada tipo de operação
   const [diasVendas, setDiasVendas] = useState(90);
