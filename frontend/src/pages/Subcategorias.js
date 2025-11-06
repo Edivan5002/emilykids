@@ -212,6 +212,52 @@ const Subcategorias = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Filtros */}
+      <div className="mb-4 grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <Input
+            placeholder="Buscar por nome..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={categoriaFilter} onValueChange={setCategoriaFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="Categoria" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas as categorias</SelectItem>
+            {categorias.map(c => (
+              <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={marcaFilter} onValueChange={setMarcaFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="Marca" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas as marcas</SelectItem>
+            {marcas.map(m => (
+              <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os status</SelectItem>
+            <SelectItem value="ativo">Apenas Ativos</SelectItem>
+            <SelectItem value="inativo">Apenas Inativos</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="table-container">
         <table>
           <thead>
@@ -224,7 +270,7 @@ const Subcategorias = () => {
             </tr>
           </thead>
           <tbody>
-            {subcategorias.map((s) => (
+            {filteredSubcategorias.map((s) => (
               <tr key={s.id}>
                 <td className="font-medium">{s.nome}</td>
                 <td>{getCategoriaNome(s.categoria_id)}</td>
