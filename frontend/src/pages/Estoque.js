@@ -50,20 +50,27 @@ const Estoque = () => {
 
   const fetchData = async () => {
     try {
-      const [prodRes, movRes, alertRes, marcasRes, catRes, userRes] = await Promise.all([
+      const [prodRes, movRes, alertRes, marcasRes, catRes] = await Promise.all([
         axios.get(`${API}/produtos`),
         axios.get(`${API}/estoque/movimentacoes`),
         axios.get(`${API}/estoque/alertas`),
         axios.get(`${API}/marcas`),
-        axios.get(`${API}/categorias`),
-        axios.get(`${API}/usuarios`)
+        axios.get(`${API}/categorias`)
       ]);
       setProdutos(prodRes.data);
       setMovimentacoes(movRes.data);
       setAlertas(alertRes.data);
       setMarcas(marcasRes.data);
       setCategorias(catRes.data);
-      setUsuarios(userRes.data);
+
+      // Tentar buscar usuários (pode falhar se não for admin)
+      try {
+        const userRes = await axios.get(`${API}/usuarios`);
+        setUsuarios(userRes.data);
+      } catch (userError) {
+        console.log('Não foi possível carregar lista de usuários');
+        setUsuarios([]);
+      }
     } catch (error) {
       toast.error('Erro ao carregar dados');
     }
