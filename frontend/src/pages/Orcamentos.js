@@ -51,17 +51,20 @@ const Orcamentos = () => {
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const [orcRes, cliRes, prodRes] = await Promise.all([
-        axios.get(`${API}/orcamentos`),
-        axios.get(`${API}/clientes`),
-        axios.get(`${API}/produtos`)
+        axios.get(`${API}/orcamentos?limit=0`),
+        axios.get(`${API}/clientes?limit=0`),
+        axios.get(`${API}/produtos?limit=0`)
       ]);
       setOrcamentos(orcRes.data);
       setClientes(cliRes.data);
       setProdutos(prodRes.data);
     } catch (error) {
-      toast.error('Erro ao carregar dados');
+      toast.error('Erro ao carregar dados. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
