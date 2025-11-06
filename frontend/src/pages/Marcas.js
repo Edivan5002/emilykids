@@ -176,7 +176,23 @@ const Marcas = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredMarcas.map((m) => (
+            {loading ? (
+              <tr>
+                <td colSpan="3" className="text-center py-8">
+                  <div className="flex flex-col items-center justify-center space-y-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <p className="text-gray-600">Carregando marcas...</p>
+                  </div>
+                </td>
+              </tr>
+            ) : filteredMarcas.length === 0 ? (
+              <tr>
+                <td colSpan="3" className="text-center py-8 text-gray-500">
+                  Nenhuma marca encontrada
+                </td>
+              </tr>
+            ) : (
+              filteredMarcas.map((m) => (
               <tr key={m.id}>
                 <td className="font-medium">{m.nome}</td>
                 <td>
