@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, ShoppingCart, BarChart3, Loader2 } from 'lucide-react';
+import { TrendingUp, ShoppingCart, BarChart3, Loader2, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Componente para ícone Emily Kids (boneca com balão)
