@@ -209,6 +209,16 @@ const Logs = () => {
     }
   };
 
+  const handleVerDetalhes = (log) => {
+    setDetalhesLog(log);
+    setIsDetalhesOpen(true);
+  };
+
+  const handleCloseDetalhes = () => {
+    setIsDetalhesOpen(false);
+    setDetalhesLog(null);
+  };
+
   const handleArquivar = async () => {
     if (!window.confirm('Deseja arquivar logs antigos? Esta ação não pode ser desfeita.')) {
       return;
