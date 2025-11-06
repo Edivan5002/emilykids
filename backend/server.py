@@ -2439,9 +2439,22 @@ async def validar_autorizacao(auth_data: AutorizacaoRequest, current_user: dict 
 # ========== CLIENTES ==========
 
 @api_router.get("/clientes", response_model=List[Cliente])
-async def get_clientes(incluir_inativos: bool = False, current_user: dict = Depends(require_permission("clientes", "ler"))):
+async def get_clientes(
+    incluir_inativos: bool = False,
+    page: int = 1,
+    limit: int = 100,
+    current_user: dict = Depends(require_permission("clientes", "ler"))
+):
+    """Lista clientes com paginação opcional"""
     filtro = {} if incluir_inativos else {"ativo": True}
-    clientes = await db.clientes.find(filtro, {"_id": 0}).to_list(1000)
+    
+    # Se limit=0, retorna todos (mantém compatibilidade)
+    if limit == 0:
+        clientes = await db.clientes.find(filtro, {"_id": 0}).to_list(10000)
+    else:
+        skip = (page - 1) * limit
+        clientes = await db.clientes.find(filtro, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    
     return clientes
 
 @api_router.post("/clientes", response_model=Cliente)
