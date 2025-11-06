@@ -1267,6 +1267,145 @@ const Estoque = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog: Detalhes do Inventário */}
+      <Dialog open={detalhesInventarioDialog.open} onOpenChange={(open) => setDetalhesInventarioDialog({ open, inventario: null })}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clipboard className="text-blue-600" size={24} />
+              Detalhes do Inventário
+            </DialogTitle>
+          </DialogHeader>
+          
+          {detalhesInventarioDialog.inventario && (
+            <div className="space-y-6">
+              {/* Informações Gerais */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Informações Gerais</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Número do Inventário</p>
+                      <p className="font-semibold text-lg">{detalhesInventarioDialog.inventario.numero}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Status</p>
+                      <span className={`inline-block px-3 py-1 rounded text-sm font-medium ${
+                        detalhesInventarioDialog.inventario.status === 'concluido' 
+                          ? 'bg-green-100 text-green-700' 
+                          : detalhesInventarioDialog.inventario.status === 'cancelado'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {detalhesInventarioDialog.inventario.status === 'concluido' ? 'Concluído' : 
+                         detalhesInventarioDialog.inventario.status === 'cancelado' ? 'Cancelado' : 'Em Andamento'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Data de Início</p>
+                      <p className="font-medium">
+                        {new Date(detalhesInventarioDialog.inventario.data_inicio).toLocaleString('pt-BR')}
+                      </p>
+                    </div>
+                    {detalhesInventarioDialog.inventario.data_conclusao && (
+                      <div>
+                        <p className="text-sm text-gray-600">Data de Conclusão</p>
+                        <p className="font-medium">
+                          {new Date(detalhesInventarioDialog.inventario.data_conclusao).toLocaleString('pt-BR')}
+                        </p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm text-gray-600">Responsável</p>
+                      <p className="font-medium">{detalhesInventarioDialog.inventario.responsavel_nome}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Total de Produtos</p>
+                      <p className="font-medium">{detalhesInventarioDialog.inventario.total_produtos}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Produtos Contados</p>
+                      <p className="font-medium">{detalhesInventarioDialog.inventario.total_contados}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Divergências</p>
+                      <p className="font-medium text-orange-600">{detalhesInventarioDialog.inventario.total_divergencias}</p>
+                    </div>
+                    {detalhesInventarioDialog.inventario.motivo_cancelamento && (
+                      <div className="col-span-2">
+                        <p className="text-sm text-gray-600">Motivo do Cancelamento</p>
+                        <p className="font-medium text-red-600">{detalhesInventarioDialog.inventario.motivo_cancelamento}</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Itens do Inventário */}
+              {detalhesInventarioDialog.inventario.itens && detalhesInventarioDialog.inventario.itens.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Itens do Inventário</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-full">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="text-left p-3 text-sm font-semibold">SKU</th>
+                            <th className="text-left p-3 text-sm font-semibold">Produto</th>
+                            <th className="text-center p-3 text-sm font-semibold">Estoque Sistema</th>
+                            <th className="text-center p-3 text-sm font-semibold">Contado</th>
+                            <th className="text-center p-3 text-sm font-semibold">Diferença</th>
+                            <th className="text-left p-3 text-sm font-semibold">Observação</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {detalhesInventarioDialog.inventario.itens.map((item, idx) => (
+                            <tr key={idx} className={`border-b ${
+                              item.diferenca !== null && item.diferenca !== 0 
+                                ? 'bg-yellow-50' 
+                                : item.estoque_contado !== null 
+                                ? 'bg-green-50' 
+                                : ''
+                            }`}>
+                              <td className="p-3 text-sm font-mono">{item.produto_sku}</td>
+                              <td className="p-3 text-sm">{item.produto_nome}</td>
+                              <td className="p-3 text-sm text-center font-semibold">{item.estoque_sistema}</td>
+                              <td className="p-3 text-sm text-center">
+                                {item.estoque_contado !== null ? (
+                                  <span className="font-semibold text-green-600">{item.estoque_contado}</span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-sm text-center">
+                                {item.diferenca !== null && item.diferenca !== 0 ? (
+                                  <span className={`font-bold ${item.diferenca > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    {item.diferenca > 0 ? '+' : ''}{item.diferenca}
+                                  </span>
+                                ) : item.diferenca === 0 ? (
+                                  <span className="text-green-600">✓</span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-sm text-gray-600">{item.observacao || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
