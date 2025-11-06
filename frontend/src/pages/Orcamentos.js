@@ -586,16 +586,7 @@ const Orcamentos = () => {
                     </Button>
                   </>
                 )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleExcluirClick(orcamento)}
-                  data-testid={`excluir-${orcamento.id}`}
-                >
-                  <Trash2 className="mr-2 text-red-500" size={16} />
-                  Excluir
-                  {user?.papel === 'vendedor' && <Shield className="ml-1" size={12} style={{color: '#E76F51'}} />}
-                </Button>
+                {/* Excluir button removed */}
               </div>
             </CardContent>
           </Card>
