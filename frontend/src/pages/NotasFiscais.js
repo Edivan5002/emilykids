@@ -365,18 +365,28 @@ const NotasFiscais = () => {
                     <Package size={18} />
                     Adicionar Item
                   </h3>
+                  
+                  {produtos.length === 0 && (
+                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg mb-3">
+                      <p className="text-sm text-yellow-800">
+                        {loading ? 'Carregando produtos...' : 'Nenhum produto cadastrado no sistema'}
+                      </p>
+                    </div>
+                  )}
+                  
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <Label className="text-xs">Produto</Label>
                       <Select 
                         value={novoItem.produto_id} 
                         onValueChange={(v) => setNovoItem({ ...novoItem, produto_id: v })}
+                        disabled={produtos.length === 0}
                       >
                         <SelectTrigger className="h-9">
-                          <SelectValue placeholder="Selecione" />
+                          <SelectValue placeholder={produtos.length === 0 ? "Sem produtos" : "Selecione"} />
                         </SelectTrigger>
                         <SelectContent>
-                          {produtos.map(p => (
+                          {produtos.filter(p => p.ativo !== false).map(p => (
                             <SelectItem key={p.id} value={p.id}>
                               {p.nome} - {p.sku}
                             </SelectItem>
