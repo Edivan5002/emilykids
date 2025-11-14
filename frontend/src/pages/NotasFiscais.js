@@ -43,17 +43,27 @@ const NotasFiscais = () => {
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const [nfRes, fornRes, prodRes] = await Promise.all([
         axios.get(`${API}/notas-fiscais`),
-        axios.get(`${API}/fornecedores`),
-        axios.get(`${API}/produtos`)
+        axios.get(`${API}/fornecedores?limit=0`),
+        axios.get(`${API}/produtos?limit=0`)
       ]);
-      setNotasFiscais(nfRes.data);
-      setFornecedores(fornRes.data);
-      setProdutos(prodRes.data);
+      
+      // Verificar se os dados estão paginados
+      const notasFiscaisData = nfRes.data?.data || nfRes.data || [];
+      const fornecedoresData = fornRes.data?.data || fornRes.data || [];
+      const produtosData = prodRes.data?.data || prodRes.data || [];
+      
+      setNotasFiscais(notasFiscaisData);
+      setFornecedores(fornecedoresData);
+      setProdutos(produtosData);
     } catch (error) {
+      console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar dados');
+    } finally {
+      setLoading(false);
     }
   };
 
