@@ -184,30 +184,108 @@ const Orcamentos = () => {
   };
 
   const handleConverterVenda = async (orcamentoId) => {
-    const formasPagamento = ['cartao', 'pix', 'boleto', 'dinheiro'];
-    const forma = prompt(`Forma de pagamento:\n1 - Cartão\n2 - PIX\n3 - Boleto\n4 - Dinheiro\n\nDigite 1, 2, 3 ou 4:`);
-    
-    const formaMap = { '1': 'cartao', '2': 'pix', '3': 'boleto', '4': 'dinheiro' };
-    const formaPagamento = formaMap[forma];
-    
-    if (!formaPagamento) {
-      toast.error('Forma de pagamento inválida');
+    // Buscar o orçamento completo
+    const orcamento = orcamentos.find(o => o.id === orcamentoId);
+    if (!orcamento) {
+      toast.error('Orçamento não encontrado');
       return;
     }
 
+    // Abrir modal de conversão com os dados do orçamento
+    setModalConversao({
+      open: true,
+      orcamento: orcamento,
+      itens: [...orcamento.itens], // Cópia dos itens
+      formaPagamento: '',
+      desconto: orcamento.desconto || 0,
+      frete: orcamento.frete || 0,
+      observacoes: ''
+    });
+  };
+
+  const handleAdicionarItemConversao = () => {
+    if (!novoItemConversao.produto_id || novoItemConversao.quantidade <= 0 || novoItemConversao.preco_unitario <= 0) {
+      toast.error('Preencha todos os campos do item');
+      return;
+    }
+
+    const produto = produtos.find(p => p.id === novoItemConversao.produto_id);
+    if (!produto) {
+      toast.error('Produto não encontrado');
+      return;
+    }
+
+    const itemCompleto = {
+      produto_id: novoItemConversao.produto_id,
+      produto_nome: produto.nome,
+      produto_sku: produto.sku,
+      quantidade: novoItemConversao.quantidade,
+      preco_unitario: novoItemConversao.preco_unitario,
+      subtotal: parseFloat((novoItemConversao.quantidade * novoItemConversao.preco_unitario).toFixed(2))
+    };
+
+    setModalConversao({
+      ...modalConversao,
+      itens: [...modalConversao.itens, itemCompleto]
+    });
+
+    setNovoItemConversao({
+      produto_id: '',
+      quantidade: 1,
+      preco_unitario: 0
+    });
+
+    toast.success('Item adicionado');
+  };
+
+  const handleRemoverItemConversao = (index) => {
+    const novosItens = modalConversao.itens.filter((_, idx) => idx !== index);
+    setModalConversao({
+      ...modalConversao,
+      itens: novosItens
+    });
+    toast.success('Item removido');
+  };
+
+  const handleEfetivarVenda = async () => {
+    if (!modalConversao.formaPagamento) {
+      toast.error('Selecione a forma de pagamento');
+      return;
+    }
+
+    if (modalConversao.itens.length === 0) {
+      toast.error('Adicione pelo menos um item');
+      return;
+    }
+
+    setLoading(true);
     try {
-      // Enviar como JSON no corpo da requisição
-      await axios.post(`${API}/orcamentos/${orcamentoId}/converter-venda`, {
-        forma_pagamento: formaPagamento,
-        desconto: null,  // Mantém o desconto do orçamento
-        frete: null,     // Mantém o frete do orçamento
-        observacoes: null
+      // Enviar conversão com os itens editados
+      await axios.post(`${API}/orcamentos/${modalConversao.orcamento.id}/converter-venda`, {
+        forma_pagamento: modalConversao.formaPagamento,
+        desconto: modalConversao.desconto,
+        frete: modalConversao.frete,
+        observacoes: modalConversao.observacoes,
+        itens: modalConversao.itens.map(item => ({
+          produto_id: item.produto_id,
+          quantidade: item.quantidade,
+          preco_unitario: item.preco_unitario
+        }))
       });
+      
       toast.success('Orçamento convertido em venda com sucesso!');
+      setModalConversao({ open: false, orcamento: null, itens: [], formaPagamento: '', desconto: 0, frete: 0, observacoes: '' });
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao converter');
+      toast.error(error.response?.data?.detail || 'Erro ao converter em venda');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleCancelarConversao = () => {
+    setModalConversao({ open: false, orcamento: null, itens: [], formaPagamento: '', desconto: 0, frete: 0, observacoes: '' });
+    setNovoItemConversao({ produto_id: '', quantidade: 1, preco_unitario: 0 });
   };
 
   const handleDevolver = async (orcamentoId) => {
