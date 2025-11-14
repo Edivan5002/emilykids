@@ -390,7 +390,10 @@ const NotasFiscais = () => {
                         type="number"
                         min="1"
                         value={novoItem.quantidade}
-                        onChange={(e) => setNovoItem({ ...novoItem, quantidade: parseInt(e.target.value) })}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 0;
+                          setNovoItem({ ...novoItem, quantidade: val });
+                        }}
                         className="h-9"
                       />
                     </div>
@@ -401,7 +404,10 @@ const NotasFiscais = () => {
                         step="0.01"
                         min="0.01"
                         value={novoItem.preco_unitario}
-                        onChange={(e) => setNovoItem({ ...novoItem, preco_unitario: parseFloat(e.target.value) })}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0;
+                          setNovoItem({ ...novoItem, preco_unitario: val });
+                        }}
                         className="h-9"
                       />
                     </div>
