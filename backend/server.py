@@ -5094,12 +5094,46 @@ async def converter_orcamento_venda(
                 detail=f"Estoque insuficiente para '{produto['nome']}'. Estoque foi vendido para outro cliente."
             )
     
+    # Usar novos itens se fornecidos, senão usar do orçamento
+    itens_final = conversao.itens if conversao.itens is not None else orcamento["itens"]
+    
+    # Se itens foram editados, reverter estoque dos itens originais e validar novos
+    if conversao.itens is not None:
+        # Reverter estoque dos itens originais do orçamento
+        for item in orcamento["itens"]:
+            produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
+            if produto:
+                novo_estoque = produto["estoque_atual"] + item["quantidade"]
+                await db.produtos.update_one(
+                    {"id": item["produto_id"]},
+                    {"$set": {"estoque_atual": novo_estoque}}
+                )
+        
+        # Validar e reservar estoque dos novos itens
+        for item in itens_final:
+            produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
+            if not produto:
+                raise HTTPException(status_code=404, detail=f"Produto {item['produto_id']} não encontrado")
+            
+            if produto["estoque_atual"] < item["quantidade"]:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Estoque insuficiente para '{produto['nome']}'. Disponível: {produto['estoque_atual']}"
+                )
+            
+            # Reservar estoque
+            novo_estoque = produto["estoque_atual"] - item["quantidade"]
+            await db.produtos.update_one(
+                {"id": item["produto_id"]},
+                {"$set": {"estoque_atual": novo_estoque}}
+            )
+    
     # Usar novo desconto/frete se fornecido, senão usar do orçamento
     desconto_final = conversao.desconto if conversao.desconto is not None else orcamento["desconto"]
     frete_final = conversao.frete if conversao.frete is not None else orcamento["frete"]
     
     # Recalcular total
-    subtotal = sum(item["quantidade"] * item["preco_unitario"] for item in orcamento["itens"])
+    subtotal = sum(item["quantidade"] * item["preco_unitario"] for item in itens_final)
     total_final = subtotal - desconto_final + frete_final
     
     # Gerar número sequencial para a venda
