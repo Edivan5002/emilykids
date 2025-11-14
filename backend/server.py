@@ -5143,7 +5143,7 @@ async def converter_orcamento_venda(
     venda = Venda(
         numero_venda=numero_venda,
         cliente_id=orcamento["cliente_id"],
-        itens=orcamento["itens"],
+        itens=itens_final,
         desconto=desconto_final,
         frete=frete_final,
         subtotal=subtotal,
@@ -5158,7 +5158,7 @@ async def converter_orcamento_venda(
             "data": datetime.now(timezone.utc).isoformat(),
             "usuario": current_user["nome"],
             "acao": "conversao_orcamento",
-            "detalhes": f"Venda {numero_venda} criada a partir do orçamento {orcamento_id}"
+            "detalhes": f"Venda {numero_venda} criada a partir do orçamento {orcamento_id}{' (com itens editados)' if conversao.itens is not None else ''}"
         }]
     )
     
