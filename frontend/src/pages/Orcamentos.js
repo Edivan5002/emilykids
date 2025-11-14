@@ -826,7 +826,287 @@ const Orcamentos = () => {
         )}
       </div>
 
-      {/* AutorizacaoModal removed */}
+      {/* Modal de Conversão em Venda */}
+      <Dialog open={modalConversao.open} onOpenChange={(open) => !open && handleCancelarConversao()}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Check className="text-green-600" size={24} />
+              Converter Orçamento em Venda
+            </DialogTitle>
+          </DialogHeader>
+
+          {modalConversao.orcamento && (
+            <div className="space-y-6">
+              {/* Informações do Orçamento */}
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="pt-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Orçamento:</span>
+                      <span className="ml-2 font-semibold">{modalConversao.orcamento.numero}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Cliente:</span>
+                      <span className="ml-2 font-semibold">{getClienteNome(modalConversao.orcamento.cliente_id)}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Tabs defaultValue="itens">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="itens">
+                    <Package size={16} className="mr-2" />
+                    Itens da Venda
+                  </TabsTrigger>
+                  <TabsTrigger value="pagamento">
+                    <DollarSign size={16} className="mr-2" />
+                    Pagamento
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* ABA ITENS */}
+                <TabsContent value="itens" className="space-y-4">
+                  {/* Lista de Itens */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Itens do Orçamento</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {modalConversao.itens.length > 0 ? (
+                        <div className="space-y-2">
+                          {modalConversao.itens.map((item, idx) => (
+                            <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                              <div className="flex-1">
+                                <p className="font-medium">{item.produto_nome || getProdutoNome(item.produto_id)}</p>
+                                <p className="text-sm text-gray-600">
+                                  Qtd: {item.quantidade} x R$ {item.preco_unitario.toFixed(2)} = 
+                                  <span className="font-semibold ml-1">R$ {item.subtotal.toFixed(2)}</span>
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoverItemConversao(idx)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <Package size={48} className="mx-auto mb-2 text-gray-300" />
+                          <p>Nenhum item adicionado</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Adicionar Novo Item */}
+                  <Card className="border-green-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Plus size={18} className="text-green-600" />
+                        Adicionar Item
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-4 gap-3">
+                        <div className="col-span-2">
+                          <Label>Produto</Label>
+                          <Select 
+                            value={novoItemConversao.produto_id} 
+                            onValueChange={(v) => {
+                              const prod = produtos.find(p => p.id === v);
+                              setNovoItemConversao({ 
+                                ...novoItemConversao, 
+                                produto_id: v,
+                                preco_unitario: prod?.preco_venda || 0
+                              });
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o produto" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {produtos.filter(p => p.ativo !== false).map(p => (
+                                <SelectItem key={p.id} value={p.id}>
+                                  {p.nome} - R$ {p.preco_venda?.toFixed(2)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Quantidade</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={novoItemConversao.quantidade}
+                            onChange={(e) => setNovoItemConversao({ 
+                              ...novoItemConversao, 
+                              quantidade: parseInt(e.target.value) || 1 
+                            })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Preço Unit.</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={novoItemConversao.preco_unitario}
+                            onChange={(e) => setNovoItemConversao({ 
+                              ...novoItemConversao, 
+                              preco_unitario: parseFloat(e.target.value) || 0 
+                            })}
+                          />
+                        </div>
+                      </div>
+                      <Button 
+                        onClick={handleAdicionarItemConversao}
+                        className="w-full mt-3"
+                        variant="outline"
+                      >
+                        <Plus size={16} className="mr-2" />
+                        Adicionar Item
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Totais */}
+                  <Card className="bg-gray-50">
+                    <CardContent className="pt-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span>Subtotal:</span>
+                          <span className="font-semibold">
+                            R$ {modalConversao.itens.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Desconto:</span>
+                          <span className="font-semibold text-red-600">
+                            - R$ {(modalConversao.desconto || 0).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Frete:</span>
+                          <span className="font-semibold text-blue-600">
+                            + R$ {(modalConversao.frete || 0).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-lg font-bold border-t pt-2">
+                          <span>Total:</span>
+                          <span className="text-green-600">
+                            R$ {(
+                              modalConversao.itens.reduce((sum, item) => sum + item.subtotal, 0) 
+                              - (modalConversao.desconto || 0) 
+                              + (modalConversao.frete || 0)
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* ABA PAGAMENTO */}
+                <TabsContent value="pagamento" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Dados do Pagamento</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label>Forma de Pagamento *</Label>
+                        <Select 
+                          value={modalConversao.formaPagamento} 
+                          onValueChange={(v) => setModalConversao({ ...modalConversao, formaPagamento: v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a forma de pagamento" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                            <SelectItem value="pix">PIX</SelectItem>
+                            <SelectItem value="cartao">Cartão</SelectItem>
+                            <SelectItem value="boleto">Boleto</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Desconto (R$)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={modalConversao.desconto}
+                            onChange={(e) => setModalConversao({ 
+                              ...modalConversao, 
+                              desconto: parseFloat(e.target.value) || 0 
+                            })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Frete (R$)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={modalConversao.frete}
+                            onChange={(e) => setModalConversao({ 
+                              ...modalConversao, 
+                              frete: parseFloat(e.target.value) || 0 
+                            })}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label>Observações</Label>
+                        <textarea
+                          className="w-full p-2 border rounded-md"
+                          rows="3"
+                          value={modalConversao.observacoes}
+                          onChange={(e) => setModalConversao({ 
+                            ...modalConversao, 
+                            observacoes: e.target.value 
+                          })}
+                          placeholder="Observações sobre a venda..."
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+
+              {/* Botões de Ação */}
+              <div className="flex gap-3 justify-end border-t pt-4">
+                <Button
+                  variant="outline"
+                  onClick={handleCancelarConversao}
+                  disabled={loading}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleEfetivarVenda}
+                  disabled={loading || modalConversao.itens.length === 0 || !modalConversao.formaPagamento}
+                  style={{backgroundColor: '#2C9AA1'}}
+                >
+                  {loading ? 'Processando...' : 'Efetivar Venda'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
