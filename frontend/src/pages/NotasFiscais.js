@@ -68,24 +68,39 @@ const NotasFiscais = () => {
   };
 
   const handleAddItem = () => {
-    if (!novoItem.produto_id || novoItem.quantidade <= 0 || novoItem.preco_unitario <= 0) {
-      toast.error('Preencha todos os campos do item');
+    // Validações detalhadas
+    if (!novoItem.produto_id) {
+      toast.error('Selecione um produto');
+      return;
+    }
+    
+    if (!novoItem.quantidade || novoItem.quantidade <= 0) {
+      toast.error('Quantidade deve ser maior que zero');
+      return;
+    }
+    
+    if (!novoItem.preco_unitario || novoItem.preco_unitario <= 0) {
+      toast.error('Preço unitário deve ser maior que zero');
       return;
     }
 
     const produto = produtos.find(p => p.id === novoItem.produto_id);
-    if (!produto) return;
+    if (!produto) {
+      toast.error('Produto não encontrado');
+      return;
+    }
 
     const itemCompleto = {
       ...novoItem,
       produto_nome: produto.nome,
-      subtotal: novoItem.quantidade * novoItem.preco_unitario
+      produto_sku: produto.sku,
+      subtotal: parseFloat((novoItem.quantidade * novoItem.preco_unitario).toFixed(2))
     };
 
     setItensNota([...itensNota, itemCompleto]);
     
     // Atualizar valor total
-    const novoTotal = [...itensNota, itemCompleto].reduce((sum, item) => sum + item.subtotal, 0);
+    const novoTotal = parseFloat([...itensNota, itemCompleto].reduce((sum, item) => sum + item.subtotal, 0).toFixed(2));
     setFormData({ ...formData, valor_total: novoTotal });
 
     // Limpar formulário de item
@@ -95,7 +110,7 @@ const NotasFiscais = () => {
       preco_unitario: 0
     });
 
-    toast.success('Item adicionado à nota');
+    toast.success(`Item adicionado: ${produto.nome}`);
   };
 
   const handleRemoveItem = (index) => {
