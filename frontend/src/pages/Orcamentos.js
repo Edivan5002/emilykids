@@ -35,6 +35,23 @@ const Orcamentos = () => {
     preco_unitario: 0
   });
 
+  // Modal de Conversão em Venda
+  const [modalConversao, setModalConversao] = useState({
+    open: false,
+    orcamento: null,
+    itens: [],
+    formaPagamento: '',
+    desconto: 0,
+    frete: 0,
+    observacoes: ''
+  });
+  
+  const [novoItemConversao, setNovoItemConversao] = useState({
+    produto_id: '',
+    quantidade: 1,
+    preco_unitario: 0
+  });
+
   // Filtros
   const [filtros, setFiltros] = useState({
     busca: '',
