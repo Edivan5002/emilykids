@@ -502,6 +502,7 @@ class ConversaoVendaRequest(BaseModel):
     desconto: Optional[float] = None  # Novo desconto (se diferente do orçamento)
     frete: Optional[float] = None  # Novo frete (se diferente do orçamento)
     observacoes: Optional[str] = None
+    itens: Optional[List[dict]] = None  # Novos itens (se editados)
 
 class DuplicarOrcamentoRequest(BaseModel):
     novo_cliente_id: Optional[str] = None  # Se None, mantém o mesmo cliente
