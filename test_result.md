@@ -105,6 +105,21 @@
 user_problem_statement: "MELHORIA NO MÓDULO NOTA FISCAL: Na aba 'Item' ao selecionar produtos, deve exibir informações detalhadas: Nome da Marca | Nome da Categoria | Nome da Subcategoria | Nome do Produto | SKU."
 
 backend:
+  - task: "Novas funcionalidades do módulo Produtos - Campos obrigatórios e endpoint histórico"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ NOVAS FUNCIONALIDADES IMPLEMENTADAS: (1) CAMPOS OBRIGATÓRIOS: Marca, Categoria e Subcategoria agora são campos obrigatórios no modelo Produto (marca_id, categoria_id, subcategoria_id); (2) NOVO ENDPOINT: GET /api/produtos/{produto_id}/historico-compras-completo com paginação (page e limit); (3) RELACIONAMENTOS EM CASCATA: Categorias devem ter marca_id e subcategorias devem ter categoria_id (relacionamento hierárquico); (4) ESTRUTURA DE RESPOSTA: Endpoint retorna data, total, page, limit, total_pages com itens contendo data_emissao, numero_nf, serie, fornecedor_nome, fornecedor_cnpj, quantidade, preco_unitario, subtotal, nota_id."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO PERFEITAMENTE: Executei os 6 TESTES OBRIGATÓRIOS especificados na review_request com 100% SUCCESS RATE (7/7 testes passaram). VALIDAÇÕES CONFIRMADAS: (1) RELACIONAMENTOS EM CASCATA - 2 marcas → 2 categorias (todas com marca_id) → 2 subcategorias (todas com categoria_id) ✅; (2) CAMPOS OBRIGATÓRIOS - Criação sem marca_id, categoria_id, subcategoria_id falha corretamente com 422 ✅; (3) CRIAÇÃO VÁLIDA - Produto criado com sucesso usando IDs válidos ✅; (4) ENDPOINT HISTÓRICO - GET /api/produtos/{id}/historico-compras-completo funcionando com estrutura correta e paginação ✅; (5) PRODUTO INEXISTENTE - Retorna 404 corretamente ✅; (6) ESTRUTURA RESPOSTA - Campos obrigatórios validados ✅. RESULTADO: TODAS as novas funcionalidades estão 100% operacionais!"
+
   - task: "Exibição detalhada de produtos no módulo Nota Fiscal"
     implemented: true
     working: "NA"
