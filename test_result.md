@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "NOVA FUNCIONALIDADE: No módulo Venda, quando cancelar uma venda que foi decorrente de um orçamento, o orçamento correspondente no módulo de Orçamento deve mudar de status 'vendido' para 'cancelado' e mostrar o motivo do cancelamento (mesmo motivo informado no cancelamento da venda)."
+user_problem_statement: "ALTERAÇÃO DE CONFIGURAÇÃO: Alterar senha mestre do módulo Administração de 'Emily@2024#Admin' para '486250'."
 
 backend:
   - task: "Cancelamento de venda propaga para orçamento vinculado"
