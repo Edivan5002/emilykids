@@ -3566,6 +3566,52 @@ async def get_historico_precos_produto(produto_id: str, current_user: dict = Dep
     ).sort("data_alteracao", -1).to_list(100)
     return historico
 
+
+@api_router.get("/produtos/{produto_id}/historico-compras")
+async def get_historico_compras_produto(produto_id: str, current_user: dict = Depends(require_permission("produtos", "ler"))):
+    """Retorna o histórico das últimas 5 compras do produto através de notas fiscais confirmadas"""
+    # Buscar produto para validação
+    produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    
+    # Buscar notas fiscais confirmadas que contêm este produto
+    notas = await db.notas_fiscais.find(
+        {
+            "confirmado": True,
+            "cancelada": False,
+            "status": {"$ne": "cancelada"},
+            "itens.produto_id": produto_id
+        },
+        {"_id": 0}
+    ).sort("data_emissao", -1).to_list(1000)
+    
+    # Extrair informações de compra do produto
+    historico = []
+    for nota in notas:
+        # Encontrar o item específico do produto na nota
+        for item in nota.get("itens", []):
+            if item.get("produto_id") == produto_id:
+                # Buscar informações do fornecedor
+                fornecedor = await db.fornecedores.find_one(
+                    {"id": nota.get("fornecedor_id")},
+                    {"_id": 0, "razao_social": 1, "nome_fantasia": 1}
+                )
+                
+                historico.append({
+                    "data_emissao": nota.get("data_emissao"),
+                    "numero_nf": nota.get("numero"),
+                    "serie": nota.get("serie"),
+                    "fornecedor_nome": fornecedor.get("razao_social") if fornecedor else "Fornecedor não encontrado",
+                    "quantidade": item.get("quantidade"),
+                    "preco_unitario": item.get("preco_unitario"),
+                    "subtotal": item.get("quantidade", 0) * item.get("preco_unitario", 0)
+                })
+    
+    # Retornar apenas as últimas 5 compras
+    return historico[:5]
+
+
 @api_router.get("/produtos/relatorios/mais-vendidos")
 async def get_produtos_mais_vendidos(
     limite: int = 10,
