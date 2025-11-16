@@ -1,25 +1,23 @@
 #!/usr/bin/env python3
 """
-Backend Test Suite for Fornecedores Module - Critical Bug Fix Testing
-Tests the critical supplier registration bug fix as per review request
+Backend Test Suite for Sales Cancellation Propagation to Budgets
+Tests the new functionality that propagates sales cancellation to linked budgets
 
-FOCUS: Testing the fix for empty string vs null validation in Pydantic models
-- Frontend was sending empty strings for optional fields
-- Backend Pydantic expected null for optional fields
-- This caused 422 Unprocessable Entity errors
+FOCUS: Testing the new feature where canceling a sale originated from a budget
+automatically updates the budget status from "vendido" to "cancelado" and stores
+cancellation details (reason, who canceled, when).
 
 CRITICAL TESTS:
-1. Create supplier with complete data (all fields)
-2. Create supplier with minimal data (only required fields) - THE CRITICAL TEST
-3. Create supplier with partial data (some optional fields)
-4. Edit supplier functionality
-5. List suppliers with inactive ones
+1. Cancel sale originated from budget - Budget should be updated
+2. Cancel sale NOT originated from budget - No propagation should occur  
+3. Validate all fields in canceled budget
+4. Verify stock is correctly reverted
 """
 
 import requests
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 import sys
 import os
 
