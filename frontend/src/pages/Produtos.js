@@ -1524,7 +1524,12 @@ const Produtos = () => {
                   {p.tags && p.tags.map(tag => <Badge key={tag} variant="outline" className="ml-1">{tag}</Badge>)}
                 </td>
                 <td className="hidden lg:table-cell">{getMarcaNome(p.marca_id)}</td>
-                <td className="hidden md:table-cell">{formatarMoeda(p.preco_custo)}</td>
+                <td className="hidden xl:table-cell">
+                  {p.preco_ultima_compra ? formatarMoeda(p.preco_ultima_compra) : '-'}
+                </td>
+                <td className="hidden md:table-cell font-semibold text-blue-600">
+                  {formatarMoeda(p.preco_medio || p.preco_inicial || 0)}
+                </td>
                 <td>{formatarMoeda(p.preco_venda)}</td>
                 <td className="text-green-600 font-semibold hidden lg:table-cell">{p.margem_lucro?.toFixed(2)}%</td>
                 <td className="hidden sm:table-cell">
