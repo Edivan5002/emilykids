@@ -439,22 +439,27 @@ const NotasFiscais = () => {
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <Label className="text-xs">Produto</Label>
-                      <Select 
-                        value={novoItem.produto_id} 
-                        onValueChange={(v) => setNovoItem({ ...novoItem, produto_id: v })}
-                        disabled={produtos.length === 0}
-                      >
-                        <SelectTrigger className="h-9">
-                          <SelectValue placeholder={produtos.length === 0 ? "Sem produtos" : "Selecione"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {produtos.filter(p => p.ativo !== false).map(p => (
-                            <SelectItem key={p.id} value={p.id} className="text-sm">
-                              {getProdutoDetalhado(p)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex gap-2">
+                        <Select 
+                          value={novoItem.produto_id} 
+                          onValueChange={(v) => {
+                            setNovoItem({ ...novoItem, produto_id: v });
+                            fetchHistoricoCompras(v);
+                          }}
+                          disabled={produtos.length === 0}
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder={produtos.length === 0 ? "Sem produtos" : "Selecione"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {produtos.filter(p => p.ativo !== false).map(p => (
+                              <SelectItem key={p.id} value={p.id} className="text-sm">
+                                {getProdutoDetalhado(p)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <div>
                       <Label className="text-xs">Quantidade</Label>
