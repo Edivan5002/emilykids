@@ -66,7 +66,9 @@ const Produtos = () => {
     categoria_id: '',
     subcategoria_id: '',
     unidade: 'UN',
-    preco_custo: 0,
+    preco_inicial: 0,  // Usado apenas no cadastro
+    preco_medio: 0,  // Calculado automaticamente
+    preco_ultima_compra: 0,  // Calculado automaticamente
     preco_venda: 0,
     margem_lucro: 0,
     preco_promocional: '',
