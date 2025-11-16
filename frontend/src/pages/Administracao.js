@@ -59,7 +59,7 @@ const Administracao = () => {
 
   const fetchLogsAuditoria = async () => {
     try {
-      const response = await axios.get(`${API}/admin/logs-auditoria?limit=50`);
+      const response = await axios.get(`${API}/admin/logs-auditoria?limit=20`);
       setLogsAuditoria(response.data.logs);
     } catch (error) {
       console.error('Erro ao carregar logs de auditoria');
