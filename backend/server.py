@@ -240,9 +240,9 @@ class Produto(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     sku: str
     nome: str
-    marca_id: Optional[str] = None
-    categoria_id: Optional[str] = None
-    subcategoria_id: Optional[str] = None
+    marca_id: str  # Obrigatório
+    categoria_id: str  # Obrigatório
+    subcategoria_id: str  # Obrigatório
     unidade: str = "UN"
     
     # Preços
