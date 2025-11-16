@@ -7832,9 +7832,6 @@ async def admin_resetar_modulo(
     try:
         collection_name = modulos_validos[request.modulo]
         
-        # Contar antes
-        count = await db[collection_name].count_documents({})
-        
         # Deletar tudo
         result = await db[collection_name].delete_many({})
         
