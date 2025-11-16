@@ -6816,7 +6816,7 @@ async def sugestao_precificacao(request: PrevisaoDemandaRequest, current_user: d
                 "ativo": True
             },
             {"_id": 0}
-        ).limit(10).to_list(10)
+        ).limit(20).to_list(20)
         
         precos_similares = [p.get("preco_venda", 0) for p in produtos_similares if p.get("preco_venda")]
         preco_medio_categoria = sum(precos_similares) / len(precos_similares) if precos_similares else 0
