@@ -24,6 +24,7 @@ const NotasFiscais = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cancelDialog, setCancelDialog] = useState({ open: false, notaId: null, confirmada: false, motivo: '' });
+  const [historicoDialog, setHistoricoDialog] = useState({ open: false, produtoId: null, produtoNome: '', historico: [], loading: false });
   
   const [formData, setFormData] = useState({
     numero: '',
