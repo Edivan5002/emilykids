@@ -18,6 +18,9 @@ const NotasFiscais = () => {
   const [notasFiscais, setNotasFiscais] = useState([]);
   const [fornecedores, setFornecedores] = useState([]);
   const [produtos, setProdutos] = useState([]);
+  const [marcas, setMarcas] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [subcategorias, setSubcategorias] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cancelDialog, setCancelDialog] = useState({ open: false, notaId: null, confirmada: false, motivo: '' });
