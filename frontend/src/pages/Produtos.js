@@ -315,12 +315,29 @@ const Produtos = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validar campos obrigatórios
+    if (!formData.marca_id) {
+      toast.error('Por favor, selecione uma marca');
+      setActiveTab('basico');
+      return;
+    }
+    if (!formData.categoria_id) {
+      toast.error('Por favor, selecione uma categoria');
+      setActiveTab('basico');
+      return;
+    }
+    if (!formData.subcategoria_id) {
+      toast.error('Por favor, selecione uma subcategoria');
+      setActiveTab('basico');
+      return;
+    }
+    
     try {
       const dados = { ...formData };
       
       // Sanitizar campos opcionais: converter strings vazias em null
       const camposOpcionais = [
-        'marca_id', 'categoria_id', 'subcategoria_id',
         'preco_promocional', 'data_inicio_promo', 'data_fim_promo',
         'codigo_barras', 'peso', 'altura', 'largura', 'profundidade',
         'fornecedor_preferencial_id', 'comissao_vendedor', 'descricao'
