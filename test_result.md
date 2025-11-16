@@ -105,6 +105,18 @@
 user_problem_statement: "BUG: No módulo de Orçamento, ao clicar em 'Converter em Venda' e editar os itens na modal, após efetivar a venda, o card do orçamento não atualiza com os valores finais (itens editados, subtotal, total). Exemplo: Orçamento #5c81e122 deveria ter atualizado de R$ 310 para R$ 80 após remover vestido e adicionar apenas uma camisa."
 
 backend:
+  - task: "Atualização do orçamento ao converter em venda com itens editados"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ BUG CORRIGIDO: Modificado endpoint POST /orcamentos/{id}/converter-venda (linha 5191-5204). PROBLEMA: Ao converter orçamento com itens editados, apenas o status era atualizado para 'vendido', mas os itens, subtotal, total, desconto e frete não eram atualizados no orçamento original. SOLUÇÃO: Expandido o $set do update_one para incluir: itens (itens_final), subtotal (subtotal calculado), total (total_final calculado), desconto (desconto_final), frete (frete_final). Agora o card do orçamento reflete os valores finais após conversão com edições."
+
   - task: "Correção RBAC - Módulo Produtos (9 endpoints CRUD)"
     implemented: true
     working: true
