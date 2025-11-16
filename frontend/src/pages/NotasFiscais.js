@@ -768,6 +768,87 @@ const NotasFiscais = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Modal de Histórico de Compras */}
+      <Dialog open={historicoDialog.open} onOpenChange={(open) => setHistoricoDialog({ ...historicoDialog, open })}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Histórico de Compras - {historicoDialog.produtoNome}</DialogTitle>
+          </DialogHeader>
+
+          {historicoDialog.loading ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <span className="ml-3 text-gray-600">Carregando histórico...</span>
+            </div>
+          ) : historicoDialog.historico.length === 0 ? (
+            <div className="p-8 text-center">
+              <Package size={48} className="mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                Nenhum Histórico Encontrado
+              </h3>
+              <p className="text-gray-600">
+                Este produto não possui histórico de compras. Esta é a primeira compra deste produto.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600 mb-4">
+                Últimas {historicoDialog.historico.length} compras deste produto:
+              </p>
+              {historicoDialog.historico.map((compra, index) => (
+                <Card key={index} className="border border-gray-200">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500">Data da Compra</p>
+                        <p className="font-semibold text-sm">
+                          {new Date(compra.data_emissao).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Nota Fiscal</p>
+                        <p className="font-semibold text-sm">
+                          {compra.numero_nf} / Série {compra.serie}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Fornecedor</p>
+                        <p className="font-semibold text-sm">{compra.fornecedor_nome}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Quantidade</p>
+                        <p className="font-semibold text-sm">{compra.quantidade} unidades</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Preço Unitário</p>
+                        <p className="font-semibold text-sm text-green-600">
+                          R$ {compra.preco_unitario.toFixed(2)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Subtotal</p>
+                        <p className="font-semibold text-sm text-blue-600">
+                          R$ {compra.subtotal.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-4">
+            <Button
+              className="w-full"
+              onClick={() => setHistoricoDialog({ open: false, produtoId: null, produtoNome: '', historico: [], loading: false })}
+            >
+              Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 };
