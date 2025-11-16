@@ -801,6 +801,19 @@ const Orcamentos = () => {
                 </div>
               </div>
 
+              {/* Motivo do Cancelamento - se orçamento foi cancelado */}
+              {orcamento.status === 'cancelado' && orcamento.motivo_cancelamento && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm font-semibold text-red-800 mb-1">Motivo do Cancelamento:</p>
+                  <p className="text-sm text-red-700">{orcamento.motivo_cancelamento}</p>
+                  {orcamento.data_cancelamento && (
+                    <p className="text-xs text-red-600 mt-1">
+                      Cancelado em: {new Date(orcamento.data_cancelamento).toLocaleString('pt-BR')}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="flex gap-2">
                 {orcamento.status === 'aberto' && (
                   <>
