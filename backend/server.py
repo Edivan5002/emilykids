@@ -3373,26 +3373,30 @@ async def update_produto(produto_id: str, produto_data: ProdutoCreate, current_u
     if not existing:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
     
-    # Calcular margem automaticamente se não fornecida
-    if produto_data.margem_lucro is None and produto_data.preco_custo > 0:
-        produto_data.margem_lucro = ((produto_data.preco_venda - produto_data.preco_custo) / produto_data.preco_custo) * 100
-    
     updated_data = produto_data.model_dump()
     updated_data["id"] = produto_id
     updated_data["estoque_atual"] = existing.get("estoque_atual", 0)
     updated_data["created_at"] = existing["created_at"]
     
+    # Preservar campos calculados automaticamente (não devem ser editados pelo usuário)
+    updated_data["preco_medio"] = existing.get("preco_medio", existing.get("preco_inicial", 0))
+    updated_data["preco_ultima_compra"] = existing.get("preco_ultima_compra")
+    
+    # Calcular margem usando preco_medio
+    if updated_data.get("margem_lucro") is None and updated_data["preco_medio"] > 0:
+        updated_data["margem_lucro"] = ((updated_data["preco_venda"] - updated_data["preco_medio"]) / updated_data["preco_medio"]) * 100
+    
     # Verificar se houve alteração de preços
-    preco_custo_alterado = existing.get("preco_custo") != updated_data["preco_custo"]
+    preco_inicial_alterado = existing.get("preco_inicial") != updated_data["preco_inicial"]
     preco_venda_alterado = existing.get("preco_venda") != updated_data["preco_venda"]
     
-    if preco_custo_alterado or preco_venda_alterado:
+    if preco_inicial_alterado or preco_venda_alterado:
         # Registrar no histórico
         margem_anterior = existing.get("margem_lucro", 0)
         historico = HistoricoPreco(
             produto_id=produto_id,
-            preco_custo_anterior=existing.get("preco_custo", 0),
-            preco_custo_novo=updated_data["preco_custo"],
+            preco_custo_anterior=existing.get("preco_medio", 0),
+            preco_custo_novo=updated_data["preco_medio"],
             preco_venda_anterior=existing.get("preco_venda", 0),
             preco_venda_novo=updated_data["preco_venda"],
             margem_anterior=margem_anterior,
