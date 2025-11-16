@@ -7179,7 +7179,7 @@ async def get_dashboard_logs(current_user: dict = Depends(require_permission("lo
     logs_seguranca = await db.logs_seguranca.find(
         {"timestamp": {"$gte": data_inicio}},
         {"_id": 0}
-    ).sort("timestamp", -1).limit(10).to_list(10)
+    ).sort("timestamp", -1).limit(20).to_list(20)
     
     # Total de logs de segurança nos últimos 7 dias
     total_security = await db.logs_seguranca.count_documents({"timestamp": {"$gte": data_inicio}})
