@@ -191,11 +191,17 @@ const Orcamentos = () => {
       return;
     }
 
+    // Calcular subtotal para cada item se não existir
+    const itensComSubtotal = orcamento.itens.map(item => ({
+      ...item,
+      subtotal: item.subtotal || (item.quantidade * item.preco_unitario)
+    }));
+
     // Abrir modal de conversão com os dados do orçamento
     setModalConversao({
       open: true,
       orcamento: orcamento,
-      itens: [...orcamento.itens], // Cópia dos itens
+      itens: itensComSubtotal, // Itens com subtotal calculado
       formaPagamento: '',
       desconto: orcamento.desconto || 0,
       frete: orcamento.frete || 0,
