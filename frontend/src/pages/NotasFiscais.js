@@ -418,8 +418,8 @@ const NotasFiscais = () => {
                         </SelectTrigger>
                         <SelectContent>
                           {produtos.filter(p => p.ativo !== false).map(p => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.nome} - {p.sku}
+                            <SelectItem key={p.id} value={p.id} className="text-sm">
+                              {getProdutoDetalhado(p)}
                             </SelectItem>
                           ))}
                         </SelectContent>
