@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "ALTERAÇÃO DE CONFIGURAÇÃO: Alterar senha mestre do módulo Administração de 'Emily@2024#Admin' para '486250'."
+user_problem_statement: "MELHORIA NO MÓDULO NOTA FISCAL: Na aba 'Item' ao selecionar produtos, deve exibir informações detalhadas: Nome da Marca | Nome da Categoria | Nome da Subcategoria | Nome do Produto | SKU."
 
 backend:
 
