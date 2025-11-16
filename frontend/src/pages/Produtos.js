@@ -1223,6 +1223,113 @@ const Produtos = () => {
                     </>
                   )}
                 </TabsContent>
+
+                {/* ABA ÚLTIMAS COMPRAS */}
+                {isEditing && (
+                  <TabsContent value="ultimas-compras" className="space-y-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <History size={20} />
+                        Histórico Completo de Compras
+                      </h3>
+                      {historicoCompras.total > 0 && (
+                        <Badge variant="secondary">{historicoCompras.total} compras registradas</Badge>
+                      )}
+                    </div>
+
+                    {historicoCompras.loading ? (
+                      <div className="flex justify-center items-center py-12">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+                        <span className="ml-3 text-gray-600">Carregando histórico...</span>
+                      </div>
+                    ) : historicoCompras.data.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Package size={48} className="mx-auto text-gray-400 mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                          Nenhuma Compra Registrada
+                        </h3>
+                        <p className="text-gray-600">
+                          Não foram realizadas compras deste produto.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                          {historicoCompras.data.map((compra, index) => (
+                            <Card key={index} className="border border-gray-200 hover:shadow-md transition-shadow">
+                              <CardContent className="p-4">
+                                <div className="grid grid-cols-3 gap-4">
+                                  <div>
+                                    <p className="text-xs text-gray-500">Data da Compra</p>
+                                    <p className="font-semibold text-sm">
+                                      {new Date(compra.data_emissao).toLocaleDateString('pt-BR')}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500">Nota Fiscal</p>
+                                    <p className="font-semibold text-sm">
+                                      NF {compra.numero_nf} / Série {compra.serie}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500">Fornecedor</p>
+                                    <p className="font-semibold text-sm">{compra.fornecedor_nome}</p>
+                                    {compra.fornecedor_cnpj && (
+                                      <p className="text-xs text-gray-500">{compra.fornecedor_cnpj}</p>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500">Quantidade</p>
+                                    <p className="font-semibold text-sm">{compra.quantidade} unidades</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500">Preço Unitário</p>
+                                    <p className="font-semibold text-sm text-green-600">
+                                      R$ {compra.preco_unitario.toFixed(2)}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500">Subtotal</p>
+                                    <p className="font-semibold text-sm text-blue-600">
+                                      R$ {compra.subtotal.toFixed(2)}
+                                    </p>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+
+                        {/* Paginação */}
+                        {historicoCompras.total_pages > 1 && (
+                          <div className="flex justify-center items-center gap-2 mt-4">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => fetchHistoricoCompras(editingId, historicoCompras.page - 1)}
+                              disabled={historicoCompras.page === 1}
+                            >
+                              Anterior
+                            </Button>
+                            <span className="text-sm text-gray-600">
+                              Página {historicoCompras.page} de {historicoCompras.total_pages}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => fetchHistoricoCompras(editingId, historicoCompras.page + 1)}
+                              disabled={historicoCompras.page >= historicoCompras.total_pages}
+                            >
+                              Próxima
+                            </Button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </TabsContent>
+                )}
               </Tabs>
               
               <div className="mt-6 flex justify-end gap-2">
