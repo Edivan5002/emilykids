@@ -167,11 +167,26 @@ const Layout = ({ children }) => {
                 return null;
               }
               
+              // Verificar permissão do módulo
+              if (item.module && !hasModulePermission(item.module)) {
+                return null;
+              }
+              
               const Icon = item.icon;
               
               // Se for um submenu (Cadastros)
               if (item.isSubmenu) {
-                const hasActiveChild = item.children?.some(child => location.pathname === child.path);
+                // Filtrar filhos por permissão
+                const visibleChildren = item.children?.filter(child => 
+                  !child.module || hasModulePermission(child.module)
+                ) || [];
+                
+                // Se não há filhos visíveis, não mostrar o submenu
+                if (visibleChildren.length === 0) {
+                  return null;
+                }
+                
+                const hasActiveChild = visibleChildren.some(child => location.pathname === child.path);
                 return (
                   <div key={index}>
                     {/* Menu pai - Cadastros */}
