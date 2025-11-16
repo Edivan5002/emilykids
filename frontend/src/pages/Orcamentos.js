@@ -902,7 +902,8 @@ const Orcamentos = () => {
                                 <Trash2 size={16} />
                               </Button>
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       ) : (
                         <div className="text-center py-8 text-gray-500">
