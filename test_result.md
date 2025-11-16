@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "BUG: No módulo de Orçamento, ao clicar em 'Converter em Venda' e editar os itens na modal, após efetivar a venda, o card do orçamento não atualiza com os valores finais (itens editados, subtotal, total). Exemplo: Orçamento #5c81e122 deveria ter atualizado de R$ 310 para R$ 80 após remover vestido e adicionar apenas uma camisa."
+user_problem_statement: "NOVA FUNCIONALIDADE: No módulo Venda, quando cancelar uma venda que foi decorrente de um orçamento, o orçamento correspondente no módulo de Orçamento deve mudar de status 'vendido' para 'cancelado' e mostrar o motivo do cancelamento (mesmo motivo informado no cancelamento da venda)."
 
 backend:
   - task: "Atualização do orçamento ao converter em venda com itens editados"
