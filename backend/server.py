@@ -4277,7 +4277,6 @@ async def create_nota_fiscal(nota_data: NotaFiscalCreate, current_user: dict = D
     if status_inicial == "aguardando_aprovacao":
         toast_message = f"Nota fiscal criada. Valor R$ {nota_data.valor_total:.2f} requer aprovação!"
     else:
-        toast_message = "Nota fiscal criada com sucesso!"
     
     return nota
 
