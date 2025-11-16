@@ -4632,7 +4632,7 @@ async def confirmar_nota_fiscal(nota_id: str, current_user: dict = Depends(get_c
     if nota.get("confirmado", False) or nota["status"] == "confirmada":
         raise HTTPException(status_code=400, detail="Nota fiscal já confirmada")
     
-    # Atualizar estoque
+    # Atualizar estoque e recalcular preços
     for item in nota["itens"]:
         produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
         if produto:
@@ -4652,6 +4652,9 @@ async def confirmar_nota_fiscal(nota_id: str, current_user: dict = Depends(get_c
                 user_id=current_user["id"]
             )
             await db.movimentacoes_estoque.insert_one(movimentacao.model_dump())
+            
+            # Recalcular preço médio e preço última compra
+            await recalcular_precos_produto(item["produto_id"])
     
     # Adicionar ao histórico
     historico_entry = {
