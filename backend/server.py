@@ -4930,7 +4930,7 @@ def calcular_margem_lucro(itens: List[dict], produtos_db) -> float:
     for item in itens:
         produto = next((p for p in produtos_db if p["id"] == item["produto_id"]), None)
         if produto:
-            custo_total += item["quantidade"] * produto.get("preco_custo", 0)
+            custo_total += item["quantidade"] * produto.get("preco_medio", 0)
             receita_total += item["quantidade"] * item["preco_unitario"]
     
     if receita_total == 0:
