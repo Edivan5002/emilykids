@@ -81,30 +81,30 @@ const Layout = ({ children }) => {
   }, [location.pathname]);
 
   const menuItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/usuarios', label: 'Usuários', icon: UserCog, adminOnly: true },
-    { path: '/papeis-permissoes', label: 'Papéis & Permissões', icon: Shield, adminOnly: true },
-    { path: '/administracao', label: 'Administração', icon: Shield, adminOnly: true, className: 'text-red-600' },
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, module: 'dashboard' },
+    { path: '/usuarios', label: 'Usuários', icon: UserCog, adminOnly: true, module: 'usuarios' },
+    { path: '/papeis-permissoes', label: 'Papéis & Permissões', icon: Shield, adminOnly: true, module: 'usuarios' },
+    { path: '/administracao', label: 'Administração', icon: Shield, adminOnly: true, className: 'text-red-600', module: 'configuracoes' },
     { 
       label: 'Cadastros', 
       icon: FolderOpen, 
       isSubmenu: true,
       children: [
-        { path: '/clientes', label: 'Clientes', icon: Users },
-        { path: '/fornecedores', label: 'Fornecedores', icon: Truck },
-        { path: '/marcas', label: 'Marcas', icon: Tag },
-        { path: '/categorias', label: 'Categorias', icon: Folder },
-        { path: '/subcategorias', label: 'Subcategorias', icon: Layers }
+        { path: '/clientes', label: 'Clientes', icon: Users, module: 'clientes' },
+        { path: '/fornecedores', label: 'Fornecedores', icon: Truck, module: 'fornecedores' },
+        { path: '/marcas', label: 'Marcas', icon: Tag, module: 'marcas' },
+        { path: '/categorias', label: 'Categorias', icon: Folder, module: 'categorias' },
+        { path: '/subcategorias', label: 'Subcategorias', icon: Layers, module: 'subcategorias' }
       ]
     },
-    { path: '/produtos', label: 'Produtos', icon: Package },
-    { path: '/estoque', label: 'Estoque', icon: Package },
-    { path: '/notas-fiscais', label: 'Notas Fiscais', icon: Receipt },
-    { path: '/orcamentos', label: 'Orçamentos', icon: ClipboardList },
-    { path: '/vendas', label: 'Vendas', icon: ShoppingCart },
-    { path: '/relatorios', label: 'Relatórios', icon: BarChart3 },
-    { path: '/ia-insights', label: 'IA Insights', icon: EmilyIcon },
-    { path: '/logs', label: 'Logs', icon: History }
+    { path: '/produtos', label: 'Produtos', icon: Package, module: 'produtos' },
+    { path: '/estoque', label: 'Estoque', icon: Package, module: 'estoque' },
+    { path: '/notas-fiscais', label: 'Notas Fiscais', icon: Receipt, module: 'notas_fiscais' },
+    { path: '/orcamentos', label: 'Orçamentos', icon: ClipboardList, module: 'orcamentos' },
+    { path: '/vendas', label: 'Vendas', icon: ShoppingCart, module: 'vendas' },
+    { path: '/relatorios', label: 'Relatórios', icon: BarChart3, module: 'relatorios' },
+    { path: '/ia-insights', label: 'IA Insights', icon: EmilyIcon, module: 'ia_insights' },
+    { path: '/logs', label: 'Logs', icon: History, module: 'logs' }
   ];
 
   const handleLogout = () => {
