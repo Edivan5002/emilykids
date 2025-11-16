@@ -794,31 +794,54 @@ const Produtos = () => {
                   </div>
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <Label>Marca</Label>
-                      <Select value={formData.marca_id} onValueChange={(value) => setFormData({ ...formData, marca_id: value })}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <Label>Marca *</Label>
+                      <Select 
+                        value={formData.marca_id} 
+                        onValueChange={handleMarcaChange}
+                        required
+                      >
+                        <SelectTrigger className={!formData.marca_id ? 'border-red-500' : ''}>
+                          <SelectValue placeholder="Selecione uma marca" />
+                        </SelectTrigger>
                         <SelectContent>
                           {marcas.map(m => <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>)}
                         </SelectContent>
                       </Select>
+                      {!formData.marca_id && <p className="text-xs text-red-500 mt-1">Campo obrigatório</p>}
                     </div>
                     <div>
-                      <Label>Categoria</Label>
-                      <Select value={formData.categoria_id} onValueChange={(value) => setFormData({ ...formData, categoria_id: value })}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <Label>Categoria *</Label>
+                      <Select 
+                        value={formData.categoria_id} 
+                        onValueChange={handleCategoriaChange}
+                        disabled={!formData.marca_id || categoriasFiltradas.length === 0}
+                        required
+                      >
+                        <SelectTrigger className={!formData.categoria_id ? 'border-red-500' : ''}>
+                          <SelectValue placeholder={!formData.marca_id ? "Selecione marca primeiro" : "Selecione uma categoria"} />
+                        </SelectTrigger>
                         <SelectContent>
-                          {categorias.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                          {categoriasFiltradas.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
                         </SelectContent>
                       </Select>
+                      {!formData.categoria_id && <p className="text-xs text-red-500 mt-1">Campo obrigatório</p>}
                     </div>
                     <div>
-                      <Label>Subcategoria</Label>
-                      <Select value={formData.subcategoria_id} onValueChange={(value) => setFormData({ ...formData, subcategoria_id: value })}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <Label>Subcategoria *</Label>
+                      <Select 
+                        value={formData.subcategoria_id} 
+                        onValueChange={(value) => setFormData({ ...formData, subcategoria_id: value })}
+                        disabled={!formData.categoria_id || subcategoriasFiltradas.length === 0}
+                        required
+                      >
+                        <SelectTrigger className={!formData.subcategoria_id ? 'border-red-500' : ''}>
+                          <SelectValue placeholder={!formData.categoria_id ? "Selecione categoria primeiro" : "Selecione uma subcategoria"} />
+                        </SelectTrigger>
                         <SelectContent>
-                          {subcategorias.map(s => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
+                          {subcategoriasFiltradas.map(s => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
                         </SelectContent>
                       </Select>
+                      {!formData.subcategoria_id && <p className="text-xs text-red-500 mt-1">Campo obrigatório</p>}
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-4">
