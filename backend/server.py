@@ -3418,6 +3418,35 @@ async def update_produto(produto_id: str, produto_data: ProdutoCreate, current_u
     )
     return Produto(**updated_data)
 
+
+@api_router.post("/produtos/migrar-precos-temporario")
+async def migrar_precos_produtos(current_user: dict = Depends(get_current_user)):
+    """ENDPOINT TEMPORÁRIO: Migra produtos antigos com preco_custo para novo esquema"""
+    produtos = await db.produtos.find({}, {"_id": 0}).to_list(10000)
+    
+    migrados = 0
+    for produto in produtos:
+        if "preco_custo" in produto and "preco_inicial" not in produto:
+            # Migrar
+            await db.produtos.update_one(
+                {"id": produto["id"]},
+                {"$set": {
+                    "preco_inicial": produto["preco_custo"],
+                    "preco_medio": produto["preco_custo"],
+                    "preco_ultima_compra": None
+                }, "$unset": {"preco_custo": ""}}
+            )
+            migrados += 1
+    
+    return {"message": f"Migrados {migrados} produtos"}
+
+@api_router.delete("/produtos/deletar-todos-temporario")
+async def deletar_todos_produtos(current_user: dict = Depends(get_current_user)):
+    """ENDPOINT TEMPORÁRIO: Deleta todos os produtos"""
+    result = await db.produtos.delete_many({})
+    return {"message": f"Deletados {result.deleted_count} produtos"}
+
+
 @api_router.delete("/produtos/{produto_id}")
 async def delete_produto(produto_id: str, current_user: dict = Depends(require_permission("produtos", "deletar"))):
     # Verificar se o produto existe
