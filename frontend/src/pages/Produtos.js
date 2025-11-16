@@ -245,27 +245,30 @@ const Produtos = () => {
     return 0;
   };
 
-  const handlePrecoCustoChange = (valor) => {
-    const novoCusto = parseFloat(valor) || 0;
+  const handlePrecoInicialChange = (valor) => {
+    const novoPreco = parseFloat(valor) || 0;
     setFormData(prev => ({
       ...prev,
-      preco_custo: novoCusto,
-      margem_lucro: calcularMargem(novoCusto, prev.preco_venda)
+      preco_inicial: novoPreco,
+      preco_medio: novoPreco,  // No cadastro, preco_medio = preco_inicial
+      margem_lucro: calcularMargem(novoPreco, prev.preco_venda)
     }));
   };
 
   const handlePrecoVendaChange = (valor) => {
     const novaVenda = parseFloat(valor) || 0;
+    const custoBase = isEditing ? formData.preco_medio : formData.preco_inicial;
     setFormData(prev => ({
       ...prev,
       preco_venda: novaVenda,
-      margem_lucro: calcularMargem(prev.preco_custo, novaVenda)
+      margem_lucro: calcularMargem(custoBase, novaVenda)
     }));
   };
 
   const handleMargemChange = (valor) => {
     const novaMargem = parseFloat(valor) || 0;
-    const novaVenda = formData.preco_custo * (1 + novaMargem / 100);
+    const custoBase = isEditing ? formData.preco_medio : formData.preco_inicial;
+    const novaVenda = custoBase * (1 + novaMargem / 100);
     setFormData(prev => ({
       ...prev,
       margem_lucro: novaMargem,
