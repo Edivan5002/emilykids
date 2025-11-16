@@ -1802,7 +1802,7 @@ class UserUpdate(BaseModel):
 @api_router.get("/usuarios", response_model=List[User])
 async def get_usuarios(
     page: int = 1,
-    limit: int = 100,
+    limit: int = 20,
     current_user: dict = Depends(require_permission("usuarios", "ler"))
 ):
     """Lista usuários com paginação opcional (apenas admin)"""
@@ -2019,7 +2019,7 @@ async def toggle_usuario_status(user_id: str, current_user: dict = Depends(get_c
 @api_router.get("/roles", response_model=List[Role])
 async def get_roles(
     page: int = 1,
-    limit: int = 100,
+    limit: int = 20,
     current_user: dict = Depends(require_permission("usuarios", "ler"))
 ):
     """Lista todos os papéis com paginação opcional"""
@@ -2372,7 +2372,7 @@ async def delete_user_group(group_id: str, current_user: dict = Depends(get_curr
 
 @api_router.get("/permission-history")
 async def get_permission_history(
-    limit: int = 100,
+    limit: int = 20,
     offset: int = 0,
     current_user: dict = Depends(require_permission("logs", "ler"))
 ):
@@ -2503,7 +2503,7 @@ async def validar_autorizacao(auth_data: AutorizacaoRequest, current_user: dict 
 async def get_clientes(
     incluir_inativos: bool = False,
     page: int = 1,
-    limit: int = 100,
+    limit: int = 20,
     current_user: dict = Depends(require_permission("clientes", "ler"))
 ):
     """Lista clientes com paginação opcional"""
@@ -2646,7 +2646,7 @@ async def toggle_cliente_status(cliente_id: str, current_user: dict = Depends(re
 async def get_fornecedores(
     incluir_inativos: bool = False,
     page: int = 1,
-    limit: int = 100,
+    limit: int = 20,
     current_user: dict = Depends(require_permission("fornecedores", "ler"))
 ):
     """Lista fornecedores com paginação opcional"""
@@ -2781,7 +2781,7 @@ async def toggle_fornecedor_status(fornecedor_id: str, current_user: dict = Depe
 async def get_marcas(
     incluir_inativos: bool = False,
     page: int = 1,
-    limit: int = 100,
+    limit: int = 20,
     current_user: dict = Depends(require_permission("marcas", "ler"))
 ):
     """Lista marcas com paginação opcional"""
@@ -2923,7 +2923,7 @@ async def toggle_marca_status(marca_id: str, current_user: dict = Depends(requir
 async def get_categorias(
     incluir_inativos: bool = False,
     page: int = 1,
-    limit: int = 100,
+    limit: int = 20,
     current_user: dict = Depends(require_permission("categorias", "ler"))
 ):
     """Lista categorias com paginação opcional"""
@@ -3090,7 +3090,7 @@ async def toggle_categoria_status(categoria_id: str, current_user: dict = Depend
 async def get_subcategorias(
     incluir_inativos: bool = False,
     page: int = 1,
-    limit: int = 100,
+    limit: int = 20,
     current_user: dict = Depends(require_permission("subcategorias", "ler"))
 ):
     """Lista subcategorias com paginação opcional"""
@@ -3313,7 +3313,7 @@ async def recalcular_precos_produto(produto_id: str):
 async def get_produtos(
     incluir_inativos: bool = False,
     page: int = 1,
-    limit: int = 100,
+    limit: int = 20,
     current_user: dict = Depends(require_permission("produtos", "ler"))
 ):
     """Lista produtos com paginação opcional"""
@@ -3910,7 +3910,7 @@ async def busca_avancada_produtos(
 @api_router.get("/estoque/alertas")
 async def get_alertas_estoque(
     page: int = 1,
-    limit: int = 100,
+    limit: int = 20,
     current_user: dict = Depends(get_current_user)
 ):
     """Lista alertas de estoque com paginação opcional"""
@@ -3932,7 +3932,7 @@ async def get_alertas_estoque(
 @api_router.get("/estoque/movimentacoes")
 async def get_movimentacoes(
     page: int = 1,
-    limit: int = 100,
+    limit: int = 20,
     current_user: dict = Depends(get_current_user)
 ):
     """Lista movimentações de estoque com paginação opcional"""
@@ -4153,7 +4153,7 @@ async def iniciar_inventario(
 @api_router.get("/estoque/inventario", response_model=List[Inventario])
 async def listar_inventarios(
     status: Optional[str] = None,
-    limit: int = 100,
+    limit: int = 20,
     current_user: dict = Depends(require_permission("estoque", "ler"))
 ):
     """Lista todos os inventários"""
@@ -4369,7 +4369,7 @@ async def get_notas_fiscais(
     status: str = None,
     fornecedor_id: str = None,
     page: int = 1,
-    limit: int = 100,
+    limit: int = 20,
     current_user: dict = Depends(require_permission("notas_fiscais", "ler"))
 ):
     """Lista notas fiscais com filtros e paginação opcional"""
@@ -4976,7 +4976,7 @@ async def get_orcamentos(
     status: str = None,
     cliente_id: str = None,
     page: int = 1,
-    limit: int = 100,
+    limit: int = 20,
     current_user: dict = Depends(require_permission("orcamentos", "ler"))
 ):
     """Lista orçamentos com filtros e paginação opcional"""
@@ -5762,7 +5762,7 @@ async def get_vendas(
     status_entrega: str = None,
     cliente_id: str = None,
     page: int = 1,
-    limit: int = 100,
+    limit: int = 20,
     current_user: dict = Depends(require_permission("vendas", "ler"))
 ):
     """Lista vendas com filtros e paginação opcional"""
@@ -7198,7 +7198,7 @@ async def get_dashboard_logs(current_user: dict = Depends(require_permission("lo
 
 @api_router.get("/logs/seguranca")
 async def get_logs_seguranca(
-    limit: int = 100,
+    limit: int = 20,
     offset: int = 0,
     current_user: dict = Depends(get_current_user)
 ):
