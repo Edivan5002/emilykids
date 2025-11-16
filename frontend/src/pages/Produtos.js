@@ -34,6 +34,19 @@ const Produtos = () => {
   const [loading, setLoading] = useState(false);
   const [relatorios, setRelatorios] = useState(null);
   
+  // Estados para filtros em cascata
+  const [categoriasFiltradas, setCategoriasFiltradas] = useState([]);
+  const [subcategoriasFiltradas, setSubcategoriasFiltradas] = useState([]);
+  
+  // Estado para histórico de compras com paginação
+  const [historicoCompras, setHistoricoCompras] = useState({ 
+    data: [], 
+    total: 0, 
+    page: 1, 
+    total_pages: 0, 
+    loading: false 
+  });
+  
   // Filtros
   const [filtros, setFiltros] = useState({
     termo: '',
