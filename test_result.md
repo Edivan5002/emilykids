@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "NOVA TAREFA: Módulo Fornecedores - (1) ERRO ao cadastrar fornecedor, (2) ERRO ao editar fornecedor, (3) Fornecedores INATIVOS não aparecem na listagem (devem aparecer), (4) Validação: só permite inativar fornecedor se não houver associações com outros módulos (notas fiscais, produtos ativos, orçamentos, vendas)."
+user_problem_statement: "BUG: No módulo de Orçamento, ao clicar em 'Converter em Venda' e editar os itens na modal, após efetivar a venda, o card do orçamento não atualiza com os valores finais (itens editados, subtotal, total). Exemplo: Orçamento #5c81e122 deveria ter atualizado de R$ 310 para R$ 80 após remover vestido e adicionar apenas uma camisa."
 
 backend:
   - task: "Correção RBAC - Módulo Produtos (9 endpoints CRUD)"
