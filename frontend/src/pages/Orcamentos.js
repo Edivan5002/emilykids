@@ -1015,7 +1015,10 @@ const Orcamentos = () => {
                           <span>Total:</span>
                           <span className="text-green-600">
                             R$ {(
-                              modalConversao.itens.reduce((sum, item) => sum + item.subtotal, 0) 
+                              modalConversao.itens.reduce((sum, item) => {
+                                const subtotal = item.subtotal || (item.quantidade * item.preco_unitario);
+                                return sum + subtotal;
+                              }, 0) 
                               - (modalConversao.desconto || 0) 
                               + (modalConversao.frete || 0)
                             ).toFixed(2)}
