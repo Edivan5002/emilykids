@@ -1759,7 +1759,7 @@ async def get_my_sessions(current_user: dict = Depends(get_current_user)):
     sessions = await db.user_sessions.find(
         {"user_id": current_user["id"], "ativo": True},
         {"_id": 0}
-    ).sort("created_at", -1).to_list(50)
+    ).sort("created_at", -1).to_list(20)
     
     return {
         "total": len(sessions),
