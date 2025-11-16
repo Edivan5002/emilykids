@@ -107,15 +107,18 @@ user_problem_statement: "BUG: No módulo de Orçamento, ao clicar em 'Converter 
 backend:
   - task: "Atualização do orçamento ao converter em venda com itens editados"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "✅ BUG CORRIGIDO: Modificado endpoint POST /orcamentos/{id}/converter-venda (linha 5191-5204). PROBLEMA: Ao converter orçamento com itens editados, apenas o status era atualizado para 'vendido', mas os itens, subtotal, total, desconto e frete não eram atualizados no orçamento original. SOLUÇÃO: Expandido o $set do update_one para incluir: itens (itens_final), subtotal (subtotal calculado), total (total_final calculado), desconto (desconto_final), frete (frete_final). Agora o card do orçamento reflete os valores finais após conversão com edições."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO PERFEITAMENTE: Executei os 3 TESTES OBRIGATÓRIOS especificados na review_request com 100% SUCCESS RATE. VALIDAÇÕES CONFIRMADAS: (1) CONVERSÃO COM EDIÇÃO DE ITENS - Orçamento original: 2 Vestidos + 1 Camisa (R$ 385), convertido para: 3 Camisas (R$ 245) - ORÇAMENTO ATUALIZADO CORRETAMENTE ✅; (2) CONVERSÃO SEM EDIÇÃO - Orçamento mantém valores originais (R$ 85), apenas status muda para 'vendido' ✅; (3) CONVERSÃO COM EDIÇÃO DESCONTO/FRETE - Desconto alterado de R$ 20 para R$ 30, frete de R$ 25 para R$ 15, total recalculado de R$ 155 para R$ 135 ✅. RESULTADO: TODAS as validações passaram - orçamento é ATUALIZADO com itens editados, subtotal/total RECALCULADOS, desconto/frete APLICADOS, status muda para 'vendido'. BUG CRÍTICO TOTALMENTE CORRIGIDO!"
 
   - task: "Correção RBAC - Módulo Produtos (9 endpoints CRUD)"
     implemented: true
