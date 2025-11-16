@@ -137,7 +137,7 @@ const Produtos = () => {
   const fetchRelatorios = async () => {
     try {
       const [maisVendidos, valorEstoque] = await Promise.all([
-        axios.get(`${API}/produtos/relatorios/mais-vendidos?limite=5`),
+        axios.get(`${API}/produtos/relatorios/mais-vendidos?limite=20`),
         axios.get(`${API}/produtos/relatorios/valor-estoque`)
       ]);
       setRelatorios({
