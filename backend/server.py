@@ -6932,7 +6932,7 @@ async def get_dashboard_logs(current_user: dict = Depends(require_permission("lo
     
     # KPIs
     total_logs = len(logs)
-    total_erros = len([l for l in logs if l.get("severidade") in ["ERROR", "CRITICAL"]])
+    total_erros = len([log_entry for log_entry in logs if log_entry.get("severidade") in ["ERROR", "CRITICAL"]])
     
     # Contar usuários REALMENTE ativos no sistema (não apenas nos logs)
     usuarios_ativos_count = await db.usuarios.count_documents({"ativo": True})
