@@ -105,6 +105,18 @@
 user_problem_statement: "NOVA FUNCIONALIDADE: No módulo Venda, quando cancelar uma venda que foi decorrente de um orçamento, o orçamento correspondente no módulo de Orçamento deve mudar de status 'vendido' para 'cancelado' e mostrar o motivo do cancelamento (mesmo motivo informado no cancelamento da venda)."
 
 backend:
+  - task: "Cancelamento de venda propaga para orçamento vinculado"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py, /app/frontend/src/pages/Orcamentos.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ FUNCIONALIDADE IMPLEMENTADA: (1) BACKEND: Modificado endpoint POST /vendas/{id}/cancelar (linhas 5927-5956) para verificar se venda possui orcamento_id vinculado. Se sim, atualiza o orçamento: status='cancelado', motivo_cancelamento (mesmo da venda), cancelado_por (user_id), data_cancelamento, adiciona entrada no histórico. Adicionados campos opcionais ao modelo Orcamento: motivo_cancelamento, cancelado_por, data_cancelamento. Status 'cancelado' incluído na lista de status válidos (linha 450). (2) FRONTEND: Adicionado card visual vermelho no módulo Orçamentos (/app/frontend/src/pages/Orcamentos.js) que exibe motivo e data de cancelamento quando status='cancelado'. Badge de status já suportava 'cancelado' (bg-red). RESULTADO: Quando venda originada de orçamento é cancelada, o orçamento automaticamente muda para status 'cancelado' e exibe o motivo visualmente no card."
+  
   - task: "Atualização do orçamento ao converter em venda com itens editados"
     implemented: true
     working: true
