@@ -7714,9 +7714,6 @@ async def admin_delete_vendas_antigas(
     try:
         data_limite = (datetime.now(timezone.utc) - timedelta(days=request.dias)).isoformat()
         
-        # Contar antes de deletar
-        count = await db.vendas.count_documents({"created_at": {"$lt": data_limite}})
-        
         # Deletar vendas antigas
         result = await db.vendas.delete_many({"created_at": {"$lt": data_limite}})
         
