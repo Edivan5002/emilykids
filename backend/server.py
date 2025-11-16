@@ -6276,10 +6276,6 @@ async def previsao_demanda(request: PrevisaoDemandaRequest, current_user: dict =
         
         # Buscar histórico de vendas dos últimos 90 dias
         vendas = await db.vendas.find({}, {"_id": 0}).to_list(1000)
-        movimentacoes = await db.movimentacoes_estoque.find(
-            {"produto_id": produto_id, "tipo": "saida"},
-            {"_id": 0}
-        ).to_list(1000)
         
         # Calcular estatísticas
         total_vendido = 0
