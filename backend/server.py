@@ -6808,7 +6808,7 @@ DADOS DO PRODUTO:
 - SKU: {produto['sku']}
 - Marca: {marca.get('nome') if marca else 'N/A'}
 - Categoria: {categoria.get('nome') if categoria else 'N/A'}
-- Preço de Custo Atual: R$ {produto.get('preco_custo', 0):.2f}
+- Preço Médio de Custo: R$ {produto.get('preco_medio', 0):.2f}
 - Preço de Venda Atual: R$ {produto.get('preco_venda', 0):.2f}
 - Margem de Lucro Atual: {produto.get('margem_lucro', 0):.2f}%
 - Estoque Atual: {produto.get('estoque_atual', 0)} unidades
