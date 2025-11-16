@@ -297,7 +297,7 @@ class ProdutoCreate(BaseModel):
     unidade: str = "UN"
     
     # Preços
-    preco_custo: float
+    preco_inicial: float  # Usuário informa no cadastro
     preco_venda: float
     margem_lucro: Optional[float] = None
     preco_promocional: Optional[float] = None
