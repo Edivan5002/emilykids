@@ -289,9 +289,9 @@ class Produto(BaseModel):
 class ProdutoCreate(BaseModel):
     sku: str
     nome: str
-    marca_id: Optional[str] = None
-    categoria_id: Optional[str] = None
-    subcategoria_id: Optional[str] = None
+    marca_id: str  # Obrigatório
+    categoria_id: str  # Obrigatório
+    subcategoria_id: str  # Obrigatório
     unidade: str = "UN"
     
     # Preços
