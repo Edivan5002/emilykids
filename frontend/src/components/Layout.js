@@ -223,9 +223,9 @@ const Layout = ({ children }) => {
                     </div>
                     
                     {/* Subitens - Clientes, Fornecedores, etc */}
-                    {cadastrosOpen && sidebarOpen && item.children && (
+                    {cadastrosOpen && sidebarOpen && visibleChildren && (
                       <div className="ml-4">
-                        {item.children.map((child) => {
+                        {visibleChildren.map((child) => {
                           const ChildIcon = child.icon;
                           const isChildActive = location.pathname === child.path;
                           return (
