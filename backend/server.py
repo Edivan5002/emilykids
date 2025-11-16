@@ -246,9 +246,11 @@ class Produto(BaseModel):
     unidade: str = "UN"
     
     # Preços
-    preco_custo: float
+    preco_inicial: float  # Informado pelo usuário no cadastro
+    preco_medio: float  # Calculado automaticamente (média ponderada das compras)
+    preco_ultima_compra: Optional[float] = None  # Preço da última nota fiscal confirmada
     preco_venda: float
-    margem_lucro: Optional[float] = None  # Calculado: (preco_venda - preco_custo) / preco_custo * 100
+    margem_lucro: Optional[float] = None  # Calculado: (preco_venda - preco_medio) / preco_medio * 100
     preco_promocional: Optional[float] = None
     data_inicio_promo: Optional[str] = None
     data_fim_promo: Optional[str] = None
