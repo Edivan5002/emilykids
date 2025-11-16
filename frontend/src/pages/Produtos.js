@@ -407,6 +407,21 @@ const Produtos = () => {
       ativo: produto.ativo
     });
     setFotoPrincipalIndex(produto.foto_principal_index || 0);
+    
+    // Configurar filtros em cascata ao editar
+    if (produto.marca_id) {
+      const catsFiltradas = categorias.filter(c => c.marca_id === produto.marca_id);
+      setCategoriasFiltradas(catsFiltradas);
+      
+      if (produto.categoria_id) {
+        const subsFiltradas = subcategorias.filter(s => s.categoria_id === produto.categoria_id);
+        setSubcategoriasFiltradas(subsFiltradas);
+      }
+    }
+    
+    // Carregar histórico de compras ao editar
+    fetchHistoricoCompras(produto.id, 1);
+    
     setIsOpen(true);
   };
 
