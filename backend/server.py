@@ -3802,7 +3802,7 @@ async def get_valor_total_estoque(current_user: dict = Depends(require_permissio
     total_produtos_inativos = await db.produtos.count_documents({"ativo": False})
     total_produtos = total_produtos_ativos + total_produtos_inativos
     
-    valor_custo_total = sum(p.get("estoque_atual", 0) * p.get("preco_custo", 0) for p in produtos_ativos)
+    valor_custo_total = sum(p.get("estoque_atual", 0) * p.get("preco_medio", 0) for p in produtos_ativos)
     valor_venda_total = sum(p.get("estoque_atual", 0) * p.get("preco_venda", 0) for p in produtos_ativos)
     total_itens = sum(p.get("estoque_atual", 0) for p in produtos_ativos)
     
