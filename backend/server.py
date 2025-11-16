@@ -447,7 +447,12 @@ class Orcamento(BaseModel):
     margem_lucro: float = 0
     
     # Status expandido
-    status: str = "rascunho"  # rascunho, em_analise, aprovado, aberto, vendido, devolvido, expirado, perdido
+    status: str = "rascunho"  # rascunho, em_analise, aprovado, aberto, vendido, devolvido, expirado, perdido, cancelado
+    
+    # Cancelamento (quando venda vinculada é cancelada)
+    motivo_cancelamento: Optional[str] = None
+    cancelado_por: Optional[str] = None
+    data_cancelamento: Optional[str] = None
     
     # Validade
     data_validade: str  # Calculada automaticamente
