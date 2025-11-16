@@ -3256,18 +3256,23 @@ async def get_produtos(
 
 @api_router.post("/produtos", response_model=Produto)
 async def create_produto(produto_data: ProdutoCreate, current_user: dict = Depends(require_permission("produtos", "criar"))):
-    # Calcular margem automaticamente se não fornecida
-    if produto_data.margem_lucro is None and produto_data.preco_custo > 0:
-        produto_data.margem_lucro = ((produto_data.preco_venda - produto_data.preco_custo) / produto_data.preco_custo) * 100
+    # Inicializar preço_medio com preço_inicial no momento do cadastro
+    produto_dict = produto_data.model_dump()
+    produto_dict["preco_medio"] = produto_dict["preco_inicial"]
+    produto_dict["preco_ultima_compra"] = None
     
-    produto = Produto(**produto_data.model_dump())
+    # Calcular margem automaticamente usando preco_medio
+    if produto_dict.get("margem_lucro") is None and produto_dict["preco_medio"] > 0:
+        produto_dict["margem_lucro"] = ((produto_dict["preco_venda"] - produto_dict["preco_medio"]) / produto_dict["preco_medio"]) * 100
+    
+    produto = Produto(**produto_dict)
     await db.produtos.insert_one(produto.model_dump())
     
     # Registrar histórico de preço inicial
     historico = HistoricoPreco(
         produto_id=produto.id,
         preco_custo_anterior=0,
-        preco_custo_novo=produto.preco_custo,
+        preco_custo_novo=produto.preco_inicial,
         preco_venda_anterior=0,
         preco_venda_novo=produto.preco_venda,
         margem_anterior=0,
