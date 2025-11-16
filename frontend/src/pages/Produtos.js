@@ -284,7 +284,7 @@ const Produtos = () => {
         { key: 'marca_nome', label: 'Marca' },
         { key: 'categoria_nome', label: 'Categoria' },
         { key: 'subcategoria_nome', label: 'Subcategoria' },
-        { key: 'preco_custo', label: 'Preço Custo' },
+        { key: 'preco_medio', label: 'Preço Médio' },
         { key: 'preco_venda', label: 'Preço Venda' },
         { key: 'margem_lucro', label: 'Margem (%)' },
         { key: 'estoque_atual', label: 'Estoque Atual' },
