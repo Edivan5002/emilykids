@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "MELHORIA NO MÓDULO NOTA FISCAL: Na aba 'Item' ao selecionar produtos, deve exibir informações detalhadas: Nome da Marca | Nome da Categoria | Nome da Subcategoria | Nome do Produto | SKU."
+user_problem_statement: "NOVAS FUNCIONALIDADES NO MÓDULO PRODUTOS: (1) Marca, Categoria e Subcategoria agora são campos obrigatórios no modelo Produto; (2) Novo endpoint GET /api/produtos/{produto_id}/historico-compras-completo com paginação; (3) Categorias devem ter marca_id e subcategorias devem ter categoria_id (relacionamento em cascata)."
 
 backend:
   - task: "Novas funcionalidades do módulo Produtos - Campos obrigatórios e endpoint histórico"
