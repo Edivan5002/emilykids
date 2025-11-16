@@ -105,6 +105,17 @@
 user_problem_statement: "MELHORIA NO MÓDULO NOTA FISCAL: Na aba 'Item' ao selecionar produtos, deve exibir informações detalhadas: Nome da Marca | Nome da Categoria | Nome da Subcategoria | Nome do Produto | SKU."
 
 backend:
+  - task: "Exibição detalhada de produtos no módulo Nota Fiscal"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/NotasFiscais.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ MELHORIA IMPLEMENTADA: (1) ESTADOS: Adicionados estados para marcas, categorias e subcategorias; (2) FETCH DATA: Modificado fetchData() para buscar marcas, categorias e subcategorias em paralelo com os dados existentes usando Promise.all; (3) FUNÇÃO AUXILIAR: Criada getProdutoDetalhado(produto) que retorna string formatada com: Nome da Marca | Nome da Categoria | Nome da Subcategoria | Nome do Produto | SKU; Tratamento para campos não preenchidos (exibe 'Sem Marca', 'Sem Categoria', 'Sem Subcategoria', 'N/A' para SKU ausente); (4) INTERFACE: Modificado SelectItem na aba 'Item' (linha ~391) para usar getProdutoDetalhado(p) ao invés de apenas nome e SKU. RESULTADO: Ao adicionar produtos em notas fiscais, o dropdown agora exibe informações completas facilitando identificação correta do produto."
 
   - task: "Alteração da senha mestre de administração"
     implemented: true
