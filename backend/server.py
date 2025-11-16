@@ -7101,7 +7101,7 @@ async def verificar_atividade_suspeita(current_user: dict = Depends(require_perm
                 "ip": ip,
                 "tentativas": len(logs_ip),
                 "ultima_tentativa": logs_ip[0]["timestamp"],
-                "emails_tentados": list(set(l.get("user_email") for l in logs_ip if l.get("user_email")))
+                "emails_tentados": list(set(log_entry.get("user_email") for log_entry in logs_ip if log_entry.get("user_email")))
             })
     
     # Acessos negados
