@@ -43,6 +43,17 @@ const Layout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Função para verificar se usuário tem permissão em um módulo
+  const hasModulePermission = (module) => {
+    if (!user?.permissoes) return false;
+    if (user?.papel === 'admin') return true;
+    
+    // Verifica se tem qualquer permissão (ler, criar, editar, deletar) no módulo
+    return user.permissoes.some(perm => 
+      perm.startsWith(`${module}:`)
+    );
+  };
+
   // Detectar tamanho da tela e ajustar sidebar
   useEffect(() => {
     const handleResize = () => {
