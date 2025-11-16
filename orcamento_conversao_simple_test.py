@@ -126,13 +126,18 @@ class SimpleOrcamentoConversaoTester:
             return None
     
     def get_budget_by_id(self, budget_id):
-        """Get budget details by ID"""
+        """Get budget details by ID using list endpoint"""
         try:
-            response = requests.get(f"{self.base_url}/orcamentos/{budget_id}", headers=self.get_headers())
+            response = requests.get(f"{self.base_url}/orcamentos?limit=0", headers=self.get_headers())
             if response.status_code == 200:
-                return response.json()
+                budgets = response.json()
+                for budget in budgets:
+                    if budget["id"] == budget_id:
+                        return budget
+                print(f"   ⚠ Budget {budget_id} not found in list")
+                return None
             else:
-                print(f"   ⚠ Failed to get budget {budget_id}: {response.status_code}")
+                print(f"   ⚠ Failed to get budgets list: {response.status_code}")
                 return None
         except Exception as e:
             print(f"   ⚠ Error getting budget {budget_id}: {str(e)}")
