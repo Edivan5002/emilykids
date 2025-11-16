@@ -901,23 +901,81 @@ const Produtos = () => {
                 {/* ABA PREÇOS */}
                 <TabsContent value="precos" className="space-y-4">
                   <div className="grid grid-cols-3 gap-4">
+                    {!isEditing ? (
+                      // NO CADASTRO: Mostra "Preço Inicial" editável
+                      <div>
+                        <Label>Preço Inicial (R$) *</Label>
+                        <Input 
+                          type="number" 
+                          step="0.01" 
+                          value={formData.preco_inicial} 
+                          onChange={(e) => handlePrecoInicialChange(e.target.value)} 
+                          required 
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Preço informado no cadastro</p>
+                      </div>
+                    ) : (
+                      // NA EDIÇÃO: Mostra "Preço Última Compra" não editável
+                      <div>
+                        <Label>Preço Última Compra (R$)</Label>
+                        <Input 
+                          type="number" 
+                          step="0.01" 
+                          value={formData.preco_ultima_compra || formData.preco_inicial} 
+                          readOnly 
+                          className="bg-gray-100"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Nota fiscal mais recente</p>
+                      </div>
+                    )}
+                    
                     <div>
-                      <Label>Preço de Custo (R$) *</Label>
-                      <Input type="number" step="0.01" value={formData.preco_custo} onChange={(e) => handlePrecoCustoChange(e.target.value)} required />
+                      <Label>Preço Médio (R$)</Label>
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        value={formData.preco_medio || formData.preco_inicial} 
+                        readOnly 
+                        className="bg-gray-100"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Média ponderada das compras</p>
                     </div>
+                    
                     <div>
                       <Label>Preço de Venda (R$) *</Label>
-                      <Input type="number" step="0.01" value={formData.preco_venda} onChange={(e) => handlePrecoVendaChange(e.target.value)} required />
-                    </div>
-                    <div>
-                      <Label>Margem de Lucro (%)</Label>
-                      <Input type="number" step="0.01" value={formData.margem_lucro} onChange={(e) => handleMargemChange(e.target.value)} />
-                      <p className="text-xs text-gray-500 mt-1">Calculado automaticamente</p>
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        value={formData.preco_venda} 
+                        onChange={(e) => handlePrecoVendaChange(e.target.value)} 
+                        required 
+                      />
                     </div>
                   </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Margem de Lucro (%)</Label>
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        value={formData.margem_lucro} 
+                        onChange={(e) => handleMargemChange(e.target.value)} 
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Calculado sobre preço médio</p>
+                    </div>
+                  </div>
+                  
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <p className="text-sm font-medium text-blue-900">Informações de Preço:</p>
-                    <p className="text-sm text-blue-700">Margem: {formData.margem_lucro}% | Lucro por unidade: {formatarMoeda(formData.preco_venda - formData.preco_custo)}</p>
+                    <p className="text-sm text-blue-700">
+                      Margem: {formData.margem_lucro}% | Lucro por unidade: {formatarMoeda(formData.preco_venda - (isEditing ? formData.preco_medio : formData.preco_inicial))}
+                    </p>
+                    {isEditing && formData.preco_ultima_compra && (
+                      <p className="text-sm text-gray-600 mt-1">
+                        Última compra: R$ {formData.preco_ultima_compra?.toFixed(2)}
+                      </p>
+                    )}
                   </div>
                   <hr />
                   <h3 className="font-semibold">Preço Promocional</h3>
