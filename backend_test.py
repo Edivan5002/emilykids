@@ -51,7 +51,7 @@ class SalesCancellationTester:
             print(f"   Details: {details}")
     
     def authenticate(self):
-        """Authenticate using credentials from review request"""
+        """Authenticate using admin credentials"""
         print("\n=== AUTHENTICATION TEST ===")
         
         # Try multiple admin credentials to find working ones
@@ -66,7 +66,6 @@ class SalesCancellationTester:
         ]
         
         for login_data in credentials_to_try:
-        
             try:
                 response = requests.post(f"{self.base_url}/auth/login", json=login_data)
                 if response.status_code == 200:
