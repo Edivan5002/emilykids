@@ -5925,6 +5925,35 @@ async def cancelar_venda(
         }}
     )
     
+    # Se a venda foi originada de um orçamento, atualizar o orçamento
+    if venda.get("orcamento_id"):
+        orcamento = await db.orcamentos.find_one({"id": venda["orcamento_id"]}, {"_id": 0})
+        if orcamento:
+            # Adicionar ao histórico do orçamento
+            historico_orcamento = {
+                "data": datetime.now(timezone.utc).isoformat(),
+                "usuario": current_user["nome"],
+                "acao": "cancelamento_venda_vinculada",
+                "detalhes": f"Venda cancelada. Motivo: {cancelamento.motivo}"
+            }
+            
+            if "historico_alteracoes" not in orcamento:
+                orcamento["historico_alteracoes"] = []
+            orcamento["historico_alteracoes"].append(historico_orcamento)
+            
+            # Atualizar orçamento para status cancelado
+            await db.orcamentos.update_one(
+                {"id": venda["orcamento_id"]},
+                {"$set": {
+                    "status": "cancelado",
+                    "motivo_cancelamento": cancelamento.motivo,
+                    "cancelado_por": current_user["id"],
+                    "data_cancelamento": datetime.now(timezone.utc).isoformat(),
+                    "historico_alteracoes": orcamento["historico_alteracoes"],
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }}
+            )
+    
     # Log
     await log_action(
         ip="0.0.0.0",
