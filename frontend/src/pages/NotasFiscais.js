@@ -80,6 +80,36 @@ const NotasFiscais = () => {
     }
   };
 
+  const fetchHistoricoCompras = async (produtoId) => {
+    const produto = produtos.find(p => p.id === produtoId);
+    if (!produto) {
+      toast.error('Produto não encontrado');
+      return;
+    }
+
+    setHistoricoDialog({ 
+      open: true, 
+      produtoId, 
+      produtoNome: produto.nome, 
+      historico: [], 
+      loading: true 
+    });
+
+    try {
+      const response = await axios.get(`${API}/produtos/${produtoId}/historico-compras`);
+      setHistoricoDialog(prev => ({ 
+        ...prev, 
+        historico: response.data, 
+        loading: false 
+      }));
+    } catch (error) {
+      console.error('Erro ao buscar histórico:', error);
+      toast.error('Erro ao buscar histórico de compras');
+      setHistoricoDialog(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+
   const handleAddItem = () => {
     // Validações detalhadas
     if (!novoItem.produto_id) {
