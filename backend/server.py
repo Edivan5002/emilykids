@@ -6895,7 +6895,7 @@ async def get_estatisticas_logs(
     tempo_medio = sum(tempos_execucao) / len(tempos_execucao) if tempos_execucao else 0
     
     # Erros
-    total_erros = len([l for l in logs if l.get("severidade") in ["ERROR", "CRITICAL"]])
+    total_erros = len([log_entry for log_entry in logs if log_entry.get("severidade") in ["ERROR", "CRITICAL"]])
     
     return {
         "periodo": {"data_inicio": data_inicio, "data_fim": data_fim},
