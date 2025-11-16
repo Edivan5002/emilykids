@@ -882,7 +882,7 @@ async def send_password_reset_email(email: str, token: str, user_name: str):
     
     # Por enquanto, apenas log para desenvolvimento
     print(f"\n{'='*60}")
-    print(f"PASSWORD RESET REQUEST")
+    print("PASSWORD RESET REQUEST")
     print(f"{'='*60}")
     print(f"User: {user_name}")
     print(f"Email: {email}")
