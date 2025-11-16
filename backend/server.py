@@ -4706,7 +4706,7 @@ async def cancelar_nota_fiscal(
     if nota.get("cancelada", False):
         raise HTTPException(status_code=400, detail="Nota fiscal já está cancelada")
     
-    # Se já foi confirmada, reverter estoque
+    # Se já foi confirmada, reverter estoque e recalcular preços
     if nota.get("confirmado", False) or nota["status"] == "confirmada":
         for item in nota.get("itens", []):
             produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
@@ -4732,6 +4732,9 @@ async def cancelar_nota_fiscal(
                     user_id=current_user["id"]
                 )
                 await db.movimentacoes_estoque.insert_one(movimentacao.model_dump())
+                
+                # Recalcular preço médio e preço última compra (exclui a nota cancelada)
+                await recalcular_precos_produto(item["produto_id"])
     
     # Adicionar ao histórico
     historico_entry = {
