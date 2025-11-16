@@ -6858,8 +6858,8 @@ Seja específico nos valores sugeridos e forneça justificativas claras para cad
         response = await chat.send_message(message)
         
         # Calcular alguns indicadores adicionais
-        markup_atual = ((produto.get('preco_venda', 0) - produto.get('preco_custo', 0)) / produto.get('preco_custo', 1)) * 100
-        roi = (receita_total - (produto.get('preco_custo', 0) * quantidade_vendida)) / max(produto.get('preco_custo', 0) * quantidade_vendida, 1) * 100 if quantidade_vendida > 0 else 0
+        markup_atual = ((produto.get('preco_venda', 0) - produto.get('preco_medio', 0)) / produto.get('preco_medio', 1)) * 100
+        roi = (receita_total - (produto.get('preco_medio', 0) * quantidade_vendida)) / max(produto.get('preco_medio', 0) * quantidade_vendida, 1) * 100 if quantidade_vendida > 0 else 0
         
         return {
             "success": True,
@@ -6869,7 +6869,7 @@ Seja específico nos valores sugeridos e forneça justificativas claras para cad
                 "sku": produto["sku"],
                 "marca": marca.get('nome') if marca else 'N/A',
                 "categoria": categoria.get('nome') if categoria else 'N/A',
-                "preco_custo": produto.get('preco_custo', 0),
+                "preco_medio": produto.get('preco_medio', 0),
                 "preco_venda": produto.get('preco_venda', 0),
                 "margem_lucro": produto.get('margem_lucro', 0)
             },
