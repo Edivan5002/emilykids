@@ -5188,11 +5188,16 @@ async def converter_orcamento_venda(
         orcamento["historico_alteracoes"] = []
     orcamento["historico_alteracoes"].append(historico_entry)
     
-    # Atualizar status do orçamento
+    # Atualizar orçamento com os valores finais da conversão
     await db.orcamentos.update_one(
         {"id": orcamento_id},
         {"$set": {
             "status": "vendido",
+            "itens": itens_final,
+            "subtotal": subtotal,
+            "total": total_final,
+            "desconto": desconto_final,
+            "frete": frete_final,
             "historico_alteracoes": orcamento["historico_alteracoes"],
             "updated_at": datetime.now(timezone.utc).isoformat()
         }}
