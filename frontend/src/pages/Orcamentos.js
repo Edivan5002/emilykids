@@ -993,7 +993,10 @@ const Orcamentos = () => {
                         <div className="flex justify-between">
                           <span>Subtotal:</span>
                           <span className="font-semibold">
-                            R$ {modalConversao.itens.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2)}
+                            R$ {modalConversao.itens.reduce((sum, item) => {
+                              const subtotal = item.subtotal || (item.quantidade * item.preco_unitario);
+                              return sum + subtotal;
+                            }, 0).toFixed(2)}
                           </span>
                         </div>
                         <div className="flex justify-between">
