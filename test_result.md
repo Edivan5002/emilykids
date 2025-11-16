@@ -107,15 +107,18 @@ user_problem_statement: "NOVA FUNCIONALIDADE: No módulo Venda, quando cancelar 
 backend:
   - task: "Cancelamento de venda propaga para orçamento vinculado"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py, /app/frontend/src/pages/Orcamentos.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "✅ FUNCIONALIDADE IMPLEMENTADA: (1) BACKEND: Modificado endpoint POST /vendas/{id}/cancelar (linhas 5927-5956) para verificar se venda possui orcamento_id vinculado. Se sim, atualiza o orçamento: status='cancelado', motivo_cancelamento (mesmo da venda), cancelado_por (user_id), data_cancelamento, adiciona entrada no histórico. Adicionados campos opcionais ao modelo Orcamento: motivo_cancelamento, cancelado_por, data_cancelamento. Status 'cancelado' incluído na lista de status válidos (linha 450). (2) FRONTEND: Adicionado card visual vermelho no módulo Orçamentos (/app/frontend/src/pages/Orcamentos.js) que exibe motivo e data de cancelamento quando status='cancelado'. Badge de status já suportava 'cancelado' (bg-red). RESULTADO: Quando venda originada de orçamento é cancelada, o orçamento automaticamente muda para status 'cancelado' e exibe o motivo visualmente no card."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO PERFEITAMENTE: Executei os 4 TESTES OBRIGATÓRIOS especificados na review_request com 100% SUCCESS RATE. VALIDAÇÕES CONFIRMADAS: (1) CANCELAR VENDA ORIGINADA DE ORÇAMENTO - Criado cliente, produto, orçamento, convertido para venda (status='vendido'), cancelado com motivo 'Cliente desistiu da compra' - ORÇAMENTO ATUALIZADO CORRETAMENTE: status='cancelado', motivo_cancelamento correto, cancelado_por preenchido, data_cancelamento válida, histórico com entrada 'cancelamento_venda_vinculada' ✅; (2) CANCELAR VENDA NÃO ORIGINADA DE ORÇAMENTO - Venda direta cancelada sem erros, sem propagação ✅; (3) VALIDAR CAMPOS NO ORÇAMENTO CANCELADO - Todos os campos validados: status, motivo_cancelamento, cancelado_por, data_cancelamento (ISO válida), historico_alteracoes ✅; (4) ESTOQUE REVERTIDO CORRETAMENTE - Estoque inicial 100 → 98 após venda → 100 após cancelamento ✅. RESULTADO: TODAS as validações passaram - propagação de cancelamento funcionando 100% conforme especificado!"
   
   - task: "Atualização do orçamento ao converter em venda com itens editados"
     implemented: true
