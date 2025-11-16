@@ -124,8 +124,25 @@ class SalesCancellationTester:
             response = requests.post(f"{self.base_url}/produtos", json=product_data, headers=self.get_headers())
             if response.status_code == 200:
                 product = response.json()
-                self.created_products.append(product["id"])
-                return product["id"]
+                product_id = product["id"]
+                self.created_products.append(product_id)
+                
+                # Set initial stock using manual adjustment
+                stock_adjustment = {
+                    "produto_id": product_id,
+                    "quantidade": 100,
+                    "motivo": "Estoque inicial para teste",
+                    "tipo": "entrada"
+                }
+                
+                stock_response = requests.post(f"{self.base_url}/estoque/ajuste-manual", 
+                                             json=stock_adjustment, headers=self.get_headers())
+                if stock_response.status_code == 200:
+                    print(f"   ✓ Product created with initial stock of 100")
+                else:
+                    print(f"   ⚠ Failed to set initial stock: {stock_response.status_code} - {stock_response.text}")
+                
+                return product_id
             else:
                 print(f"   ⚠ Failed to create test product: {response.status_code} - {response.text}")
                 return None
