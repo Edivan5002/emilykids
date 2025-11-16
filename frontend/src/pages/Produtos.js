@@ -179,6 +179,63 @@ const Produtos = () => {
     }
   };
 
+  // Função para carregar histórico de compras com paginação
+  const fetchHistoricoCompras = async (produtoId, page = 1) => {
+    setHistoricoCompras(prev => ({ ...prev, loading: true }));
+    try {
+      const response = await axios.get(`${API}/produtos/${produtoId}/historico-compras-completo?page=${page}&limit=20`);
+      setHistoricoCompras({
+        data: response.data.data,
+        total: response.data.total,
+        page: response.data.page,
+        total_pages: response.data.total_pages,
+        loading: false
+      });
+    } catch (error) {
+      console.error('Erro ao carregar histórico:', error);
+      toast.error('Erro ao carregar histórico de compras');
+      setHistoricoCompras({ data: [], total: 0, page: 1, total_pages: 0, loading: false });
+    }
+  };
+
+  // Função para atualizar categorias quando marca é selecionada
+  const handleMarcaChange = (marcaId) => {
+    setFormData(prev => ({
+      ...prev,
+      marca_id: marcaId,
+      categoria_id: '',  // Limpar categoria
+      subcategoria_id: ''  // Limpar subcategoria
+    }));
+    
+    // Filtrar categorias da marca selecionada
+    if (marcaId) {
+      const catsFiltradas = categorias.filter(c => c.marca_id === marcaId);
+      setCategoriasFiltradas(catsFiltradas);
+      setSubcategoriasFiltradas([]);  // Limpar subcategorias
+    } else {
+      setCategoriasFiltradas([]);
+      setSubcategoriasFiltradas([]);
+    }
+  };
+
+  // Função para atualizar subcategorias quando categoria é selecionada
+  const handleCategoriaChange = (categoriaId) => {
+    setFormData(prev => ({
+      ...prev,
+      categoria_id: categoriaId,
+      subcategoria_id: ''  // Limpar subcategoria
+    }));
+    
+    // Filtrar subcategorias da categoria selecionada
+    if (categoriaId) {
+      const subsFiltradas = subcategorias.filter(s => s.categoria_id === categoriaId);
+      setSubcategoriasFiltradas(subsFiltradas);
+    } else {
+      setSubcategoriasFiltradas([]);
+    }
+  };
+
+
   const calcularMargem = (custo, venda) => {
     if (custo > 0) {
       return ((venda - custo) / custo * 100).toFixed(2);
