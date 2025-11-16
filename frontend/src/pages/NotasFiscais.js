@@ -229,6 +229,25 @@ const NotasFiscais = () => {
     return produto?.nome || 'Produto';
   };
 
+  const getProdutoDetalhado = (produto) => {
+    if (!produto) return '';
+    
+    // Buscar marca
+    const marca = marcas.find(m => m.id === produto.marca_id);
+    const marcaNome = marca?.nome || 'Sem Marca';
+    
+    // Buscar categoria
+    const categoria = categorias.find(c => c.id === produto.categoria_id);
+    const categoriaNome = categoria?.nome || 'Sem Categoria';
+    
+    // Buscar subcategoria
+    const subcategoria = subcategorias.find(s => s.id === produto.subcategoria_id);
+    const subcategoriaNome = subcategoria?.nome || 'Sem Subcategoria';
+    
+    // Montar texto: Marca | Categoria | Subcategoria | Nome do Produto | SKU
+    return `${marcaNome} | ${categoriaNome} | ${subcategoriaNome} | ${produto.nome} | SKU: ${produto.sku || 'N/A'}`;
+  };
+
   // Estatísticas
   const notasConfirmadas = notasFiscais.filter(nf => nf.confirmado && !nf.cancelada && nf.status !== 'cancelada').length;
   const notasPendentes = notasFiscais.filter(nf => !nf.confirmado && !nf.cancelada && nf.status !== 'cancelada').length;
