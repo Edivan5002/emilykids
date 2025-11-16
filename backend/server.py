@@ -3792,7 +3792,7 @@ async def get_historico_compras_completo_produto(
 
 @api_router.get("/produtos/relatorios/mais-vendidos")
 async def get_produtos_mais_vendidos(
-    limite: int = 10,
+    limite: int = 20,
     data_inicio: Optional[str] = None,
     data_fim: Optional[str] = None,
     current_user: dict = Depends(require_permission("relatorios", "ler"))
