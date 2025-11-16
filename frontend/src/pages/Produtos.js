@@ -471,7 +471,8 @@ const Produtos = () => {
     setActiveTab('basico');
     setFormData({
       sku: '', nome: '', marca_id: '', categoria_id: '', subcategoria_id: '', unidade: 'UN',
-      preco_custo: 0, preco_venda: 0, margem_lucro: 0, preco_promocional: '', data_inicio_promo: '', data_fim_promo: '',
+      preco_inicial: 0, preco_medio: 0, preco_ultima_compra: 0, preco_venda: 0, margem_lucro: 0, 
+      preco_promocional: '', data_inicio_promo: '', data_fim_promo: '',
       estoque_minimo: 0, estoque_maximo: 0, codigo_barras: '', peso: '', altura: '', largura: '', profundidade: '',
       fornecedor_preferencial_id: '', comissao_vendedor: '', tags: [], em_destaque: false,
       tem_variacoes: false, variacoes: [], eh_kit: false, componentes_kit: [], fotos: [], descricao: '', ativo: true
