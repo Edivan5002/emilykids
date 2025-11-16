@@ -139,7 +139,7 @@ class FiltrosLog(BaseModel):
     tela: Optional[str] = None
     acao: Optional[str] = None
     metodo_http: Optional[str] = None
-    limit: int = 50
+    limit: int = 20
     offset: int = 0
 
 class Cliente(BaseModel):
@@ -7001,7 +7001,7 @@ async def get_logs(
     tela: str = None,
     acao: str = None,
     metodo_http: str = None,
-    limit: int = 50,
+    limit: int = 20,
     offset: int = 0,
     current_user: dict = Depends(require_permission("logs", "ler"))
 ):
@@ -8219,7 +8219,7 @@ async def admin_limpar_tudo(
 
 @api_router.get("/admin/logs-auditoria")
 async def admin_get_logs_auditoria(
-    limit: int = 50,
+    limit: int = 20,
     current_user: dict = Depends(require_permission("admin", "ler"))
 ):
     """Retorna logs de auditoria das ações administrativas"""
