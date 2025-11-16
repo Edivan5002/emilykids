@@ -3235,6 +3235,80 @@ async def toggle_subcategoria_status(subcategoria_id: str, current_user: dict = 
 
 # ========== PRODUTOS ==========
 
+async def recalcular_precos_produto(produto_id: str):
+    """
+    Recalcula preço_medio e preco_ultima_compra de um produto com base nas notas fiscais confirmadas
+    - Preço Médio: média ponderada de todas as compras (soma(preco*qtd) / soma(qtd))
+    - Preço Última Compra: preço da nota fiscal mais recente
+    """
+    # Buscar o produto
+    produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
+    if not produto:
+        return
+    
+    # Buscar todas as notas fiscais confirmadas que contêm este produto
+    notas = await db.notas_fiscais.find(
+        {
+            "confirmado": True,
+            "cancelada": False,
+            "status": {"$ne": "cancelada"},
+            "itens.produto_id": produto_id
+        },
+        {"_id": 0}
+    ).sort("data_emissao", -1).to_list(10000)
+    
+    if not notas:
+        # Se não há notas fiscais, preco_medio = preco_inicial e preco_ultima_compra = None
+        await db.produtos.update_one(
+            {"id": produto_id},
+            {"$set": {
+                "preco_medio": produto.get("preco_inicial", 0),
+                "preco_ultima_compra": None
+            }}
+        )
+        return
+    
+    # Calcular preço médio ponderado e preço da última compra
+    soma_valores = 0
+    soma_quantidades = 0
+    preco_ultima_compra = None
+    
+    for nota in notas:
+        for item in nota.get("itens", []):
+            if item.get("produto_id") == produto_id:
+                quantidade = item.get("quantidade", 0)
+                preco_unitario = item.get("preco_unitario", 0)
+                
+                soma_valores += quantidade * preco_unitario
+                soma_quantidades += quantidade
+                
+                # Primeira iteração (nota mais recente)
+                if preco_ultima_compra is None:
+                    preco_ultima_compra = preco_unitario
+    
+    # Calcular preço médio
+    preco_medio = soma_valores / soma_quantidades if soma_quantidades > 0 else produto.get("preco_inicial", 0)
+    
+    # Se não há última compra, usar preço inicial
+    if preco_ultima_compra is None:
+        preco_ultima_compra = produto.get("preco_inicial", 0)
+    
+    # Atualizar produto
+    await db.produtos.update_one(
+        {"id": produto_id},
+        {"$set": {
+            "preco_medio": round(preco_medio, 2),
+            "preco_ultima_compra": round(preco_ultima_compra, 2)
+        }}
+    )
+    
+    return {
+        "preco_medio": round(preco_medio, 2),
+        "preco_ultima_compra": round(preco_ultima_compra, 2)
+    }
+
+
+
 @api_router.get("/produtos", response_model=List[Produto])
 async def get_produtos(
     incluir_inativos: bool = False,
