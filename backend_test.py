@@ -116,7 +116,6 @@ class SalesCancellationTester:
             "nome": f"Produto Teste Cancelamento{name_suffix}",
             "preco_custo": 50.0,
             "preco_venda": 100.0,
-            "estoque_atual": 100,
             "estoque_minimo": 5,
             "estoque_maximo": 200
         }
