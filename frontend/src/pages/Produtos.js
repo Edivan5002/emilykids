@@ -160,14 +160,20 @@ const Produtos = () => {
 
   const fetchRelatorios = async () => {
     try {
-      const [maisVendidos, valorEstoque] = await Promise.all([
-        axios.get(`${API}/produtos/relatorios/mais-vendidos?limite=20`),
-        axios.get(`${API}/produtos/relatorios/valor-estoque`)
-      ]);
-      setRelatorios({
-        maisVendidos: maisVendidos.data,
-        valorEstoque: valorEstoque.data
-      });
+      const requests = [];
+      
+      // Tentar carregar relatórios, mas não falhar se não tiver permissão
+      try {
+        const maisVendidos = await axios.get(`${API}/produtos/relatorios/mais-vendidos?limite=20`);
+        const valorEstoque = await axios.get(`${API}/produtos/relatorios/valor-estoque`);
+        setRelatorios({
+          maisVendidos: maisVendidos.data,
+          valorEstoque: valorEstoque.data
+        });
+      } catch (err) {
+        console.log('Sem permissão para relatórios de produtos');
+        setRelatorios({ maisVendidos: [], valorEstoque: {} });
+      }
     } catch (error) {
       console.error('Erro ao carregar relatórios');
     }
