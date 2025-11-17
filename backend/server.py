@@ -7005,13 +7005,8 @@ async def get_dashboard(current_user: dict = Depends(require_permission("relator
 
 @api_router.get("/relatorios/vendas-por-periodo")
 async def vendas_por_periodo(current_user: dict = Depends(require_permission("relatorios", "ler"))):
-    # Apenas vendas efetivadas (não canceladas)
-    vendas = await db.vendas.find({
-        "$and": [
-            {"$or": [{"cancelada": {"$exists": False}}, {"cancelada": False}]},
-            {"$or": [{"status": {"$exists": False}}, {"status": {"$ne": "cancelada"}}]}
-        ]
-    }, {"_id": 0}).to_list(10000)
+    # Apenas vendas efetivadas
+    vendas = await db.vendas.find({"status": "efetivada"}, {"_id": 0}).to_list(10000)
     
     # Agrupar por data
     vendas_por_dia = {}
