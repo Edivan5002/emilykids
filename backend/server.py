@@ -6613,8 +6613,11 @@ async def recomendacoes_cliente(request: RecomendacoesClienteRequest, current_us
             for item in venda.get("itens", []):
                 produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
                 if produto:
+                    # Obter descrição completa do produto
+                    descricao_completa = await get_produto_descricao_completa(item["produto_id"])
                     produtos_comprados.append({
                         "nome": produto["nome"],
+                        "descricao_completa": descricao_completa,
                         "quantidade": item["quantidade"],
                         "valor": item["preco_unitario"]
                     })
