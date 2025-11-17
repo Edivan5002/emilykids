@@ -1103,7 +1103,7 @@ const Estoque = () => {
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Produto</p>
                   <p className="font-semibold">
-                    {produtos.find(p => p.id === detalhesMovimentacao.produto_id)?.nome || 'Produto não encontrado'}
+                    {detalhesMovimentacao.produto_id ? getProdutoDescricaoCompleta(detalhesMovimentacao.produto_id) : 'Produto não encontrado'}
                   </p>
                 </div>
                 <div>
