@@ -7461,6 +7461,17 @@ async def get_kpis_dashboard(data_inicio: str = None, data_fim: str = None, curr
     
     top_produtos = sorted(produtos_vendidos.items(), key=lambda x: x[1]["faturamento"], reverse=True)[:5]
     
+    # Adicionar descrição completa dos produtos
+    top_produtos_completo = []
+    for pid, data in top_produtos:
+        descricao = await get_produto_descricao_completa(pid)
+        top_produtos_completo.append({
+            "produto_id": pid,
+            "produto_descricao": descricao,
+            "quantidade": data["quantidade"],
+            "faturamento": data["faturamento"]
+        })
+    
     return {
         "periodo": {
             "data_inicio": data_inicio,
@@ -7489,13 +7500,7 @@ async def get_kpis_dashboard(data_inicio: str = None, data_fim: str = None, curr
             "total": len(clientes),
             "ativos": clientes_ativos
         },
-        "top_produtos": [
-            {
-                "produto_id": pid,
-                "quantidade": data["quantidade"],
-                "faturamento": data["faturamento"]
-            } for pid, data in top_produtos
-        ]
+        "top_produtos": top_produtos_completo
     }
 
 @api_router.get("/relatorios/vendas/por-periodo")
