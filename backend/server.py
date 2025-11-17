@@ -9685,6 +9685,676 @@ async def admin_get_logs_auditoria(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# ========== CONTAS A PAGAR - ENDPOINTS ==========
+
+# Função helper para gerar número de conta a pagar
+async def gerar_numero_conta_pagar() -> str:
+    """Gera número sequencial para conta a pagar (CP-000001)"""
+    ultimo = await db.contas_pagar.find_one(sort=[("created_at", -1)])
+    if ultimo and "numero" in ultimo:
+        ultimo_num = int(ultimo["numero"].split("-")[1])
+        novo_num = ultimo_num + 1
+    else:
+        novo_num = 1
+    return f"CP-{novo_num:06d}"
+
+# Função helper para atualizar status da conta
+async def atualizar_status_conta_pagar(conta_id: str):
+    """Atualiza status da conta baseado nas parcelas"""
+    conta = await db.contas_pagar.find_one({"id": conta_id})
+    if not conta:
+        return
+    
+    total_parcelas = len(conta["parcelas"])
+    parcelas_pagas = len([p for p in conta["parcelas"] if p["status"] == "pago"])
+    parcelas_vencidas = len([p for p in conta["parcelas"] if p["status"] == "vencido"])
+    
+    # Determinar novo status
+    if parcelas_pagas == total_parcelas:
+        novo_status = "pago_total"
+    elif parcelas_pagas > 0:
+        novo_status = "pago_parcial"
+    elif parcelas_vencidas > 0:
+        novo_status = "vencido"
+    else:
+        novo_status = "pendente"
+    
+    # Atualizar valores
+    valor_pago = sum(p["valor_pago"] for p in conta["parcelas"])
+    valor_pendente = conta["valor_total"] - valor_pago
+    
+    await db.contas_pagar.update_one(
+        {"id": conta_id},
+        {"$set": {
+            "status": novo_status,
+            "valor_pago": valor_pago,
+            "valor_pendente": valor_pendente
+        }}
+    )
+
+# Funções de logging para Contas a Pagar
+async def registrar_criacao_conta_pagar(
+    conta: dict,
+    usuario_id: str,
+    usuario_nome: str,
+    ip: str = None
+):
+    """Registra criação de conta a pagar"""
+    detalhes = {
+        "fornecedor_id": conta.get("fornecedor_id"),
+        "fornecedor_nome": conta.get("fornecedor_nome"),
+        "valor_total": conta.get("valor_total"),
+        "forma_pagamento": conta.get("forma_pagamento"),
+        "numero_parcelas": conta.get("numero_parcelas"),
+        "origem": conta.get("origem"),
+        "origem_numero": conta.get("origem_numero")
+    }
+    
+    await registrar_log_financeiro(
+        usuario_id=usuario_id,
+        usuario_nome=usuario_nome,
+        acao="conta_pagar_criada",
+        modulo="contas_pagar",
+        registro_id=conta["id"],
+        registro_numero=conta["numero"],
+        detalhes=detalhes,
+        ip=ip
+    )
+
+async def registrar_pagamento_parcela(
+    conta: dict,
+    parcela: dict,
+    valor_pago: float,
+    usuario_id: str,
+    usuario_nome: str,
+    ip: str = None
+):
+    """Registra pagamento de parcela"""
+    detalhes = {
+        "fornecedor_nome": conta.get("fornecedor_nome"),
+        "numero_parcela": parcela.get("numero_parcela"),
+        "valor_parcela": parcela.get("valor"),
+        "valor_pago": valor_pago,
+        "juros": parcela.get("valor_juros", 0),
+        "multa": parcela.get("valor_multa", 0),
+        "desconto": parcela.get("valor_desconto", 0),
+        "forma_pagamento": parcela.get("forma_pagamento")
+    }
+    
+    await registrar_log_financeiro(
+        usuario_id=usuario_id,
+        usuario_nome=usuario_nome,
+        acao="parcela_paga",
+        modulo="contas_pagar",
+        registro_id=conta["id"],
+        registro_numero=conta["numero"],
+        detalhes=detalhes,
+        ip=ip,
+        severidade="INFO"
+    )
+    
+    # Adicionar ao histórico da conta
+    await adicionar_historico_conta(
+        conta_id=conta["id"],
+        tipo="pagar",
+        acao="parcela_paga",
+        usuario_id=usuario_id,
+        usuario_nome=usuario_nome,
+        dados_novos=detalhes
+    )
+
+async def registrar_cancelamento_conta_pagar(
+    conta: dict,
+    motivo: str,
+    usuario_id: str,
+    usuario_nome: str,
+    ip: str = None
+):
+    """Registra cancelamento de conta a pagar"""
+    detalhes = {
+        "fornecedor_nome": conta.get("fornecedor_nome"),
+        "valor_total": conta.get("valor_total"),
+        "valor_pago": conta.get("valor_pago"),
+        "valor_pendente": conta.get("valor_pendente"),
+        "motivo": motivo
+    }
+    
+    await registrar_log_financeiro(
+        usuario_id=usuario_id,
+        usuario_nome=usuario_nome,
+        acao="conta_pagar_cancelada",
+        modulo="contas_pagar",
+        registro_id=conta["id"],
+        registro_numero=conta["numero"],
+        detalhes=detalhes,
+        ip=ip,
+        severidade="WARNING"
+    )
+    
+    # Adicionar ao histórico da conta
+    await adicionar_historico_conta(
+        conta_id=conta["id"],
+        tipo="pagar",
+        acao="cancelada",
+        usuario_id=usuario_id,
+        usuario_nome=usuario_nome,
+        dados_novos=detalhes
+    )
+
+# Listar contas a pagar
+@api_router.get("/contas-pagar")
+async def listar_contas_pagar(
+    page: int = 1,
+    limit: int = 20,
+    data_inicio: str = None,
+    data_fim: str = None,
+    fornecedor_id: str = None,
+    status: str = None,
+    origem: str = None,
+    vencidas: bool = None,
+    forma_pagamento: str = None,
+    categoria: str = None,
+    prioridade: str = None,
+    current_user: dict = Depends(require_permission("contas_pagar", "ler"))
+):
+    """
+    Lista contas a pagar com filtros avançados
+    """
+    query = {"cancelada": False}
+    
+    if fornecedor_id:
+        query["fornecedor_id"] = fornecedor_id
+    
+    if status and status != "todos":
+        query["status"] = status
+    
+    if origem and origem != "todos":
+        query["origem"] = origem
+    
+    if forma_pagamento and forma_pagamento != "todas":
+        query["forma_pagamento"] = forma_pagamento
+    
+    if categoria and categoria != "todas":
+        query["categoria"] = categoria
+    
+    if prioridade and prioridade != "todas":
+        query["prioridade"] = prioridade
+    
+    if vencidas:
+        query["status"] = "vencido"
+    
+    if data_inicio and data_fim:
+        query["created_at"] = {
+            "$gte": data_inicio,
+            "$lte": data_fim
+        }
+    
+    # Paginação
+    skip = (page - 1) * limit
+    
+    contas = await db.contas_pagar.find(query, {"_id": 0})\
+        .sort("created_at", -1)\
+        .skip(skip)\
+        .limit(limit)\
+        .to_list(limit)
+    
+    total = await db.contas_pagar.count_documents(query)
+    
+    return {
+        "data": contas,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "pages": (total + limit - 1) // limit
+    }
+
+# Criar conta a pagar manual
+@api_router.post("/contas-pagar")
+async def criar_conta_pagar(
+    conta: ContaPagarCreate,
+    current_user: dict = Depends(require_permission("contas_pagar", "criar"))
+):
+    """
+    Cria uma nova conta a pagar manualmente
+    """
+    # Buscar fornecedor se informado
+    fornecedor_nome = None
+    fornecedor_cpf_cnpj = None
+    if conta.fornecedor_id:
+        fornecedor = await db.fornecedores.find_one({"id": conta.fornecedor_id}, {"_id": 0})
+        if not fornecedor:
+            raise HTTPException(status_code=404, detail="Fornecedor não encontrado")
+        fornecedor_nome = fornecedor.get("razao_social")
+        fornecedor_cpf_cnpj = fornecedor.get("cnpj")
+    
+    # Gerar número
+    numero = await gerar_numero_conta_pagar()
+    
+    # Criar parcelas
+    parcelas = []
+    if conta.tipo_pagamento == "parcelado" and conta.parcelas:
+        for i, p in enumerate(conta.parcelas, 1):
+            parcelas.append(ParcelaPagar(
+                numero_parcela=i,
+                valor=p.get("valor"),
+                data_vencimento=p.get("data_vencimento"),
+                status="pendente"
+            ).dict())
+    else:
+        # Pagamento à vista
+        data_venc = conta.data_vencimento or datetime.now(timezone.utc).isoformat()[:10]
+        parcelas.append(ParcelaPagar(
+            numero_parcela=1,
+            valor=conta.valor_total,
+            data_vencimento=data_venc,
+            status="pendente"
+        ).dict())
+    
+    # Criar conta
+    nova_conta = ContaPagar(
+        numero=numero,
+        origem="manual",
+        fornecedor_id=conta.fornecedor_id,
+        fornecedor_nome=fornecedor_nome,
+        fornecedor_cpf_cnpj=fornecedor_cpf_cnpj,
+        descricao=conta.descricao,
+        categoria=conta.categoria,
+        subcategoria=conta.subcategoria,
+        observacao=conta.observacao,
+        valor_total=conta.valor_total,
+        valor_pendente=conta.valor_total,
+        valor_liquido=conta.valor_total,
+        forma_pagamento=conta.forma_pagamento,
+        tipo_pagamento=conta.tipo_pagamento,
+        numero_parcelas=len(parcelas),
+        parcelas=parcelas,
+        prioridade=conta.prioridade,
+        created_by=current_user["id"],
+        created_by_name=current_user["nome"],
+        tags=conta.tags,
+        centro_custo=conta.centro_custo,
+        projeto=conta.projeto
+    )
+    
+    await db.contas_pagar.insert_one(nova_conta.dict())
+    
+    # Registrar log
+    await registrar_criacao_conta_pagar(
+        conta=nova_conta.dict(),
+        usuario_id=current_user["id"],
+        usuario_nome=current_user["nome"]
+    )
+    
+    return nova_conta
+
+# Obter uma conta a pagar
+@api_router.get("/contas-pagar/{id}")
+async def obter_conta_pagar(
+    id: str,
+    current_user: dict = Depends(require_permission("contas_pagar", "ler"))
+):
+    """
+    Obtém detalhes completos de uma conta a pagar
+    """
+    conta = await db.contas_pagar.find_one({"id": id}, {"_id": 0})
+    if not conta:
+        raise HTTPException(status_code=404, detail="Conta a pagar não encontrada")
+    
+    return conta
+
+# Editar conta a pagar
+@api_router.put("/contas-pagar/{id}")
+async def editar_conta_pagar(
+    id: str,
+    dados: ContaPagarUpdate,
+    current_user: dict = Depends(require_permission("contas_pagar", "editar"))
+):
+    """
+    Edita informações de uma conta a pagar
+    """
+    conta = await db.contas_pagar.find_one({"id": id}, {"_id": 0})
+    if not conta:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    if conta["cancelada"]:
+        raise HTTPException(status_code=400, detail="Conta cancelada não pode ser editada")
+    
+    # Preparar dados anteriores para log
+    dados_anteriores = {
+        "descricao": conta.get("descricao"),
+        "observacao": conta.get("observacao"),
+        "prioridade": conta.get("prioridade"),
+        "tags": conta.get("tags"),
+        "centro_custo": conta.get("centro_custo"),
+        "projeto": conta.get("projeto")
+    }
+    
+    # Atualizar campos
+    update_data = {}
+    if dados.descricao is not None:
+        update_data["descricao"] = dados.descricao
+    if dados.observacao is not None:
+        update_data["observacao"] = dados.observacao
+    if dados.prioridade is not None:
+        update_data["prioridade"] = dados.prioridade
+    if dados.tags is not None:
+        update_data["tags"] = dados.tags
+    if dados.centro_custo is not None:
+        update_data["centro_custo"] = dados.centro_custo
+    if dados.projeto is not None:
+        update_data["projeto"] = dados.projeto
+    
+    update_data["updated_by"] = current_user["id"]
+    update_data["updated_by_name"] = current_user["nome"]
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.contas_pagar.update_one(
+        {"id": id},
+        {"$set": update_data}
+    )
+    
+    # Adicionar ao histórico
+    await adicionar_historico_conta(
+        conta_id=id,
+        tipo="pagar",
+        acao="editada",
+        usuario_id=current_user["id"],
+        usuario_nome=current_user["nome"],
+        dados_anteriores=dados_anteriores,
+        dados_novos=update_data
+    )
+    
+    # Registrar log
+    await registrar_log_financeiro(
+        usuario_id=current_user["id"],
+        usuario_nome=current_user["nome"],
+        acao="conta_pagar_editada",
+        modulo="contas_pagar",
+        registro_id=id,
+        registro_numero=conta["numero"],
+        detalhes=update_data
+    )
+    
+    return {"message": "Conta atualizada com sucesso"}
+
+# Liquidar parcela
+@api_router.post("/contas-pagar/{id}/liquidar-parcela")
+async def liquidar_parcela(
+    id: str,
+    dados: PagamentoParcela,
+    current_user: dict = Depends(require_permission("contas_pagar", "liquidar"))
+):
+    """
+    Registra pagamento de uma parcela
+    """
+    conta = await db.contas_pagar.find_one({"id": id}, {"_id": 0})
+    if not conta:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    if conta["cancelada"]:
+        raise HTTPException(status_code=400, detail="Conta cancelada")
+    
+    # Encontrar parcela
+    parcela_idx = None
+    parcela = None
+    for i, p in enumerate(conta["parcelas"]):
+        if p["numero_parcela"] == dados.numero_parcela:
+            parcela_idx = i
+            parcela = p
+            break
+    
+    if parcela is None:
+        raise HTTPException(status_code=404, detail="Parcela não encontrada")
+    
+    if parcela["status"] == "pago":
+        raise HTTPException(status_code=400, detail="Parcela já foi paga")
+    
+    # Calcular valor final
+    valor_final = dados.valor_pago + dados.juros + dados.multa - dados.desconto
+    
+    # Atualizar parcela
+    update_parcela = {
+        f"parcelas.{parcela_idx}.status": "pago",
+        f"parcelas.{parcela_idx}.data_pagamento": dados.data_pagamento,
+        f"parcelas.{parcela_idx}.valor_pago": dados.valor_pago,
+        f"parcelas.{parcela_idx}.valor_juros": dados.juros,
+        f"parcelas.{parcela_idx}.valor_multa": dados.multa,
+        f"parcelas.{parcela_idx}.valor_desconto": dados.desconto,
+        f"parcelas.{parcela_idx}.valor_final": valor_final,
+        f"parcelas.{parcela_idx}.forma_pagamento": dados.forma_pagamento or conta["forma_pagamento"],
+        f"parcelas.{parcela_idx}.comprovante": dados.comprovante,
+        f"parcelas.{parcela_idx}.paga_por": current_user["id"],
+        f"parcelas.{parcela_idx}.paga_por_name": current_user["nome"],
+        f"parcelas.{parcela_idx}.observacao": dados.observacao,
+        f"parcelas.{parcela_idx}.dias_atraso": 0
+    }
+    
+    await db.contas_pagar.update_one(
+        {"id": id},
+        {"$set": update_parcela}
+    )
+    
+    # Atualizar status da conta
+    await atualizar_status_conta_pagar(id)
+    
+    # Atualizar dados do fornecedor se houver
+    conta_atualizada = await db.contas_pagar.find_one({"id": id}, {"_id": 0})
+    if conta["fornecedor_id"]:
+        await db.fornecedores.update_one(
+            {"id": conta["fornecedor_id"]},
+            {
+                "$inc": {"total_pago": valor_final},
+                "$set": {"data_ultimo_pagamento": datetime.now(timezone.utc).isoformat()}
+            }
+        )
+    
+    # Registrar log
+    await registrar_pagamento_parcela(
+        conta=conta_atualizada,
+        parcela=conta_atualizada["parcelas"][parcela_idx],
+        valor_pago=valor_final,
+        usuario_id=current_user["id"],
+        usuario_nome=current_user["nome"]
+    )
+    
+    return {"message": "Parcela paga com sucesso", "conta": conta_atualizada}
+
+# Cancelar conta a pagar
+@api_router.delete("/contas-pagar/{id}")
+async def cancelar_conta_pagar(
+    id: str,
+    motivo: str,
+    current_user: dict = Depends(require_permission("contas_pagar", "deletar"))
+):
+    """
+    Cancela uma conta a pagar
+    """
+    conta = await db.contas_pagar.find_one({"id": id}, {"_id": 0})
+    if not conta:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    if conta["cancelada"]:
+        raise HTTPException(status_code=400, detail="Conta já está cancelada")
+    
+    # Cancelar conta
+    await db.contas_pagar.update_one(
+        {"id": id},
+        {"$set": {
+            "cancelada": True,
+            "cancelada_por": current_user["id"],
+            "cancelada_por_name": current_user["nome"],
+            "cancelada_at": datetime.now(timezone.utc).isoformat(),
+            "motivo_cancelamento": motivo,
+            "status": "cancelado"
+        }}
+    )
+    
+    # Registrar log
+    await registrar_cancelamento_conta_pagar(
+        conta=conta,
+        motivo=motivo,
+        usuario_id=current_user["id"],
+        usuario_nome=current_user["nome"]
+    )
+    
+    return {"message": "Conta cancelada com sucesso"}
+
+# Dashboard de Contas a Pagar
+@api_router.get("/contas-pagar/dashboard/kpis")
+async def dashboard_contas_pagar(
+    data_inicio: str = None,
+    data_fim: str = None,
+    current_user: dict = Depends(require_permission("contas_pagar", "ler"))
+):
+    """
+    KPIs e estatísticas de contas a pagar
+    """
+    query = {"cancelada": False}
+    
+    if data_inicio and data_fim:
+        query["created_at"] = {"$gte": data_inicio, "$lte": data_fim}
+    
+    contas = await db.contas_pagar.find(query, {"_id": 0}).to_list(10000)
+    
+    # Calcular KPIs
+    total_pagar = sum(c["valor_total"] for c in contas)
+    total_pago = sum(c["valor_pago"] for c in contas)
+    total_pendente = sum(c["valor_pendente"] for c in contas)
+    total_vencido = sum(c["valor_pendente"] for c in contas if c["status"] == "vencido")
+    
+    quantidade_contas = len(contas)
+    contas_pagas = len([c for c in contas if c["status"] == "pago_total"])
+    contas_vencidas = len([c for c in contas if c["status"] == "vencido"])
+    
+    taxa_pagamento = (total_pago / total_pagar * 100) if total_pagar > 0 else 0
+    
+    # Pagamentos por forma de pagamento
+    por_forma_pagamento = {}
+    for conta in contas:
+        forma = conta["forma_pagamento"]
+        if forma not in por_forma_pagamento:
+            por_forma_pagamento[forma] = {"total": 0, "pago": 0, "quantidade": 0}
+        por_forma_pagamento[forma]["total"] += conta["valor_total"]
+        por_forma_pagamento[forma]["pago"] += conta["valor_pago"]
+        por_forma_pagamento[forma]["quantidade"] += 1
+    
+    # Pagamentos por categoria
+    por_categoria = {}
+    for conta in contas:
+        cat = conta.get("categoria", "outros")
+        if cat not in por_categoria:
+            por_categoria[cat] = {"total": 0, "pago": 0, "quantidade": 0}
+        por_categoria[cat]["total"] += conta["valor_total"]
+        por_categoria[cat]["pago"] += conta["valor_pago"]
+        por_categoria[cat]["quantidade"] += 1
+    
+    # Contas por prioridade
+    por_prioridade = {}
+    for conta in contas:
+        prio = conta.get("prioridade", "normal")
+        if prio not in por_prioridade:
+            por_prioridade[prio] = {"total": 0, "quantidade": 0}
+        por_prioridade[prio]["total"] += conta["valor_pendente"]
+        por_prioridade[prio]["quantidade"] += 1
+    
+    # Top 5 fornecedores
+    fornecedores_valores = {}
+    for conta in contas:
+        if conta.get("fornecedor_id"):
+            forn_id = conta["fornecedor_id"]
+            if forn_id not in fornecedores_valores:
+                fornecedores_valores[forn_id] = {
+                    "nome": conta.get("fornecedor_nome", "N/A"),
+                    "total": 0,
+                    "pago": 0,
+                    "pendente": 0
+                }
+            fornecedores_valores[forn_id]["total"] += conta["valor_total"]
+            fornecedores_valores[forn_id]["pago"] += conta["valor_pago"]
+            fornecedores_valores[forn_id]["pendente"] += conta["valor_pendente"]
+    
+    top_fornecedores = sorted(
+        fornecedores_valores.values(),
+        key=lambda x: x["total"],
+        reverse=True
+    )[:5]
+    
+    return {
+        "total_pagar": total_pagar,
+        "total_pago": total_pago,
+        "total_pendente": total_pendente,
+        "total_vencido": total_vencido,
+        "quantidade_contas": quantidade_contas,
+        "contas_pagas": contas_pagas,
+        "contas_vencidas": contas_vencidas,
+        "taxa_pagamento": taxa_pagamento,
+        "por_forma_pagamento": por_forma_pagamento,
+        "por_categoria": por_categoria,
+        "por_prioridade": por_prioridade,
+        "top_fornecedores": top_fornecedores
+    }
+
+# Resumo de contas a pagar
+@api_router.get("/contas-pagar/resumo")
+async def resumo_contas_pagar(
+    current_user: dict = Depends(require_permission("contas_pagar", "ler"))
+):
+    """
+    Resumo rápido de contas a pagar (pendentes, vencidas, pagas)
+    """
+    contas = await db.contas_pagar.find({"cancelada": False}, {"_id": 0}).to_list(10000)
+    
+    pendentes = [c for c in contas if c["status"] == "pendente"]
+    vencidas = [c for c in contas if c["status"] == "vencido"]
+    pagas = [c for c in contas if c["status"] == "pago_total"]
+    
+    return {
+        "pendentes": {
+            "quantidade": len(pendentes),
+            "valor": sum(c["valor_pendente"] for c in pendentes)
+        },
+        "vencidas": {
+            "quantidade": len(vencidas),
+            "valor": sum(c["valor_pendente"] for c in vencidas)
+        },
+        "pagas": {
+            "quantidade": len(pagas),
+            "valor": sum(c["valor_total"] for c in pagas)
+        }
+    }
+
+# Contas a pagar por fornecedor
+@api_router.get("/contas-pagar/fornecedor/{fornecedor_id}")
+async def contas_por_fornecedor(
+    fornecedor_id: str,
+    incluir_canceladas: bool = False,
+    current_user: dict = Depends(require_permission("contas_pagar", "ler"))
+):
+    """
+    Lista todas as contas a pagar de um fornecedor específico
+    """
+    query = {"fornecedor_id": fornecedor_id}
+    if not incluir_canceladas:
+        query["cancelada"] = False
+    
+    contas = await db.contas_pagar.find(query, {"_id": 0})\
+        .sort("created_at", -1)\
+        .to_list(1000)
+    
+    total_valor = sum(c["valor_total"] for c in contas)
+    total_pago = sum(c["valor_pago"] for c in contas)
+    total_pendente = sum(c["valor_pendente"] for c in contas)
+    
+    return {
+        "contas": contas,
+        "resumo": {
+            "quantidade": len(contas),
+            "total_valor": total_valor,
+            "total_pago": total_pago,
+            "total_pendente": total_pendente
+        }
+    }
+
 app.include_router(api_router)
 
 app.add_middleware(
