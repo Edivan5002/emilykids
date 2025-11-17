@@ -711,6 +711,11 @@ const Produtos = () => {
     return marca ? marca.nome : '-';
   };
 
+  const getSubcategoriaNome = (subcategoria_id) => {
+    const subcategoria = subcategorias.find(s => s.id === subcategoria_id);
+    return subcategoria ? subcategoria.nome : '-';
+  };
+
   const formatarMoeda = (valor) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
   };
