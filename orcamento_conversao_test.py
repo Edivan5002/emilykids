@@ -35,7 +35,7 @@ import sys
 import os
 
 # Backend URL from environment
-BACKEND_URL = "https://budget-flow-31.preview.emergentagent.com/api"
+BACKEND_URL = "https://iainsights-update.preview.emergentagent.com/api"
 
 class OrcamentoConversaoTester:
     def __init__(self):
