@@ -790,23 +790,27 @@ const Produtos = () => {
       )}
 
       {/* Header Principal */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Produtos</h1>
-          <p className="text-gray-600">Gerencie seu catálogo de produtos completo</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Produtos</h1>
+          <p className="text-sm sm:text-base text-gray-600">Gerencie seu catálogo de produtos completo</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button 
             variant="outline"
             onClick={handleExportarProdutos}
             disabled={produtosFiltrados.length === 0}
+            className="btn-responsive-sm"
           >
-            <Download className="mr-2" size={18} />
-            Exportar CSV
+            <Download className="mr-1 sm:mr-2" size={16} />
+            <span className="text-xs sm:text-sm">Exportar CSV</span>
           </Button>
           <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleCloseDialog(); else setIsOpen(true); }}>
             <DialogTrigger asChild>
-              <Button data-testid="add-produto-btn"><Plus className="mr-2" size={18} />Novo Produto</Button>
+              <Button data-testid="add-produto-btn" className="btn-responsive-sm">
+                <Plus className="mr-1 sm:mr-2" size={16} />
+                <span className="text-xs sm:text-sm">Novo Produto</span>
+              </Button>
             </DialogTrigger>
           <DialogContent className="dialog-responsive max-h-[90vh] overflow-y-auto">
             <DialogHeader>
