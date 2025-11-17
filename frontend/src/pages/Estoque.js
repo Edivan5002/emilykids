@@ -367,6 +367,21 @@ const Estoque = () => {
     return `${marcaNome} | ${categoriaNome} | ${subcategoriaNome} | ${produto.nome}`;
   };
 
+  // Helper para obter marca_id de um item de inventário
+  const getItemMarcaId = (item) => {
+    return item.marca_id || item.produto_marca_id || produtos.find(p => p.id === item.produto_id)?.marca_id;
+  };
+
+  // Helper para obter categoria_id de um item de inventário
+  const getItemCategoriaId = (item) => {
+    return item.categoria_id || item.produto_categoria_id || produtos.find(p => p.id === item.produto_id)?.categoria_id;
+  };
+
+  // Helper para obter subcategoria_id de um item de inventário
+  const getItemSubcategoriaId = (item) => {
+    return item.subcategoria_id || item.produto_subcategoria_id || produtos.find(p => p.id === item.produto_id)?.subcategoria_id;
+  };
+
   const getTipoIcon = (tipo) => {
     return tipo === 'entrada' ? 
       <TrendingUp className="text-green-600" size={16} /> : 
