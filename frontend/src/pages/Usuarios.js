@@ -294,6 +294,18 @@ const Usuarios = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {formData.role_id && (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-sm font-medium text-blue-900">
+                      Papel Selecionado: {getRoleById(formData.role_id)?.nome || 'Carregando...'}
+                    </p>
+                    {getRoleById(formData.role_id) && (
+                      <p className="text-xs text-blue-700 mt-1">
+                        {getRoleById(formData.role_id).permissoes.length} permissões atribuídas
+                      </p>
+                    )}
+                  </div>
+                )}
                 <p className="text-xs text-gray-500 mt-1">
                   As permissões são definidas através do papel no menu Papéis & Permissões
                 </p>
