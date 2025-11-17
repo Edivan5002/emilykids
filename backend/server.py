@@ -1749,8 +1749,13 @@ async def validate_reset_token(token: str):
 
 @api_router.get("/auth/me")
 async def get_me(current_user: dict = Depends(get_current_user)):
-    """Retorna dados do usuário logado"""
+    """Retorna dados do usuário logado com permissões legíveis"""
     user_data = {k: v for k, v in current_user.items() if k not in ["senha_hash", "senha_historia", "locked_until"]}
+    
+    # Obter permissões legíveis (módulo:ação)
+    permissions = await get_user_permissions(current_user["id"])
+    user_data["permissoes"] = [f"{p['modulo']}:{p['acao']}" for p in permissions if 'modulo' in p and 'acao' in p]
+    
     return user_data
 
 @api_router.get("/auth/sessions")
