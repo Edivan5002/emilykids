@@ -974,12 +974,12 @@ const Orcamentos = () => {
                           {modalConversao.itens.map((item, idx) => {
                             const subtotal = item.subtotal || (item.quantidade * item.preco_unitario);
                             return (
-                            <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                            <div key={idx} className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
                               <div className="flex-1">
-                                <p className="font-medium">{item.produto_nome || getProdutoNome(item.produto_id)}</p>
-                                <p className="text-sm text-gray-600">
-                                  Qtd: {item.quantidade} x R$ {(item.preco_unitario || 0).toFixed(2)} = 
-                                  <span className="font-semibold ml-1">R$ {subtotal.toFixed(2)}</span>
+                                <p className="font-medium text-blue-700">{getProdutoDescricaoCompleta(item.produto_id)}</p>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  Quantidade: <span className="font-semibold">{item.quantidade}</span> x R$ {(item.preco_unitario || 0).toFixed(2)} = 
+                                  <span className="font-bold text-green-600 ml-1">R$ {subtotal.toFixed(2)}</span>
                                 </p>
                               </div>
                               <Button
