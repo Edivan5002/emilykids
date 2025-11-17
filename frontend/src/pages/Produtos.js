@@ -1452,7 +1452,7 @@ const Produtos = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-5 gap-4">
+          <div className="filters-grid">
             <div>
               <Label className="text-sm font-medium mb-2 block">Buscar</Label>
               <Input placeholder="Nome, SKU ou código de barras" value={filtros.termo} onChange={(e) => setFiltros({ ...filtros, termo: e.target.value })} />
