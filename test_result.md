@@ -919,8 +919,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Novas funcionalidades do módulo Produtos - Campos obrigatórios e endpoint histórico"
-    - "Exibição detalhada de produtos no módulo Nota Fiscal"
+    - "Fase 4 - Backend Contas a Pagar - Endpoints CRUD Completos"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
