@@ -389,9 +389,9 @@ const IAInsights = () => {
                           <p className="text-sm font-bold">{precificacaoData.produto.sku}</p>
                         </div>
                         <div className="text-center p-3 bg-white rounded">
-                          <p className="text-xs text-gray-500">Preço Custo</p>
+                          <p className="text-xs text-gray-500">Preço Médio</p>
                           <p className="text-sm font-bold text-red-600">
-                            R$ {precificacaoData.produto.preco_custo.toFixed(2)}
+                            R$ {precificacaoData.produto.preco_medio?.toFixed(2) || '0.00'}
                           </p>
                         </div>
                         <div className="text-center p-3 bg-white rounded">
