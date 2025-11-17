@@ -756,7 +756,7 @@ const Relatorios = () => {
                 </CardHeader>
                 <CardContent>
                   {/* Resumo da Distribuição */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="filters-grid-3 mb-4 sm:mb-6">
                     <div className="p-4 bg-green-50 rounded-lg border-2 border-green-200">
                       <div className="flex items-center justify-between">
                         <div>
@@ -986,7 +986,7 @@ const Relatorios = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="filters-grid-3 mb-4 sm:mb-6">
                     <div className="p-4 bg-blue-50 rounded-lg">
                       <p className="text-sm text-gray-600">Total de Ações</p>
                       <p className="text-2xl font-bold text-blue-600">{auditoria.total_acoes}</p>
