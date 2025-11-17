@@ -114,21 +114,45 @@ const Produtos = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [prodRes, marcaRes, catRes, subRes, fornRes] = await Promise.all([
-        axios.get(`${API}/produtos?incluir_inativos=true&limit=0`),
-        axios.get(`${API}/marcas?limit=0`),
-        axios.get(`${API}/categorias?limit=0`),
-        axios.get(`${API}/subcategorias?limit=0`),
-        axios.get(`${API}/fornecedores?incluir_inativos=true&limit=0`)
-      ]);
+      // Sempre tentar carregar produtos (vendedor tem permissão)
+      const prodRes = await axios.get(`${API}/produtos?incluir_inativos=true&limit=0`);
       setProdutos(prodRes.data);
       setProdutosFiltrados(prodRes.data);
-      setMarcas(marcaRes.data.filter(m => m.ativo));
-      setCategorias(catRes.data.filter(c => c.ativo));
-      setSubcategorias(subRes.data.filter(s => s.ativo));
-      setFornecedores(fornRes.data.filter(f => f.ativo));
+      
+      // Tentar carregar dados adicionais, mas não falhar se não tiver permissão
+      try {
+        const marcaRes = await axios.get(`${API}/marcas?limit=0`);
+        setMarcas(marcaRes.data.filter(m => m.ativo));
+      } catch (err) {
+        console.log('Sem permissão para marcas');
+        setMarcas([]);
+      }
+      
+      try {
+        const catRes = await axios.get(`${API}/categorias?limit=0`);
+        setCategorias(catRes.data.filter(c => c.ativo));
+      } catch (err) {
+        console.log('Sem permissão para categorias');
+        setCategorias([]);
+      }
+      
+      try {
+        const subRes = await axios.get(`${API}/subcategorias?limit=0`);
+        setSubcategorias(subRes.data.filter(s => s.ativo));
+      } catch (err) {
+        console.log('Sem permissão para subcategorias');
+        setSubcategorias([]);
+      }
+      
+      try {
+        const fornRes = await axios.get(`${API}/fornecedores?incluir_inativos=true&limit=0`);
+        setFornecedores(fornRes.data.filter(f => f.ativo));
+      } catch (err) {
+        console.log('Sem permissão para fornecedores');
+        setFornecedores([]);
+      }
     } catch (error) {
-      toast.error('Erro ao carregar dados. Por favor, tente novamente.');
+      toast.error('Erro ao carregar produtos. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }
