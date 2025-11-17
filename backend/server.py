@@ -7655,7 +7655,7 @@ async def relatorio_curva_abc(current_user: dict = Depends(require_permission("r
     """
     Curva ABC de produtos baseada em faturamento
     """
-    vendas = await db.vendas.find({}, {"_id": 0}).to_list(10000)
+    vendas = await db.vendas.find({"status": "efetivada"}, {"_id": 0}).to_list(10000)
     produtos = await db.produtos.find({}, {"_id": 0}).to_list(10000)
     
     # Calcular faturamento por produto
