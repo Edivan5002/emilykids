@@ -858,9 +858,20 @@ const Orcamentos = () => {
                 <p className="text-sm font-semibold mb-2">Itens ({orcamento.itens.length}):</p>
                 <div className="grid grid-cols-1 gap-2">
                   {orcamento.itens.map((item, idx) => (
-                    <div key={idx} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
-                      <span>{getProdutoNome(item.produto_id)} x{item.quantidade}</span>
-                      <span className="font-medium">R$ {(item.quantidade * item.preco_unitario).toFixed(2)}</span>
+                    <div key={idx} className="bg-gradient-to-r from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-blue-700">
+                            {getProdutoDescricaoCompleta(item.produto_id)}
+                          </p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            Quantidade: <span className="font-semibold">{item.quantidade}</span> x R$ {item.preco_unitario.toFixed(2)}
+                          </p>
+                        </div>
+                        <span className="font-bold text-green-600 ml-2">
+                          R$ {(item.quantidade * item.preco_unitario).toFixed(2)}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
