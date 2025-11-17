@@ -758,7 +758,7 @@ const Estoque = () => {
                         <div className="flex items-center gap-3 flex-1">
                           {getTipoIcon(mov.tipo)}
                           <div className="flex-1">
-                            <p className="font-medium">{produto?.nome || 'Produto'}</p>
+                            <p className="font-medium">{produto ? getProdutoDescricaoCompleta(produto.id) : 'Produto não encontrado'}</p>
                             <p className="text-sm text-gray-600">
                               {mov.referencia_tipo === 'nota_fiscal' && 'Entrada por Nota Fiscal'}
                               {mov.referencia_tipo === 'venda' && 'Saída por Venda'}
