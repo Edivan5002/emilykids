@@ -1440,6 +1440,9 @@ const Estoque = () => {
                           <tr>
                             <th className="text-left p-3 text-sm font-semibold">SKU</th>
                             <th className="text-left p-3 text-sm font-semibold">Produto</th>
+                            <th className="text-left p-3 text-sm font-semibold hidden lg:table-cell">Marca</th>
+                            <th className="text-left p-3 text-sm font-semibold hidden lg:table-cell">Categoria</th>
+                            <th className="text-left p-3 text-sm font-semibold hidden xl:table-cell">Subcategoria</th>
                             <th className="text-center p-3 text-sm font-semibold">Estoque Sistema</th>
                             <th className="text-center p-3 text-sm font-semibold">Contado</th>
                             <th className="text-center p-3 text-sm font-semibold">Diferença</th>
@@ -1457,6 +1460,9 @@ const Estoque = () => {
                             }`}>
                               <td className="p-3 text-sm font-mono">{item.produto_sku}</td>
                               <td className="p-3 text-sm">{item.produto_nome}</td>
+                              <td className="p-3 text-sm text-gray-600 hidden lg:table-cell">{getMarcaNome(item.marca_id || item.produto_marca_id)}</td>
+                              <td className="p-3 text-sm text-gray-600 hidden lg:table-cell">{getCategoriaNome(item.categoria_id || item.produto_categoria_id)}</td>
+                              <td className="p-3 text-sm text-gray-600 hidden xl:table-cell">{getSubcategoriaNome(item.subcategoria_id || item.produto_subcategoria_id)}</td>
                               <td className="p-3 text-sm text-center font-semibold">{item.estoque_sistema}</td>
                               <td className="p-3 text-sm text-center">
                                 {item.estoque_contado !== null ? (
