@@ -211,7 +211,7 @@ const Usuarios = () => {
 
   return (
     <div className="page-container">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-6 sm:mb-8 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <UsersIcon size={32} className="text-blue-500" />
           <div>

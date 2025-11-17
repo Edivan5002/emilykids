@@ -174,7 +174,7 @@ const Subcategorias = () => {
 
   return (
     <div className="page-container" data-testid="subcategorias-page">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-6 sm:mb-8">
         <div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Subcategorias</h1>
           <p className="text-gray-600">Gerencie as subcategorias de produtos (vinculadas a categorias)</p>
