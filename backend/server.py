@@ -6664,6 +6664,8 @@ TAREFA:
 4. Sugira estratégias de cross-sell e up-sell
 5. Avalie o perfil de valor do cliente (ticket médio, frequência)
 
+IMPORTANTE: Ao mencionar produtos nas suas recomendações, SEMPRE use a descrição completa (Marca | Categoria | Subcategoria | Nome do Produto) conforme fornecido no catálogo acima.
+
 Formate sua resposta de forma estruturada e persuasiva."""
         
         message = UserMessage(text=prompt)
