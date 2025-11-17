@@ -942,7 +942,7 @@ const Estoque = () => {
                           <div className="flex items-center gap-3 flex-1">
                             {getTipoIcon(mov.tipo)}
                             <div className="flex-1">
-                              <p className="font-medium">{produto?.nome || 'Produto'}</p>
+                              <p className="font-medium">{produto ? getProdutoDescricaoCompleta(produto.id) : 'Produto não encontrado'}</p>
                               <p className="text-sm text-gray-600">Ajuste Manual</p>
                               {mov.motivo && (
                                 <p className="text-xs text-gray-500 mt-1 italic">"{mov.motivo.substring(0, 50)}{mov.motivo.length > 50 ? '...' : ''}"</p>
