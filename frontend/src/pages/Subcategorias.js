@@ -66,17 +66,30 @@ const Subcategorias = () => {
 
   const fetchData = async () => {
     try {
-      const [subRes, catRes, marcasRes] = await Promise.all([
-        axios.get(`${API}/subcategorias?incluir_inativos=true`),
-        axios.get(`${API}/categorias`),
-        axios.get(`${API}/marcas`)
-      ]);
+      // Sempre carregar subcategorias
+      const subRes = await axios.get(`${API}/subcategorias?incluir_inativos=true`);
       setSubcategorias(subRes.data);
       setFilteredSubcategorias(subRes.data);
-      setCategorias(catRes.data.filter(c => c.ativo));
-      setMarcas(marcasRes.data);
+      
+      // Tentar carregar categorias
+      try {
+        const catRes = await axios.get(`${API}/categorias`);
+        setCategorias(catRes.data.filter(c => c.ativo));
+      } catch (err) {
+        console.log('Sem permissão para categorias');
+        setCategorias([]);
+      }
+      
+      // Tentar carregar marcas
+      try {
+        const marcasRes = await axios.get(`${API}/marcas`);
+        setMarcas(marcasRes.data);
+      } catch (err) {
+        console.log('Sem permissão para marcas');
+        setMarcas([]);
+      }
     } catch (error) {
-      toast.error('Erro ao carregar dados');
+      toast.error('Erro ao carregar subcategorias');
     }
   };
 
