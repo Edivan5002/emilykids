@@ -77,6 +77,33 @@ const Vendas = () => {
         console.log('Sem permissão para produtos');
         setProdutos([]);
       }
+      
+      // Tentar carregar marcas
+      try {
+        const marcasRes = await axios.get(`${API}/marcas?limit=0`);
+        setMarcas(marcasRes.data);
+      } catch (err) {
+        console.log('Sem permissão para marcas');
+        setMarcas([]);
+      }
+      
+      // Tentar carregar categorias
+      try {
+        const catRes = await axios.get(`${API}/categorias?limit=0`);
+        setCategorias(catRes.data);
+      } catch (err) {
+        console.log('Sem permissão para categorias');
+        setCategorias([]);
+      }
+      
+      // Tentar carregar subcategorias
+      try {
+        const subRes = await axios.get(`${API}/subcategorias?limit=0`);
+        setSubcategorias(subRes.data);
+      } catch (err) {
+        console.log('Sem permissão para subcategorias');
+        setSubcategorias([]);
+      }
     } catch (error) {
       toast.error('Erro ao carregar vendas. Por favor, tente novamente.');
     } finally {
