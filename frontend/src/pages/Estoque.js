@@ -507,7 +507,7 @@ const Estoque = () => {
               </div>
 
               {/* Tabela de Produtos */}
-              <div className="overflow-x-auto">
+              <div className="table-responsive">
                 <table className="w-full min-w-full">
                   <thead className="bg-gray-50">
                     <tr>
@@ -1449,7 +1449,7 @@ const Estoque = () => {
                     <CardTitle className="text-lg">Itens do Inventário</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="overflow-x-auto">
+                    <div className="table-responsive">
                       <table className="w-full min-w-full">
                         <thead className="bg-gray-50">
                           <tr>
