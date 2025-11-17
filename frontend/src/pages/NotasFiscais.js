@@ -591,7 +591,7 @@ const NotasFiscais = () => {
       </div>
 
       {/* Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="filters-grid-4 mb-4 sm:mb-6">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
