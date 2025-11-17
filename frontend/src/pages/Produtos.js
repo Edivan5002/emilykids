@@ -1447,7 +1447,7 @@ const Produtos = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-5 gap-4">
             <Input placeholder="Buscar por nome, SKU ou código de barras" value={filtros.termo} onChange={(e) => setFiltros({ ...filtros, termo: e.target.value })} />
             
             <Select value={filtros.marca_id || 'todas'} onValueChange={(value) => setFiltros({ ...filtros, marca_id: value === 'todas' ? '' : value })}>
@@ -1463,6 +1463,14 @@ const Produtos = () => {
               <SelectContent>
                 <SelectItem value="todas">Todas</SelectItem>
                 {categorias.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            
+            <Select value={filtros.subcategoria_id || 'todas'} onValueChange={(value) => setFiltros({ ...filtros, subcategoria_id: value === 'todas' ? '' : value })}>
+              <SelectTrigger><SelectValue placeholder="Todas as subcategorias" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas</SelectItem>
+                {subcategorias.map(s => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
               </SelectContent>
             </Select>
             
