@@ -646,11 +646,13 @@ const Orcamentos = () => {
                   ) : (
                     <div className="space-y-2">
                       {itensOrcamento.map((item, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
                           <div className="flex-1">
-                            <p className="font-medium text-sm">{item.produto_nome}</p>
-                            <p className="text-xs text-gray-600">
-                              SKU: {item.produto_sku} | {item.quantidade} x R$ {item.preco_unitario.toFixed(2)} = R$ {item.subtotal.toFixed(2)}
+                            <p className="font-medium text-sm text-blue-700">
+                              {getProdutoDescricaoCompleta(item.produto_id)}
+                            </p>
+                            <p className="text-xs text-gray-600 mt-1">
+                              SKU: {item.produto_sku} | Quantidade: <span className="font-semibold">{item.quantidade}</span> x R$ {item.preco_unitario.toFixed(2)} = <span className="font-bold text-green-600">R$ {item.subtotal.toFixed(2)}</span>
                             </p>
                           </div>
                           <Button
