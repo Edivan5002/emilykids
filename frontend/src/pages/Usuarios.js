@@ -267,7 +267,14 @@ const Usuarios = () => {
               </div>
 
               <div>
-                <Label>Papel (Role) *</Label>
+                <Label>
+                  Papel (Role) *
+                  {editingUsuario && editingUsuario.papel && (
+                    <span className="ml-2 text-xs text-gray-500 font-normal">
+                      (Atual: <span className="capitalize font-medium">{editingUsuario.papel}</span>)
+                    </span>
+                  )}
+                </Label>
                 <Select value={formData.role_id} onValueChange={(value) => setFormData({...formData, role_id: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um papel" />
