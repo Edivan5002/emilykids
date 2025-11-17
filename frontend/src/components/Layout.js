@@ -116,6 +116,16 @@ const Layout = ({ children }) => {
     { path: '/notas-fiscais', label: 'Notas Fiscais', icon: Receipt, module: 'notas_fiscais' },
     { path: '/orcamentos', label: 'Orçamentos', icon: ClipboardList, module: 'orcamentos' },
     { path: '/vendas', label: 'Vendas', icon: ShoppingCart, module: 'vendas' },
+    { 
+      label: 'Financeiro', 
+      icon: DollarSign, 
+      isSubmenu: true,
+      children: [
+        { path: '/contas-receber', label: 'Contas a Receber', icon: TrendingUp, module: 'contas_receber' },
+        { path: '/contas-pagar', label: 'Contas a Pagar', icon: TrendingDown, module: 'contas_pagar' },
+        { path: '/fluxo-caixa', label: 'Fluxo de Caixa', icon: Activity, module: 'contas_receber' }
+      ]
+    },
     { path: '/relatorios', label: 'Relatórios', icon: BarChart3, module: 'relatorios' },
     { path: '/ia-insights', label: 'IA Insights', icon: EmilyIcon, module: 'ia_insights' },
     { path: '/logs', label: 'Logs', icon: History, module: 'logs' }
