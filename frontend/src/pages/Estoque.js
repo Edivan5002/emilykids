@@ -855,7 +855,7 @@ const Estoque = () => {
                       <div key={p.id} className="p-3 bg-orange-50 rounded-lg border border-orange-200">
                         <div className="flex justify-between items-center">
                           <div>
-                            <p className="font-medium text-gray-900">{p.nome}</p>
+                            <p className="font-medium text-gray-900">{getProdutoDescricaoCompleta(p.id)}</p>
                             <p className="text-sm text-gray-600">SKU: {p.sku}</p>
                           </div>
                           <div className="text-right">
