@@ -70,16 +70,29 @@ const Orcamentos = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [orcRes, cliRes, prodRes] = await Promise.all([
-        axios.get(`${API}/orcamentos?limit=0`),
-        axios.get(`${API}/clientes?limit=0`),
-        axios.get(`${API}/produtos?limit=0`)
-      ]);
+      // Sempre carregar orçamentos
+      const orcRes = await axios.get(`${API}/orcamentos?limit=0`);
       setOrcamentos(orcRes.data);
-      setClientes(cliRes.data);
-      setProdutos(prodRes.data);
+      
+      // Tentar carregar clientes separadamente
+      try {
+        const cliRes = await axios.get(`${API}/clientes?limit=0`);
+        setClientes(cliRes.data);
+      } catch (err) {
+        console.log('Sem permissão para clientes');
+        setClientes([]);
+      }
+      
+      // Tentar carregar produtos separadamente
+      try {
+        const prodRes = await axios.get(`${API}/produtos?limit=0`);
+        setProdutos(prodRes.data);
+      } catch (err) {
+        console.log('Sem permissão para produtos');
+        setProdutos([]);
+      }
     } catch (error) {
-      toast.error('Erro ao carregar dados. Por favor, tente novamente.');
+      toast.error('Erro ao carregar orçamentos. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }
