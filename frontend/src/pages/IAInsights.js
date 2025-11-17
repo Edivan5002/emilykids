@@ -348,7 +348,7 @@ const IAInsights = () => {
                   <SelectContent>
                     {produtos.map(p => (
                       <SelectItem key={p.id} value={p.id}>
-                        {p.nome} - SKU: {p.sku} - R$ {p.preco_venda?.toFixed(2)}
+                        {getProdutoDescricaoCompleta(p.id)}
                       </SelectItem>
                     ))}
                   </SelectContent>
