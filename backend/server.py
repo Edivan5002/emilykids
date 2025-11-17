@@ -638,6 +638,303 @@ class AtualizarEntregaRequest(BaseModel):
     observacoes_entrega: Optional[str] = None
 
 # Modelos de Inventário
+
+# ==================== MODELOS FINANCEIROS ====================
+
+# Parcela de Conta a Receber
+class ParcelaReceber(BaseModel):
+    numero_parcela: int
+    valor: float
+    data_vencimento: str
+    data_recebimento: Optional[str] = None
+    
+    valor_recebido: float = 0
+    valor_juros: float = 0
+    valor_desconto: float = 0
+    valor_final: float = 0
+    
+    status: str = "pendente"  # pendente, recebido, vencido, cancelado
+    dias_atraso: int = 0
+    
+    forma_recebimento: Optional[str] = None  # Pode ser diferente da original
+    comprovante: Optional[str] = None  # URL do comprovante
+    
+    recebida_por: Optional[str] = None  # ID do usuário que recebeu
+    recebida_por_name: Optional[str] = None
+    
+    observacao: Optional[str] = None
+
+# Conta a Receber
+class ContaReceber(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    # Identificação
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    numero: str  # CR-000001 (auto-incremento)
+    
+    # Origem
+    origem: str  # venda, orcamento, manual
+    origem_id: Optional[str] = None
+    origem_numero: Optional[str] = None  # VEN-00001, ORC-00001
+    
+    # Relacionamentos
+    cliente_id: str
+    cliente_nome: str
+    cliente_cpf_cnpj: Optional[str] = None
+    
+    # Descrição
+    descricao: str
+    categoria: str = "venda_produto"  # venda_produto, servico, devolucao, outros
+    observacao: Optional[str] = None
+    
+    # Valores
+    valor_total: float
+    valor_recebido: float = 0
+    valor_pendente: float
+    valor_juros: float = 0
+    valor_desconto: float = 0
+    valor_liquido: float  # total + juros - desconto
+    
+    # Pagamento
+    forma_pagamento: str  # pix, dinheiro, cartao_debito, cartao_credito
+    tipo_pagamento: str = "avista"  # avista, parcelado
+    numero_parcelas: int = 1
+    parcelas: List[ParcelaReceber] = []
+    
+    # Status e Controle
+    status: str = "pendente"  # pendente, recebido_parcial, recebido_total, vencido, cancelado
+    status_cobranca: Optional[str] = None  # em_dia, atrasado, em_cobranca, negativado
+    dias_atraso: int = 0
+    
+    # Auditoria e Controle
+    created_by: str  # ID do usuário
+    created_by_name: str  # Nome do usuário
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_by: Optional[str] = None
+    updated_by_name: Optional[str] = None
+    updated_at: Optional[str] = None
+    
+    cancelada: bool = False
+    cancelada_por: Optional[str] = None
+    cancelada_por_name: Optional[str] = None
+    cancelada_at: Optional[str] = None
+    motivo_cancelamento: Optional[str] = None
+    
+    # Tags e Categorização
+    tags: List[str] = []
+    centro_custo: Optional[str] = None
+    projeto: Optional[str] = None
+    
+    # Integração com outros módulos
+    venda_itens: List[dict] = []  # Itens da venda original
+    historico_alteracoes: List[dict] = []  # Log de alterações
+
+# Parcela de Conta a Pagar
+class ParcelaPagar(BaseModel):
+    numero_parcela: int
+    valor: float
+    data_vencimento: str
+    data_pagamento: Optional[str] = None
+    
+    valor_pago: float = 0
+    valor_juros: float = 0
+    valor_multa: float = 0
+    valor_desconto: float = 0
+    valor_final: float = 0
+    
+    status: str = "pendente"  # pendente, pago, vencido, cancelado
+    dias_atraso: int = 0
+    
+    forma_pagamento: Optional[str] = None  # Pode ser diferente da original
+    comprovante: Optional[str] = None  # URL do comprovante
+    
+    paga_por: Optional[str] = None  # ID do usuário que pagou
+    paga_por_name: Optional[str] = None
+    
+    aprovada: bool = False
+    aprovada_por: Optional[str] = None
+    aprovada_por_name: Optional[str] = None
+    
+    observacao: Optional[str] = None
+
+# Conta a Pagar
+class ContaPagar(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    # Identificação
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    numero: str  # CP-000001
+    
+    # Origem
+    origem: str = "manual"  # nota_fiscal, manual, despesa_operacional
+    origem_id: Optional[str] = None
+    origem_numero: Optional[str] = None
+    
+    # Relacionamentos
+    fornecedor_id: Optional[str] = None
+    fornecedor_nome: Optional[str] = None
+    fornecedor_cpf_cnpj: Optional[str] = None
+    
+    # Descrição
+    descricao: str
+    categoria: str = "despesa_operacional"  # compra_mercadoria, despesa_operacional, salario, aluguel, etc
+    subcategoria: Optional[str] = None
+    observacao: Optional[str] = None
+    
+    # Valores
+    valor_total: float
+    valor_pago: float = 0
+    valor_pendente: float
+    valor_juros: float = 0
+    valor_desconto: float = 0
+    valor_multa: float = 0
+    valor_liquido: float
+    
+    # Pagamento
+    forma_pagamento: str = "pix"
+    tipo_pagamento: str = "avista"  # avista, parcelado
+    numero_parcelas: int = 1
+    parcelas: List[ParcelaPagar] = []
+    
+    # Status e Controle
+    status: str = "pendente"  # pendente, pago_parcial, pago_total, vencido, cancelado
+    prioridade: str = "normal"  # baixa, normal, alta, urgente
+    
+    # Aprovação
+    aprovado: bool = False
+    aprovado_por: Optional[str] = None
+    aprovado_por_name: Optional[str] = None
+    aprovado_at: Optional[str] = None
+    
+    # Auditoria
+    created_by: str
+    created_by_name: str
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_by: Optional[str] = None
+    updated_by_name: Optional[str] = None
+    updated_at: Optional[str] = None
+    
+    cancelada: bool = False
+    cancelada_por: Optional[str] = None
+    cancelada_por_name: Optional[str] = None
+    cancelada_at: Optional[str] = None
+    motivo_cancelamento: Optional[str] = None
+    
+    # Categorização
+    tags: List[str] = []
+    centro_custo: Optional[str] = None
+    projeto: Optional[str] = None
+    
+    # Integração
+    nota_fiscal_itens: List[dict] = []
+    historico_alteracoes: List[dict] = []
+
+# Modelos de Request para Contas a Receber
+class ContaReceberCreate(BaseModel):
+    cliente_id: str
+    descricao: str
+    categoria: str = "venda_produto"
+    valor_total: float
+    forma_pagamento: str
+    tipo_pagamento: str = "avista"
+    numero_parcelas: int = 1
+    data_vencimento: Optional[str] = None
+    parcelas: List[dict] = []
+    observacao: Optional[str] = None
+    tags: List[str] = []
+    centro_custo: Optional[str] = None
+    projeto: Optional[str] = None
+
+class ContaReceberUpdate(BaseModel):
+    descricao: Optional[str] = None
+    observacao: Optional[str] = None
+    tags: Optional[List[str]] = None
+    centro_custo: Optional[str] = None
+    projeto: Optional[str] = None
+
+class RecebimentoParcela(BaseModel):
+    numero_parcela: int
+    valor_recebido: float
+    data_recebimento: str
+    juros: float = 0
+    desconto: float = 0
+    forma_recebimento: Optional[str] = None
+    comprovante: Optional[str] = None
+    observacao: Optional[str] = None
+
+# Modelos de Request para Contas a Pagar
+class ContaPagarCreate(BaseModel):
+    fornecedor_id: Optional[str] = None
+    descricao: str
+    categoria: str = "despesa_operacional"
+    subcategoria: Optional[str] = None
+    valor_total: float
+    forma_pagamento: str = "pix"
+    tipo_pagamento: str = "avista"
+    numero_parcelas: int = 1
+    data_vencimento: Optional[str] = None
+    parcelas: List[dict] = []
+    prioridade: str = "normal"
+    observacao: Optional[str] = None
+    tags: List[str] = []
+    centro_custo: Optional[str] = None
+    projeto: Optional[str] = None
+
+class ContaPagarUpdate(BaseModel):
+    descricao: Optional[str] = None
+    observacao: Optional[str] = None
+    prioridade: Optional[str] = None
+    tags: Optional[List[str]] = None
+    centro_custo: Optional[str] = None
+    projeto: Optional[str] = None
+
+class PagamentoParcela(BaseModel):
+    numero_parcela: int
+    valor_pago: float
+    data_pagamento: str
+    juros: float = 0
+    multa: float = 0
+    desconto: float = 0
+    forma_pagamento: Optional[str] = None
+    comprovante: Optional[str] = None
+    observacao: Optional[str] = None
+
+class AprovarContaPagar(BaseModel):
+    aprovado: bool
+    observacao: Optional[str] = None
+
+# Configurações Financeiras
+class ConfiguracoesFinanceiras(BaseModel):
+    # Contas a Receber
+    dias_alerta_vencimento_receber: int = 5
+    permitir_desconto_recebimento: bool = True
+    desconto_maximo_recebimento: float = 10
+    permitir_juros_atraso: bool = True
+    taxa_juros_mes: float = 2
+    
+    # Contas a Pagar
+    dias_alerta_vencimento_pagar: int = 3
+    exigir_aprovacao_pagamento: bool = True
+    valor_minimo_aprovacao: float = 1000
+    permitir_antecipacao_pagamento: bool = True
+    desconto_antecipacao: float = 1
+    
+    # Geral
+    regime_contabil: str = "caixa"  # caixa ou competencia
+    moeda: str = "BRL"
+    
+    # Categorias Personalizadas
+    categorias_receita: List[str] = []
+    categorias_despesa: List[str] = []
+    
+    # Centros de Custo
+    centros_custo: List[dict] = []
+    
+    # Aprovadores
+    aprovadores_financeiro: List[str] = []
+
+# ==================== FIM MODELOS FINANCEIROS ====================
+
 class ItemInventario(BaseModel):
     produto_id: str
     produto_nome: Optional[str] = None
