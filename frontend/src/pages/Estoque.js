@@ -57,20 +57,47 @@ const Estoque = () => {
 
   const fetchData = async () => {
     try {
-      const [prodRes, movRes, alertRes, marcasRes, catRes] = await Promise.all([
-        axios.get(`${API}/produtos`),
-        axios.get(`${API}/estoque/movimentacoes`),
-        axios.get(`${API}/estoque/alertas`),
-        axios.get(`${API}/marcas`),
-        axios.get(`${API}/categorias`)
-      ]);
+      // Sempre carregar produtos
+      const prodRes = await axios.get(`${API}/produtos`);
       setProdutos(prodRes.data);
-      setMovimentacoes(movRes.data);
-      setAlertas(alertRes.data);
-      setMarcas(marcasRes.data);
-      setCategorias(catRes.data);
+      
+      // Tentar carregar movimentações
+      try {
+        const movRes = await axios.get(`${API}/estoque/movimentacoes`);
+        setMovimentacoes(movRes.data);
+      } catch (err) {
+        console.log('Sem permissão para movimentações');
+        setMovimentacoes([]);
+      }
+      
+      // Tentar carregar alertas
+      try {
+        const alertRes = await axios.get(`${API}/estoque/alertas`);
+        setAlertas(alertRes.data);
+      } catch (err) {
+        console.log('Sem permissão para alertas');
+        setAlertas({});
+      }
+      
+      // Tentar carregar marcas
+      try {
+        const marcasRes = await axios.get(`${API}/marcas`);
+        setMarcas(marcasRes.data);
+      } catch (err) {
+        console.log('Sem permissão para marcas');
+        setMarcas([]);
+      }
+      
+      // Tentar carregar categorias
+      try {
+        const catRes = await axios.get(`${API}/categorias`);
+        setCategorias(catRes.data);
+      } catch (err) {
+        console.log('Sem permissão para categorias');
+        setCategorias([]);
+      }
     } catch (error) {
-      toast.error('Erro ao carregar dados');
+      toast.error('Erro ao carregar estoque');
     }
   };
 
