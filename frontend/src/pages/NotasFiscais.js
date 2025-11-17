@@ -49,32 +49,63 @@ const NotasFiscais = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [nfRes, fornRes, prodRes, marcasRes, categRes, subcategRes] = await Promise.all([
-        axios.get(`${API}/notas-fiscais`),
-        axios.get(`${API}/fornecedores?limit=0`),
-        axios.get(`${API}/produtos?limit=0`),
-        axios.get(`${API}/marcas?limit=0`),
-        axios.get(`${API}/categorias?limit=0`),
-        axios.get(`${API}/subcategorias?limit=0`)
-      ]);
-      
-      // Verificar se os dados estão paginados
+      // Sempre carregar notas fiscais
+      const nfRes = await axios.get(`${API}/notas-fiscais`);
       const notasFiscaisData = nfRes.data?.data || nfRes.data || [];
-      const fornecedoresData = fornRes.data?.data || fornRes.data || [];
-      const produtosData = prodRes.data?.data || prodRes.data || [];
-      const marcasData = marcasRes.data?.data || marcasRes.data || [];
-      const categoriasData = categRes.data?.data || categRes.data || [];
-      const subcategoriasData = subcategRes.data?.data || subcategRes.data || [];
-      
       setNotasFiscais(notasFiscaisData);
-      setFornecedores(fornecedoresData);
-      setProdutos(produtosData);
-      setMarcas(marcasData);
-      setCategorias(categoriasData);
-      setSubcategorias(subcategoriasData);
+      
+      // Tentar carregar fornecedores
+      try {
+        const fornRes = await axios.get(`${API}/fornecedores?limit=0`);
+        const fornecedoresData = fornRes.data?.data || fornRes.data || [];
+        setFornecedores(fornecedoresData);
+      } catch (err) {
+        console.log('Sem permissão para fornecedores');
+        setFornecedores([]);
+      }
+      
+      // Tentar carregar produtos
+      try {
+        const prodRes = await axios.get(`${API}/produtos?limit=0`);
+        const produtosData = prodRes.data?.data || prodRes.data || [];
+        setProdutos(produtosData);
+      } catch (err) {
+        console.log('Sem permissão para produtos');
+        setProdutos([]);
+      }
+      
+      // Tentar carregar marcas
+      try {
+        const marcasRes = await axios.get(`${API}/marcas?limit=0`);
+        const marcasData = marcasRes.data?.data || marcasRes.data || [];
+        setMarcas(marcasData);
+      } catch (err) {
+        console.log('Sem permissão para marcas');
+        setMarcas([]);
+      }
+      
+      // Tentar carregar categorias
+      try {
+        const categRes = await axios.get(`${API}/categorias?limit=0`);
+        const categoriasData = categRes.data?.data || categRes.data || [];
+        setCategorias(categoriasData);
+      } catch (err) {
+        console.log('Sem permissão para categorias');
+        setCategorias([]);
+      }
+      
+      // Tentar carregar subcategorias
+      try {
+        const subcategRes = await axios.get(`${API}/subcategorias?limit=0`);
+        const subcategoriasData = subcategRes.data?.data || subcategRes.data || [];
+        setSubcategorias(subcategoriasData);
+      } catch (err) {
+        console.log('Sem permissão para subcategorias');
+        setSubcategorias([]);
+      }
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      toast.error('Erro ao carregar dados');
+      console.error('Erro ao carregar notas fiscais:', error);
+      toast.error('Erro ao carregar notas fiscais');
     } finally {
       setLoading(false);
     }
