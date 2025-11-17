@@ -564,7 +564,7 @@ const Relatorios = () => {
                     </div>
                   </div>
 
-                  <div className="overflow-x-auto">
+                  <div className="table-responsive">
                     <table className="w-full">
                       <thead className="bg-gray-50">
                         <tr>
@@ -798,7 +798,7 @@ const Relatorios = () => {
                   </div>
 
                   {/* Tabela de Produtos */}
-                  <div className="overflow-x-auto">
+                  <div className="table-responsive">
                     <table className="w-full">
                       <thead className="bg-gray-50">
                         <tr>
@@ -878,7 +878,7 @@ const Relatorios = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="overflow-x-auto">
+                  <div className="table-responsive">
                     <table className="w-full">
                       <thead className="bg-gray-50">
                         <tr>
