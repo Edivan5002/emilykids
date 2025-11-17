@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "NOVAS FUNCIONALIDADES NO MÓDULO PRODUTOS: (1) Marca, Categoria e Subcategoria agora são campos obrigatórios no modelo Produto; (2) Novo endpoint GET /api/produtos/{produto_id}/historico-compras-completo com paginação; (3) Categorias devem ter marca_id e subcategorias devem ter categoria_id (relacionamento em cascata)."
+user_problem_statement: "FASE 4: Implementar Backend Completo para Contas a Pagar - Sistema financeiro de gerenciamento de pagamentos a fornecedores com CRUD completo, liquidação de parcelas, cancelamento, dashboard e relatórios."
 
 backend:
   - task: "Novas funcionalidades do módulo Produtos - Campos obrigatórios e endpoint histórico"
