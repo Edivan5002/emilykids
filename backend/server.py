@@ -6682,6 +6682,25 @@ Formate sua resposta de forma estruturada e persuasiva."""
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro na análise: {str(e)}")
 
+# Função helper para obter descrição completa do produto
+async def get_produto_descricao_completa(produto_id: str) -> str:
+    try:
+        produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
+        if not produto:
+            return "Produto não encontrado"
+        
+        marca = await db.marcas.find_one({"id": produto.get("marca_id")}, {"_id": 0})
+        categoria = await db.categorias.find_one({"id": produto.get("categoria_id")}, {"_id": 0})
+        subcategoria = await db.subcategorias.find_one({"id": produto.get("subcategoria_id")}, {"_id": 0})
+        
+        marca_nome = marca.get("nome") if marca else "N/A"
+        categoria_nome = categoria.get("nome") if categoria else "N/A"
+        subcategoria_nome = subcategoria.get("nome") if subcategoria else "N/A"
+        
+        return f"{marca_nome} | {categoria_nome} | {subcategoria_nome} | {produto['nome']}"
+    except Exception as e:
+        return f"Erro ao obter descrição: {str(e)}"
+
 @api_router.get("/ia/analise-preditiva")
 async def analise_preditiva(current_user: dict = Depends(get_current_user)):
     try:
