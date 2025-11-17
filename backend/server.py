@@ -8765,6 +8765,575 @@ async def relatorio_auditoria(
         "logs_recentes": logs[:50]  # Últimos 50 logs
     }
 
+
+
+# ========== CONTAS A RECEBER ==========
+
+# Função helper para gerar número de conta a receber
+async def gerar_numero_conta_receber() -> str:
+    """Gera número sequencial para conta a receber (CR-000001)"""
+    ultimo = await db.contas_receber.find_one(sort=[("created_at", -1)])
+    if ultimo and "numero" in ultimo:
+        ultimo_num = int(ultimo["numero"].split("-")[1])
+        novo_num = ultimo_num + 1
+    else:
+        novo_num = 1
+    return f"CR-{novo_num:06d}"
+
+# Função helper para atualizar status da conta
+async def atualizar_status_conta_receber(conta_id: str):
+    """Atualiza status da conta baseado nas parcelas"""
+    conta = await db.contas_receber.find_one({"id": conta_id})
+    if not conta:
+        return
+    
+    total_parcelas = len(conta["parcelas"])
+    parcelas_recebidas = len([p for p in conta["parcelas"] if p["status"] == "recebido"])
+    parcelas_vencidas = len([p for p in conta["parcelas"] if p["status"] == "vencido"])
+    
+    # Determinar novo status
+    if parcelas_recebidas == total_parcelas:
+        novo_status = "recebido_total"
+    elif parcelas_recebidas > 0:
+        novo_status = "recebido_parcial"
+    elif parcelas_vencidas > 0:
+        novo_status = "vencido"
+    else:
+        novo_status = "pendente"
+    
+    # Atualizar valores
+    valor_recebido = sum(p["valor_recebido"] for p in conta["parcelas"])
+    valor_pendente = conta["valor_total"] - valor_recebido
+    
+    await db.contas_receber.update_one(
+        {"id": conta_id},
+        {"$set": {
+            "status": novo_status,
+            "valor_recebido": valor_recebido,
+            "valor_pendente": valor_pendente
+        }}
+    )
+
+# Listar contas a receber
+@api_router.get("/contas-receber")
+async def listar_contas_receber(
+    page: int = 1,
+    limit: int = 20,
+    data_inicio: str = None,
+    data_fim: str = None,
+    cliente_id: str = None,
+    status: str = None,
+    origem: str = None,
+    vencidas: bool = None,
+    forma_pagamento: str = None,
+    current_user: dict = Depends(require_permission("contas_receber", "ler"))
+):
+    """
+    Lista contas a receber com filtros avançados
+    """
+    query = {"cancelada": False}
+    
+    if cliente_id:
+        query["cliente_id"] = cliente_id
+    
+    if status and status != "todos":
+        query["status"] = status
+    
+    if origem and origem != "todos":
+        query["origem"] = origem
+    
+    if forma_pagamento and forma_pagamento != "todas":
+        query["forma_pagamento"] = forma_pagamento
+    
+    if vencidas:
+        query["status"] = "vencido"
+    
+    if data_inicio and data_fim:
+        query["created_at"] = {
+            "$gte": data_inicio,
+            "$lte": data_fim
+        }
+    
+    # Paginação
+    skip = (page - 1) * limit
+    
+    contas = await db.contas_receber.find(query, {"_id": 0})\
+        .sort("created_at", -1)\
+        .skip(skip)\
+        .limit(limit)\
+        .to_list(limit)
+    
+    total = await db.contas_receber.count_documents(query)
+    
+    return {
+        "data": contas,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "pages": (total + limit - 1) // limit
+    }
+
+# Criar conta a receber manual
+@api_router.post("/contas-receber")
+async def criar_conta_receber(
+    conta: ContaReceberCreate,
+    current_user: dict = Depends(require_permission("contas_receber", "criar"))
+):
+    """
+    Cria uma nova conta a receber manualmente
+    """
+    # Buscar cliente
+    cliente = await db.clientes.find_one({"id": conta.cliente_id}, {"_id": 0})
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    # Gerar número
+    numero = await gerar_numero_conta_receber()
+    
+    # Criar parcelas
+    parcelas = []
+    if conta.tipo_pagamento == "parcelado" and conta.parcelas:
+        for i, p in enumerate(conta.parcelas, 1):
+            parcelas.append(ParcelaReceber(
+                numero_parcela=i,
+                valor=p.get("valor"),
+                data_vencimento=p.get("data_vencimento"),
+                status="pendente"
+            ).dict())
+    else:
+        # Pagamento à vista
+        data_venc = conta.data_vencimento or datetime.now(timezone.utc).isoformat()[:10]
+        parcelas.append(ParcelaReceber(
+            numero_parcela=1,
+            valor=conta.valor_total,
+            data_vencimento=data_venc,
+            status="pendente"
+        ).dict())
+    
+    # Criar conta
+    nova_conta = ContaReceber(
+        numero=numero,
+        origem="manual",
+        cliente_id=conta.cliente_id,
+        cliente_nome=cliente["nome"],
+        cliente_cpf_cnpj=cliente.get("cpf_cnpj"),
+        descricao=conta.descricao,
+        categoria=conta.categoria,
+        observacao=conta.observacao,
+        valor_total=conta.valor_total,
+        valor_pendente=conta.valor_total,
+        valor_liquido=conta.valor_total,
+        forma_pagamento=conta.forma_pagamento,
+        tipo_pagamento=conta.tipo_pagamento,
+        numero_parcelas=len(parcelas),
+        parcelas=parcelas,
+        created_by=current_user["id"],
+        created_by_name=current_user["nome"],
+        tags=conta.tags,
+        centro_custo=conta.centro_custo,
+        projeto=conta.projeto
+    )
+    
+    await db.contas_receber.insert_one(nova_conta.dict())
+    
+    # Registrar log
+    await registrar_criacao_conta_receber(
+        conta=nova_conta.dict(),
+        usuario_id=current_user["id"],
+        usuario_nome=current_user["nome"]
+    )
+    
+    return nova_conta
+
+# Obter uma conta a receber
+@api_router.get("/contas-receber/{id}")
+async def obter_conta_receber(
+    id: str,
+    current_user: dict = Depends(require_permission("contas_receber", "ler"))
+):
+    """
+    Obtém detalhes completos de uma conta a receber
+    """
+    conta = await db.contas_receber.find_one({"id": id}, {"_id": 0})
+    if not conta:
+        raise HTTPException(status_code=404, detail="Conta a receber não encontrada")
+    
+    return conta
+
+# Editar conta a receber
+@api_router.put("/contas-receber/{id}")
+async def editar_conta_receber(
+    id: str,
+    dados: ContaReceberUpdate,
+    current_user: dict = Depends(require_permission("contas_receber", "editar"))
+):
+    """
+    Edita informações de uma conta a receber
+    """
+    conta = await db.contas_receber.find_one({"id": id}, {"_id": 0})
+    if not conta:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    if conta["cancelada"]:
+        raise HTTPException(status_code=400, detail="Conta cancelada não pode ser editada")
+    
+    # Preparar dados anteriores para log
+    dados_anteriores = {
+        "descricao": conta.get("descricao"),
+        "observacao": conta.get("observacao"),
+        "tags": conta.get("tags"),
+        "centro_custo": conta.get("centro_custo"),
+        "projeto": conta.get("projeto")
+    }
+    
+    # Atualizar campos
+    update_data = {}
+    if dados.descricao is not None:
+        update_data["descricao"] = dados.descricao
+    if dados.observacao is not None:
+        update_data["observacao"] = dados.observacao
+    if dados.tags is not None:
+        update_data["tags"] = dados.tags
+    if dados.centro_custo is not None:
+        update_data["centro_custo"] = dados.centro_custo
+    if dados.projeto is not None:
+        update_data["projeto"] = dados.projeto
+    
+    update_data["updated_by"] = current_user["id"]
+    update_data["updated_by_name"] = current_user["nome"]
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.contas_receber.update_one(
+        {"id": id},
+        {"$set": update_data}
+    )
+    
+    # Adicionar ao histórico
+    await adicionar_historico_conta(
+        conta_id=id,
+        tipo="receber",
+        acao="editada",
+        usuario_id=current_user["id"],
+        usuario_nome=current_user["nome"],
+        dados_anteriores=dados_anteriores,
+        dados_novos=update_data
+    )
+    
+    # Registrar log
+    await registrar_log_financeiro(
+        usuario_id=current_user["id"],
+        usuario_nome=current_user["nome"],
+        acao="conta_receber_editada",
+        modulo="contas_receber",
+        registro_id=id,
+        registro_numero=conta["numero"],
+        detalhes=update_data
+    )
+    
+    return {"message": "Conta atualizada com sucesso"}
+
+# Receber parcela
+@api_router.post("/contas-receber/{id}/receber-parcela")
+async def receber_parcela(
+    id: str,
+    dados: RecebimentoParcela,
+    current_user: dict = Depends(require_permission("contas_receber", "receber"))
+):
+    """
+    Registra recebimento de uma parcela
+    """
+    conta = await db.contas_receber.find_one({"id": id}, {"_id": 0})
+    if not conta:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    if conta["cancelada"]:
+        raise HTTPException(status_code=400, detail="Conta cancelada")
+    
+    # Encontrar parcela
+    parcela_idx = None
+    parcela = None
+    for i, p in enumerate(conta["parcelas"]):
+        if p["numero_parcela"] == dados.numero_parcela:
+            parcela_idx = i
+            parcela = p
+            break
+    
+    if parcela is None:
+        raise HTTPException(status_code=404, detail="Parcela não encontrada")
+    
+    if parcela["status"] == "recebido":
+        raise HTTPException(status_code=400, detail="Parcela já foi recebida")
+    
+    # Calcular valor final
+    valor_final = dados.valor_recebido + dados.juros - dados.desconto
+    
+    # Atualizar parcela
+    update_parcela = {
+        f"parcelas.{parcela_idx}.status": "recebido",
+        f"parcelas.{parcela_idx}.data_recebimento": dados.data_recebimento,
+        f"parcelas.{parcela_idx}.valor_recebido": dados.valor_recebido,
+        f"parcelas.{parcela_idx}.valor_juros": dados.juros,
+        f"parcelas.{parcela_idx}.valor_desconto": dados.desconto,
+        f"parcelas.{parcela_idx}.valor_final": valor_final,
+        f"parcelas.{parcela_idx}.forma_recebimento": dados.forma_recebimento or conta["forma_pagamento"],
+        f"parcelas.{parcela_idx}.comprovante": dados.comprovante,
+        f"parcelas.{parcela_idx}.recebida_por": current_user["id"],
+        f"parcelas.{parcela_idx}.recebida_por_name": current_user["nome"],
+        f"parcelas.{parcela_idx}.observacao": dados.observacao,
+        f"parcelas.{parcela_idx}.dias_atraso": 0
+    }
+    
+    await db.contas_receber.update_one(
+        {"id": id},
+        {"$set": update_parcela}
+    )
+    
+    # Atualizar status da conta
+    await atualizar_status_conta_receber(id)
+    
+    # Atualizar dados do cliente
+    conta_atualizada = await db.contas_receber.find_one({"id": id}, {"_id": 0})
+    await db.clientes.update_one(
+        {"id": conta["cliente_id"]},
+        {
+            "$inc": {"total_pago": valor_final},
+            "$set": {"data_ultimo_pagamento": datetime.now(timezone.utc).isoformat()}
+        }
+    )
+    
+    # Registrar log
+    await registrar_recebimento_parcela(
+        conta=conta_atualizada,
+        parcela=conta_atualizada["parcelas"][parcela_idx],
+        valor_recebido=valor_final,
+        usuario_id=current_user["id"],
+        usuario_nome=current_user["nome"]
+    )
+    
+    return {"message": "Parcela recebida com sucesso", "conta": conta_atualizada}
+
+# Cancelar conta a receber
+@api_router.delete("/contas-receber/{id}")
+async def cancelar_conta_receber(
+    id: str,
+    motivo: str,
+    current_user: dict = Depends(require_permission("contas_receber", "deletar"))
+):
+    """
+    Cancela uma conta a receber
+    """
+    conta = await db.contas_receber.find_one({"id": id}, {"_id": 0})
+    if not conta:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    if conta["cancelada"]:
+        raise HTTPException(status_code=400, detail="Conta já está cancelada")
+    
+    # Cancelar conta
+    await db.contas_receber.update_one(
+        {"id": id},
+        {"$set": {
+            "cancelada": True,
+            "cancelada_por": current_user["id"],
+            "cancelada_por_name": current_user["nome"],
+            "cancelada_at": datetime.now(timezone.utc).isoformat(),
+            "motivo_cancelamento": motivo,
+            "status": "cancelado"
+        }}
+    )
+    
+    # Registrar log
+    await registrar_cancelamento_conta_receber(
+        conta=conta,
+        motivo=motivo,
+        usuario_id=current_user["id"],
+        usuario_nome=current_user["nome"]
+    )
+    
+    return {"message": "Conta cancelada com sucesso"}
+
+# Dashboard de Contas a Receber
+@api_router.get("/contas-receber/dashboard/kpis")
+async def dashboard_contas_receber(
+    data_inicio: str = None,
+    data_fim: str = None,
+    current_user: dict = Depends(require_permission("contas_receber", "ler"))
+):
+    """
+    KPIs e estatísticas de contas a receber
+    """
+    query = {"cancelada": False}
+    
+    if data_inicio and data_fim:
+        query["created_at"] = {"$gte": data_inicio, "$lte": data_fim}
+    
+    contas = await db.contas_receber.find(query, {"_id": 0}).to_list(10000)
+    
+    # Calcular KPIs
+    total_receber = sum(c["valor_total"] for c in contas)
+    total_recebido = sum(c["valor_recebido"] for c in contas)
+    total_pendente = sum(c["valor_pendente"] for c in contas)
+    total_vencido = sum(c["valor_pendente"] for c in contas if c["status"] == "vencido")
+    
+    quantidade_contas = len(contas)
+    contas_recebidas = len([c for c in contas if c["status"] == "recebido_total"])
+    contas_vencidas = len([c for c in contas if c["status"] == "vencido"])
+    
+    taxa_inadimplencia = (total_vencido / total_receber * 100) if total_receber > 0 else 0
+    taxa_recebimento = (total_recebido / total_receber * 100) if total_receber > 0 else 0
+    
+    # Recebimentos por forma de pagamento
+    por_forma_pagamento = {}
+    for conta in contas:
+        forma = conta["forma_pagamento"]
+        if forma not in por_forma_pagamento:
+            por_forma_pagamento[forma] = {"total": 0, "recebido": 0, "quantidade": 0}
+        por_forma_pagamento[forma]["total"] += conta["valor_total"]
+        por_forma_pagamento[forma]["recebido"] += conta["valor_recebido"]
+        por_forma_pagamento[forma]["quantidade"] += 1
+    
+    # Top 5 clientes inadimplentes
+    clientes_inadimplentes = {}
+    for conta in contas:
+        if conta["status"] == "vencido":
+            cliente_id = conta["cliente_id"]
+            if cliente_id not in clientes_inadimplentes:
+                clientes_inadimplentes[cliente_id] = {
+                    "cliente_nome": conta["cliente_nome"],
+                    "valor_vencido": 0,
+                    "quantidade_contas": 0
+                }
+            clientes_inadimplentes[cliente_id]["valor_vencido"] += conta["valor_pendente"]
+            clientes_inadimplentes[cliente_id]["quantidade_contas"] += 1
+    
+    top_inadimplentes = sorted(
+        clientes_inadimplentes.values(),
+        key=lambda x: x["valor_vencido"],
+        reverse=True
+    )[:5]
+    
+    # Previsão próximos 30 dias
+    hoje = datetime.now(timezone.utc).date()
+    data_limite = hoje + timedelta(days=30)
+    
+    previsao_30_dias = 0
+    for conta in contas:
+        if conta["status"] in ["pendente", "recebido_parcial"]:
+            for parcela in conta["parcelas"]:
+                if parcela["status"] == "pendente":
+                    data_venc = datetime.fromisoformat(parcela["data_vencimento"]).date()
+                    if hoje <= data_venc <= data_limite:
+                        previsao_30_dias += parcela["valor"]
+    
+    return {
+        "periodo": {"data_inicio": data_inicio, "data_fim": data_fim},
+        "resumo": {
+            "total_receber": total_receber,
+            "total_recebido": total_recebido,
+            "total_pendente": total_pendente,
+            "total_vencido": total_vencido,
+            "quantidade_contas": quantidade_contas,
+            "contas_recebidas": contas_recebidas,
+            "contas_vencidas": contas_vencidas,
+            "taxa_inadimplencia": round(taxa_inadimplencia, 2),
+            "taxa_recebimento": round(taxa_recebimento, 2),
+            "previsao_30_dias": previsao_30_dias
+        },
+        "por_forma_pagamento": por_forma_pagamento,
+        "top_inadimplentes": top_inadimplentes
+    }
+
+# Previsão de Faturamento
+@api_router.get("/contas-receber/previsao-faturamento")
+async def previsao_faturamento(
+    meses: int = 3,
+    current_user: dict = Depends(require_permission("contas_receber", "ler"))
+):
+    """
+    Previsão de faturamento baseado em parcelas a receber
+    """
+    contas = await db.contas_receber.find({
+        "cancelada": False,
+        "status": {"$in": ["pendente", "recebido_parcial", "vencido"]}
+    }, {"_id": 0}).to_list(10000)
+    
+    hoje = datetime.now(timezone.utc).date()
+    previsao = []
+    
+    for i in range(meses):
+        mes_inicio = hoje + timedelta(days=i*30)
+        mes_fim = hoje + timedelta(days=(i+1)*30)
+        
+        valor_previsto = 0
+        quantidade_parcelas = 0
+        
+        for conta in contas:
+            for parcela in conta["parcelas"]:
+                if parcela["status"] == "pendente":
+                    data_venc = datetime.fromisoformat(parcela["data_vencimento"]).date()
+                    if mes_inicio <= data_venc < mes_fim:
+                        valor_previsto += parcela["valor"]
+                        quantidade_parcelas += 1
+        
+        previsao.append({
+            "mes": mes_inicio.strftime("%Y-%m"),
+            "mes_nome": mes_inicio.strftime("%B/%Y"),
+            "valor_previsto": valor_previsto,
+            "quantidade_parcelas": quantidade_parcelas
+        })
+    
+    return {
+        "meses_previsao": meses,
+        "previsao": previsao,
+        "total_previsto": sum(p["valor_previsto"] for p in previsao)
+    }
+
+# Análise de Inadimplência
+@api_router.get("/contas-receber/inadimplencia")
+async def analise_inadimplencia(
+    current_user: dict = Depends(require_permission("contas_receber", "ler"))
+):
+    """
+    Análise detalhada de inadimplência
+    """
+    contas_vencidas = await db.contas_receber.find({
+        "cancelada": False,
+        "status": "vencido"
+    }, {"_id": 0}).to_list(10000)
+    
+    total_vencido = sum(c["valor_pendente"] for c in contas_vencidas)
+    
+    # Por faixa de atraso
+    faixas = {
+        "1-15_dias": 0,
+        "16-30_dias": 0,
+        "31-60_dias": 0,
+        "61-90_dias": 0,
+        "mais_90_dias": 0
+    }
+    
+    for conta in contas_vencidas:
+        dias = conta.get("dias_atraso", 0)
+        if dias <= 15:
+            faixas["1-15_dias"] += conta["valor_pendente"]
+        elif dias <= 30:
+            faixas["16-30_dias"] += conta["valor_pendente"]
+        elif dias <= 60:
+            faixas["31-60_dias"] += conta["valor_pendente"]
+        elif dias <= 90:
+            faixas["61-90_dias"] += conta["valor_pendente"]
+        else:
+            faixas["mais_90_dias"] += conta["valor_pendente"]
+    
+    return {
+        "total_vencido": total_vencido,
+        "quantidade_contas": len(contas_vencidas),
+        "por_faixa_atraso": faixas,
+        "contas": contas_vencidas
+    }
+
+# ========== FIM CONTAS A RECEBER ==========
+
 # ========== ENDPOINTS ADMINISTRATIVOS ==========
 
 # Modelos Pydantic para Admin
