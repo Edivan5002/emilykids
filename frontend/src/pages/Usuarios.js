@@ -226,7 +226,7 @@ const Usuarios = () => {
               Novo Usuário
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="dialog-responsive-sm">
             <DialogHeader>
               <DialogTitle>{editingUsuario ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
             </DialogHeader>

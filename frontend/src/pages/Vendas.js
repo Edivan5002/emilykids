@@ -825,7 +825,7 @@ const Vendas = () => {
 
       {/* Dialog Criar Venda */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="dialog-responsive max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nova Venda</DialogTitle>
           </DialogHeader>

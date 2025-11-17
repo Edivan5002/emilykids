@@ -1086,7 +1086,7 @@ const Estoque = () => {
 
       {/* Modal de Detalhes da Movimentação */}
       <Dialog open={isDetalhesOpen} onOpenChange={setIsDetalhesOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="dialog-responsive-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {detalhesMovimentacao?.referencia_tipo === 'ajuste_manual' ? (
@@ -1368,7 +1368,7 @@ const Estoque = () => {
 
       {/* Dialog: Detalhes do Inventário */}
       <Dialog open={detalhesInventarioDialog.open} onOpenChange={(open) => setDetalhesInventarioDialog({ open, inventario: null })}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="dialog-responsive max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Clipboard className="text-blue-600" size={24} />

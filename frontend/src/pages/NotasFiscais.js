@@ -349,7 +349,7 @@ const NotasFiscais = () => {
               Nova Nota Fiscal
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="dialog-responsive max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Cadastrar Nota Fiscal de Entrada</DialogTitle>
             </DialogHeader>

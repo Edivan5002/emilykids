@@ -468,7 +468,7 @@ const Orcamentos = () => {
               Novo Orçamento
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="dialog-responsive max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Criar Novo Orçamento</DialogTitle>
             </DialogHeader>

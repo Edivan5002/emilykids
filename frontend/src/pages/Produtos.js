@@ -808,7 +808,7 @@ const Produtos = () => {
             <DialogTrigger asChild>
               <Button data-testid="add-produto-btn"><Plus className="mr-2" size={18} />Novo Produto</Button>
             </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="dialog-responsive max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{isEditing ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
             </DialogHeader>
@@ -1709,7 +1709,7 @@ const Produtos = () => {
 
       {/* Modal de Zoom */}
       <Dialog open={!!zoomImage} onOpenChange={() => setZoomImage(null)}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="dialog-responsive">
           <DialogHeader>
             <DialogTitle>Visualização da Imagem</DialogTitle>
           </DialogHeader>
