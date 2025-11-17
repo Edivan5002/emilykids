@@ -879,8 +879,11 @@ const Vendas = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {produtos.map(p => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.nome} (Estoque: {p.estoque_atual})
+                        <SelectItem key={p.id} value={p.id} className="text-sm">
+                          <div className="flex flex-col">
+                            <span className="font-medium text-blue-700">{getProdutoDescricaoCompleta(p.id)}</span>
+                            <span className="text-xs text-gray-600">R$ {p.preco_venda.toFixed(2)} | Estoque: {p.estoque_atual}</span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
