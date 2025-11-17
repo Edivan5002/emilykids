@@ -271,7 +271,7 @@ const Subcategorias = () => {
         </Select>
       </div>
 
-      <div className="table-container overflow-x-auto">
+      <div className="table-responsive">
         <table className="min-w-full">
           <thead>
             <tr>
