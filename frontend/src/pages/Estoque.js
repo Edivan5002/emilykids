@@ -346,6 +346,22 @@ const Estoque = () => {
     return cat?.nome || '-';
   };
 
+  const getSubcategoriaNome = (subcategoriaId) => {
+    const subcat = subcategorias.find(s => s.id === subcategoriaId);
+    return subcat?.nome || '-';
+  };
+
+  const getProdutoDescricaoCompleta = (produtoId) => {
+    const produto = produtos.find(p => p.id === produtoId);
+    if (!produto) return 'Produto não encontrado';
+    
+    const marcaNome = getMarcaNome(produto.marca_id);
+    const categoriaNome = getCategoriaNome(produto.categoria_id);
+    const subcategoriaNome = getSubcategoriaNome(produto.subcategoria_id);
+    
+    return `${marcaNome} | ${categoriaNome} | ${subcategoriaNome} | ${produto.nome}`;
+  };
+
   const getTipoIcon = (tipo) => {
     return tipo === 'entrada' ? 
       <TrendingUp className="text-green-600" size={16} /> : 
