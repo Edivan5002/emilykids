@@ -170,8 +170,8 @@ const Layout = ({ children }) => {
                 return null;
               }
               
-              // Verificar permissão do módulo
-              if (item.module && !hasModulePermission(item.module)) {
+              // Verificar permissão do módulo (apenas se não for admin e item tiver módulo definido)
+              if (item.module && user?.papel !== 'admin' && !hasModulePermission(item.module)) {
                 return null;
               }
               
