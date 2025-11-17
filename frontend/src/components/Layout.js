@@ -56,6 +56,13 @@ const Layout = ({ children }) => {
       perm.startsWith(`${module}:`)
     );
   };
+  
+  // Debug: log quando user mudar
+  useEffect(() => {
+    console.log('User changed:', user);
+    console.log('User papel:', user?.papel);
+    console.log('User permissoes:', user?.permissoes?.length);
+  }, [user]);
 
   // Detectar tamanho da tela e ajustar sidebar
   useEffect(() => {
