@@ -46,15 +46,22 @@ const Relatorios = () => {
   }, []);
 
   const fetchReferenceData = async () => {
+    // Tentar carregar produtos
     try {
-      const [prodRes, cliRes] = await Promise.all([
-        axios.get(`${API}/produtos`),
-        axios.get(`${API}/clientes`)
-      ]);
+      const prodRes = await axios.get(`${API}/produtos`);
       setProdutos(prodRes.data);
+    } catch (err) {
+      console.log('Sem permissão para produtos');
+      setProdutos([]);
+    }
+    
+    // Tentar carregar clientes
+    try {
+      const cliRes = await axios.get(`${API}/clientes`);
       setClientes(cliRes.data);
-    } catch (error) {
-      console.error('Erro ao carregar dados de referência:', error);
+    } catch (err) {
+      console.log('Sem permissão para clientes');
+      setClientes([]);
     }
   };
 
