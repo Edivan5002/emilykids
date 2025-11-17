@@ -192,6 +192,24 @@ class Fornecedor(BaseModel):
     email: Optional[EmailStr] = None
     endereco: Optional[dict] = None
     ativo: bool = True
+    
+    # DADOS FINANCEIROS
+    dias_prazo_pagamento: int = 0  # Prazo padrão
+    forma_pagamento_preferencial: Optional[str] = None
+    
+    # Histórico Financeiro
+    total_compras: float = 0
+    total_pago: float = 0
+    total_pendente: float = 0
+    total_vencido: float = 0
+    
+    data_ultima_compra: Optional[str] = None
+    data_ultimo_pagamento: Optional[str] = None
+    
+    # Avaliação
+    avaliacao_fornecedor: float = 5.0  # 0-5 estrelas
+    prazo_entrega_medio: int = 0  # dias
+    
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class FornecedorCreate(BaseModel):
