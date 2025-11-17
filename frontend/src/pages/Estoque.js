@@ -92,11 +92,22 @@ const Estoque = () => {
       
       // Tentar carregar categorias
       try {
-        const catRes = await axios.get(`${API}/categorias`);
-        setCategorias(catRes.data);
+        const catRes = await axios.get(`${API}/categorias?limit=0`);
+        const categoriasData = catRes.data?.data || catRes.data || [];
+        setCategorias(categoriasData);
       } catch (err) {
         console.log('Sem permissão para categorias');
         setCategorias([]);
+      }
+      
+      // Tentar carregar subcategorias
+      try {
+        const subcatRes = await axios.get(`${API}/subcategorias?limit=0`);
+        const subcategoriasData = subcatRes.data?.data || subcatRes.data || [];
+        setSubcategorias(subcategoriasData);
+      } catch (err) {
+        console.log('Sem permissão para subcategorias');
+        setSubcategorias([]);
       }
     } catch (error) {
       toast.error('Erro ao carregar estoque');
