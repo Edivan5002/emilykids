@@ -136,7 +136,7 @@ const Dashboard = () => {
           const Icon = stat.icon;
           return (
             <Card key={stat.title} className="card-hover" data-testid={stat.testid}>
-              <CardContent className="p-6">
+              <CardContent className="card-content-responsive">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex-1">
                     <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
