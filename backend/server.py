@@ -1499,11 +1499,16 @@ async def initialize_default_roles_and_permissions():
     )
     await db.roles.insert_one(admin_role.model_dump())
     
-    # 2. Gerente - Quase tudo, sem usuários e configurações
+    # 2. Gerente - Quase tudo, sem usuários e configurações, COM financeiro completo
     gerente_perms = [
         perm_id for key, perm_id in permission_map.items()
         if not key.startswith("usuarios:") and not key.startswith("configuracoes:")
     ]
+    # Adicionar permissões financeiras completas
+    gerente_perms.extend([
+        perm_id for key, perm_id in permission_map.items()
+        if key.startswith("contas_receber:") or key.startswith("contas_pagar:")
+    ])
     gerente_role = Role(
         nome="Gerente",
         descricao="Gerencia vendas, estoque e relatórios",
