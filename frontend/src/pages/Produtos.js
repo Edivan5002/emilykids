@@ -731,7 +731,7 @@ const Produtos = () => {
     <div className="page-container" data-testid="produtos-page">
       {/* Header com Relatórios */}
       {relatorios && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="filters-grid-4 mb-4 sm:mb-6">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
