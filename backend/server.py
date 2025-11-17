@@ -6637,7 +6637,11 @@ async def recomendacoes_cliente(request: RecomendacoesClienteRequest, current_us
             system_message="Você é um especialista em análise de comportamento de compra e recomendação de produtos. Forneça recomendações personalizadas e estratégicas."
         ).with_model("openai", "gpt-4")
         
-        produtos_catalogo = [f"{p['nome']} (R$ {p['preco_venda']:.2f})" for p in produtos_disponiveis[:30]]
+        # Montar catálogo com descrição completa
+        produtos_catalogo = []
+        for p in produtos_disponiveis[:30]:
+            descricao = await get_produto_descricao_completa(p['id'])
+            produtos_catalogo.append(f"{descricao} (R$ {p['preco_venda']:.2f})")
         
         prompt = f"""Analise o perfil de compras do cliente "{cliente['nome']}" e forneça recomendações personalizadas:
 
