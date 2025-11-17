@@ -1003,7 +1003,7 @@ const Estoque = () => {
                 <SelectContent>
                   {produtos.map(p => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.nome} (Estoque: {p.estoque_atual})
+                      {getProdutoDescricaoCompleta(p.id)} (Estoque: {p.estoque_atual})
                     </SelectItem>
                   ))}
                 </SelectContent>
