@@ -820,7 +820,7 @@ const Relatorios = () => {
                                 {produto.classe}
                               </span>
                             </td>
-                            <td className="p-3 text-sm font-medium">{produto.produto_nome}</td>
+                            <td className="p-3 text-sm font-medium">{produto.produto_descricao || produto.produto_nome}</td>
                             <td className="p-3 text-sm text-center">R$ {produto.faturamento.toFixed(2)}</td>
                             <td className="p-3 text-sm text-center">{produto.percentual.toFixed(2)}%</td>
                             <td className="p-3 text-sm text-center font-medium">{produto.percentual_acumulado.toFixed(2)}%</td>
