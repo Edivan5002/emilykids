@@ -152,6 +152,26 @@ class Cliente(BaseModel):
     endereco: Optional[dict] = None
     observacoes: Optional[str] = None
     ativo: bool = True
+    
+    # DADOS FINANCEIROS
+    limite_credito: float = 0
+    credito_utilizado: float = 0
+    credito_disponivel: float = 0
+    dias_prazo_pagamento: int = 0  # Prazo padrão
+    
+    # Histórico Financeiro
+    total_compras: float = 0
+    total_pago: float = 0
+    total_pendente: float = 0
+    total_vencido: float = 0
+    
+    score_credito: float = 100  # 0-100
+    status_credito: str = "aprovado"  # aprovado, bloqueado, analise
+    inadimplente: bool = False
+    
+    data_ultima_compra: Optional[str] = None
+    data_ultimo_pagamento: Optional[str] = None
+    
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class ClienteCreate(BaseModel):
