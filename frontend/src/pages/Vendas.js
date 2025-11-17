@@ -918,11 +918,11 @@ const Vendas = () => {
               {itensVenda.length > 0 && (
                 <div className="space-y-2 mt-4">
                   {itensVenda.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
                       <div className="flex-1">
-                        <p className="font-medium">{item.produto_nome}</p>
-                        <p className="text-sm text-gray-600">
-                          {item.quantidade} x R$ {item.preco_unitario.toFixed(2)} = R$ {item.subtotal.toFixed(2)}
+                        <p className="font-medium text-blue-700">{getProdutoDescricaoCompleta(item.produto_id)}</p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Quantidade: <span className="font-semibold">{item.quantidade}</span> x R$ {item.preco_unitario.toFixed(2)} = <span className="font-bold text-green-600">R$ {item.subtotal.toFixed(2)}</span>
                         </p>
                       </div>
                       <Button
