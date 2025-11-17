@@ -1453,40 +1453,55 @@ const Produtos = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-5 gap-4">
-            <Input placeholder="Buscar por nome, SKU ou código de barras" value={filtros.termo} onChange={(e) => setFiltros({ ...filtros, termo: e.target.value })} />
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Buscar</Label>
+              <Input placeholder="Nome, SKU ou código de barras" value={filtros.termo} onChange={(e) => setFiltros({ ...filtros, termo: e.target.value })} />
+            </div>
             
-            <Select value={filtros.marca_id || 'todas'} onValueChange={(value) => setFiltros({ ...filtros, marca_id: value === 'todas' ? '' : value })}>
-              <SelectTrigger><SelectValue placeholder="Todas as marcas" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas</SelectItem>
-                {marcas.map(m => <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Marca</Label>
+              <Select value={filtros.marca_id || 'todas'} onValueChange={(value) => setFiltros({ ...filtros, marca_id: value === 'todas' ? '' : value })}>
+                <SelectTrigger><SelectValue placeholder="Todas as marcas" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas</SelectItem>
+                  {marcas.map(m => <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             
-            <Select value={filtros.categoria_id || 'todas'} onValueChange={(value) => setFiltros({ ...filtros, categoria_id: value === 'todas' ? '' : value })}>
-              <SelectTrigger><SelectValue placeholder="Todas as categorias" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas</SelectItem>
-                {categorias.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Categoria</Label>
+              <Select value={filtros.categoria_id || 'todas'} onValueChange={(value) => setFiltros({ ...filtros, categoria_id: value === 'todas' ? '' : value })}>
+                <SelectTrigger><SelectValue placeholder="Todas as categorias" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas</SelectItem>
+                  {categorias.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             
-            <Select value={filtros.subcategoria_id || 'todas'} onValueChange={(value) => setFiltros({ ...filtros, subcategoria_id: value === 'todas' ? '' : value })}>
-              <SelectTrigger><SelectValue placeholder="Todas as subcategorias" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas</SelectItem>
-                {subcategorias.map(s => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Subcategoria</Label>
+              <Select value={filtros.subcategoria_id || 'todas'} onValueChange={(value) => setFiltros({ ...filtros, subcategoria_id: value === 'todas' ? '' : value })}>
+                <SelectTrigger><SelectValue placeholder="Todas as subcategorias" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas</SelectItem>
+                  {subcategorias.map(s => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             
-            <Select value={filtros.ativo || 'todos'} onValueChange={(value) => setFiltros({ ...filtros, ativo: value === 'todos' ? '' : value })}>
-              <SelectTrigger><SelectValue placeholder="Todos os status" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="true">Apenas Ativos</SelectItem>
-                <SelectItem value="false">Apenas Inativos</SelectItem>
-              </SelectContent>
-            </Select>
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Status</Label>
+              <Select value={filtros.ativo || 'todos'} onValueChange={(value) => setFiltros({ ...filtros, ativo: value === 'todos' ? '' : value })}>
+                <SelectTrigger><SelectValue placeholder="Todos os status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="true">Apenas Ativos</SelectItem>
+                  <SelectItem value="false">Apenas Inativos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
           <div className="flex gap-4 mt-4">
