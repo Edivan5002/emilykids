@@ -53,16 +53,29 @@ const Vendas = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [vendasRes, cliRes, prodRes] = await Promise.all([
-        axios.get(`${API}/vendas?limit=0`),
-        axios.get(`${API}/clientes?limit=0`),
-        axios.get(`${API}/produtos?limit=0`)
-      ]);
+      // Sempre carregar vendas
+      const vendasRes = await axios.get(`${API}/vendas?limit=0`);
       setVendas(vendasRes.data);
-      setClientes(cliRes.data);
-      setProdutos(prodRes.data);
+      
+      // Tentar carregar clientes separadamente
+      try {
+        const cliRes = await axios.get(`${API}/clientes?limit=0`);
+        setClientes(cliRes.data);
+      } catch (err) {
+        console.log('Sem permissão para clientes');
+        setClientes([]);
+      }
+      
+      // Tentar carregar produtos separadamente
+      try {
+        const prodRes = await axios.get(`${API}/produtos?limit=0`);
+        setProdutos(prodRes.data);
+      } catch (err) {
+        console.log('Sem permissão para produtos');
+        setProdutos([]);
+      }
     } catch (error) {
-      toast.error('Erro ao carregar dados. Por favor, tente novamente.');
+      toast.error('Erro ao carregar vendas. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }
