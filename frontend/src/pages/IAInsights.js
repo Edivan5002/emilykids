@@ -380,7 +380,7 @@ const IAInsights = () => {
                   {/* Informações do Produto */}
                   <Card className="border-2 border-blue-200 bg-blue-50">
                     <CardHeader>
-                      <CardTitle className="text-lg">📦 {precificacaoData.produto.nome}</CardTitle>
+                      <CardTitle className="text-lg">📦 {getProdutoDescricaoCompleta(precificacaoData.produto.id)}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
