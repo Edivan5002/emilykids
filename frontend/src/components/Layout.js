@@ -84,10 +84,10 @@ const Layout = ({ children }) => {
   }, [location.pathname]);
 
   const menuItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, module: 'dashboard' },
-    { path: '/usuarios', label: 'Usuários', icon: UserCog, adminOnly: true, module: 'usuarios' },
-    { path: '/papeis-permissoes', label: 'Papéis & Permissões', icon: Shield, adminOnly: true, module: 'usuarios' },
-    { path: '/administracao', label: 'Administração', icon: Shield, adminOnly: true, className: 'text-red-600', module: 'configuracoes' },
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }, // Dashboard sempre visível
+    { path: '/usuarios', label: 'Usuários', icon: UserCog, adminOnly: true },
+    { path: '/papeis-permissoes', label: 'Papéis & Permissões', icon: Shield, adminOnly: true },
+    { path: '/administracao', label: 'Administração', icon: Shield, adminOnly: true, className: 'text-red-600' },
     { 
       label: 'Cadastros', 
       icon: FolderOpen, 
