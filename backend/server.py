@@ -373,6 +373,18 @@ class NotaFiscal(BaseModel):
     condicoes_pagamento: Optional[str] = None
     data_vencimento: Optional[str] = None
     numero_parcelas: int = 1
+    forma_pagamento: Optional[str] = None  # pix, boleto, cartao_credito
+    tipo_pagamento: Optional[str] = None  # avista, parcelado
+    parcelas_detalhadas: List[dict] = []  # Parcelas com valor e data
+    
+    # INTEGRAÇÃO FINANCEIRA - Contas a Pagar
+    contas_pagar_ids: List[str] = []
+    valor_pago: float = 0
+    valor_pendente: float = 0
+    status_financeiro: str = "pendente"  # pendente, pago_parcial, pago_total
+    aprovacao_financeira: bool = False
+    centro_custo: Optional[str] = None
+    projeto: Optional[str] = None
     
     # Cancelamento
     cancelada: bool = False
