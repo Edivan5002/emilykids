@@ -1638,6 +1638,447 @@ async def log_action(
     if severidade in ["CRITICAL", "SECURITY"]:
         await enviar_alerta_critico(log)
 
+
+# ==================== FUNÇÕES DE LOG FINANCEIRO ====================
+
+async def registrar_log_financeiro(
+    usuario_id: str,
+    usuario_nome: str,
+    acao: str,  # conta_receber_criada, conta_receber_editada, parcela_recebida, etc
+    modulo: str,  # contas_receber, contas_pagar
+    registro_id: str,
+    registro_numero: str,
+    detalhes: dict,
+    ip: str = None,
+    severidade: str = "INFO"
+):
+    """
+    Função específica para registrar ações financeiras
+    """
+    log_detalhes = {
+        "registro_id": registro_id,
+        "registro_numero": registro_numero,
+        **detalhes
+    }
+    
+    await log_action(
+        ip=ip or "sistema",
+        user_id=usuario_id,
+        user_nome=usuario_nome,
+        tela=modulo,
+        acao=acao,
+        detalhes=log_detalhes,
+        severidade=severidade
+    )
+
+async def adicionar_historico_conta(
+    conta_id: str,
+    tipo: str,  # receber ou pagar
+    acao: str,  # editada, parcela_recebida, cancelada, etc
+    usuario_id: str,
+    usuario_nome: str,
+    dados_anteriores: dict = None,
+    dados_novos: dict = None,
+    observacao: str = None
+):
+    """
+    Adiciona entrada no histórico de alterações de uma conta
+    """
+    historico = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "acao": acao,
+        "usuario_id": usuario_id,
+        "usuario_nome": usuario_nome,
+        "dados_anteriores": dados_anteriores,
+        "dados_novos": dados_novos,
+        "observacao": observacao
+    }
+    
+    collection = db.contas_receber if tipo == "receber" else db.contas_pagar
+    
+    await collection.update_one(
+        {"id": conta_id},
+        {
+            "$push": {"historico_alteracoes": historico},
+            "$set": {
+                "updated_by": usuario_id,
+                "updated_by_name": usuario_nome,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+
+async def registrar_criacao_conta_receber(
+    conta: dict,
+    usuario_id: str,
+    usuario_nome: str,
+    ip: str = None
+):
+    """
+    Registra criação de conta a receber
+    """
+    detalhes = {
+        "cliente_id": conta.get("cliente_id"),
+        "cliente_nome": conta.get("cliente_nome"),
+        "valor_total": conta.get("valor_total"),
+        "forma_pagamento": conta.get("forma_pagamento"),
+        "numero_parcelas": conta.get("numero_parcelas"),
+        "origem": conta.get("origem"),
+        "origem_numero": conta.get("origem_numero")
+    }
+    
+    await registrar_log_financeiro(
+        usuario_id=usuario_id,
+        usuario_nome=usuario_nome,
+        acao="conta_receber_criada",
+        modulo="contas_receber",
+        registro_id=conta["id"],
+        registro_numero=conta["numero"],
+        detalhes=detalhes,
+        ip=ip
+    )
+
+async def registrar_recebimento_parcela(
+    conta: dict,
+    parcela: dict,
+    valor_recebido: float,
+    usuario_id: str,
+    usuario_nome: str,
+    ip: str = None
+):
+    """
+    Registra recebimento de parcela
+    """
+    detalhes = {
+        "cliente_nome": conta.get("cliente_nome"),
+        "numero_parcela": parcela.get("numero_parcela"),
+        "valor_parcela": parcela.get("valor"),
+        "valor_recebido": valor_recebido,
+        "juros": parcela.get("valor_juros", 0),
+        "desconto": parcela.get("valor_desconto", 0),
+        "forma_recebimento": parcela.get("forma_recebimento")
+    }
+    
+    await registrar_log_financeiro(
+        usuario_id=usuario_id,
+        usuario_nome=usuario_nome,
+        acao="parcela_recebida",
+        modulo="contas_receber",
+        registro_id=conta["id"],
+        registro_numero=conta["numero"],
+        detalhes=detalhes,
+        ip=ip,
+        severidade="INFO"
+    )
+    
+    # Adicionar ao histórico da conta
+    await adicionar_historico_conta(
+        conta_id=conta["id"],
+        tipo="receber",
+        acao="parcela_recebida",
+        usuario_id=usuario_id,
+        usuario_nome=usuario_nome,
+        dados_novos=detalhes
+    )
+
+async def registrar_cancelamento_conta_receber(
+    conta: dict,
+    motivo: str,
+    usuario_id: str,
+    usuario_nome: str,
+    ip: str = None
+):
+    """
+    Registra cancelamento de conta a receber
+    """
+    detalhes = {
+        "cliente_nome": conta.get("cliente_nome"),
+        "valor_total": conta.get("valor_total"),
+        "valor_recebido": conta.get("valor_recebido"),
+        "valor_pendente": conta.get("valor_pendente"),
+        "motivo": motivo
+    }
+    
+    await registrar_log_financeiro(
+        usuario_id=usuario_id,
+        usuario_nome=usuario_nome,
+        acao="conta_receber_cancelada",
+        modulo="contas_receber",
+        registro_id=conta["id"],
+        registro_numero=conta["numero"],
+        detalhes=detalhes,
+        ip=ip,
+        severidade="WARNING"
+    )
+    
+    # Adicionar ao histórico da conta
+    await adicionar_historico_conta(
+        conta_id=conta["id"],
+        tipo="receber",
+        acao="cancelada",
+        usuario_id=usuario_id,
+        usuario_nome=usuario_nome,
+        observacao=motivo
+    )
+
+async def registrar_criacao_conta_pagar(
+    conta: dict,
+    usuario_id: str,
+    usuario_nome: str,
+    ip: str = None
+):
+    """
+    Registra criação de conta a pagar
+    """
+    detalhes = {
+        "fornecedor_id": conta.get("fornecedor_id"),
+        "fornecedor_nome": conta.get("fornecedor_nome"),
+        "valor_total": conta.get("valor_total"),
+        "forma_pagamento": conta.get("forma_pagamento"),
+        "numero_parcelas": conta.get("numero_parcelas"),
+        "categoria": conta.get("categoria"),
+        "origem": conta.get("origem"),
+        "origem_numero": conta.get("origem_numero")
+    }
+    
+    await registrar_log_financeiro(
+        usuario_id=usuario_id,
+        usuario_nome=usuario_nome,
+        acao="conta_pagar_criada",
+        modulo="contas_pagar",
+        registro_id=conta["id"],
+        registro_numero=conta["numero"],
+        detalhes=detalhes,
+        ip=ip
+    )
+
+async def registrar_pagamento_parcela(
+    conta: dict,
+    parcela: dict,
+    valor_pago: float,
+    usuario_id: str,
+    usuario_nome: str,
+    ip: str = None
+):
+    """
+    Registra pagamento de parcela
+    """
+    detalhes = {
+        "fornecedor_nome": conta.get("fornecedor_nome"),
+        "numero_parcela": parcela.get("numero_parcela"),
+        "valor_parcela": parcela.get("valor"),
+        "valor_pago": valor_pago,
+        "juros": parcela.get("valor_juros", 0),
+        "multa": parcela.get("valor_multa", 0),
+        "desconto": parcela.get("valor_desconto", 0),
+        "forma_pagamento": parcela.get("forma_pagamento")
+    }
+    
+    await registrar_log_financeiro(
+        usuario_id=usuario_id,
+        usuario_nome=usuario_nome,
+        acao="parcela_paga",
+        modulo="contas_pagar",
+        registro_id=conta["id"],
+        registro_numero=conta["numero"],
+        detalhes=detalhes,
+        ip=ip,
+        severidade="INFO"
+    )
+    
+    # Adicionar ao histórico da conta
+    await adicionar_historico_conta(
+        conta_id=conta["id"],
+        tipo="pagar",
+        acao="parcela_paga",
+        usuario_id=usuario_id,
+        usuario_nome=usuario_nome,
+        dados_novos=detalhes
+    )
+
+async def registrar_aprovacao_conta_pagar(
+    conta: dict,
+    aprovado: bool,
+    usuario_id: str,
+    usuario_nome: str,
+    observacao: str = None,
+    ip: str = None
+):
+    """
+    Registra aprovação ou reprovação de conta a pagar
+    """
+    detalhes = {
+        "fornecedor_nome": conta.get("fornecedor_nome"),
+        "valor_total": conta.get("valor_total"),
+        "aprovado": aprovado,
+        "observacao": observacao
+    }
+    
+    acao = "conta_pagar_aprovada" if aprovado else "conta_pagar_reprovada"
+    
+    await registrar_log_financeiro(
+        usuario_id=usuario_id,
+        usuario_nome=usuario_nome,
+        acao=acao,
+        modulo="contas_pagar",
+        registro_id=conta["id"],
+        registro_numero=conta["numero"],
+        detalhes=detalhes,
+        ip=ip,
+        severidade="INFO"
+    )
+    
+    # Adicionar ao histórico da conta
+    await adicionar_historico_conta(
+        conta_id=conta["id"],
+        tipo="pagar",
+        acao=acao,
+        usuario_id=usuario_id,
+        usuario_nome=usuario_nome,
+        observacao=observacao
+    )
+
+async def registrar_cancelamento_conta_pagar(
+    conta: dict,
+    motivo: str,
+    usuario_id: str,
+    usuario_nome: str,
+    ip: str = None
+):
+    """
+    Registra cancelamento de conta a pagar
+    """
+    detalhes = {
+        "fornecedor_nome": conta.get("fornecedor_nome"),
+        "valor_total": conta.get("valor_total"),
+        "valor_pago": conta.get("valor_pago"),
+        "valor_pendente": conta.get("valor_pendente"),
+        "motivo": motivo
+    }
+    
+    await registrar_log_financeiro(
+        usuario_id=usuario_id,
+        usuario_nome=usuario_nome,
+        acao="conta_pagar_cancelada",
+        modulo="contas_pagar",
+        registro_id=conta["id"],
+        registro_numero=conta["numero"],
+        detalhes=detalhes,
+        ip=ip,
+        severidade="WARNING"
+    )
+    
+    # Adicionar ao histórico da conta
+    await adicionar_historico_conta(
+        conta_id=conta["id"],
+        tipo="pagar",
+        acao="cancelada",
+        usuario_id=usuario_id,
+        usuario_nome=usuario_nome,
+        observacao=motivo
+    )
+
+# Job para marcar parcelas vencidas (executar diariamente)
+async def verificar_e_atualizar_parcelas_vencidas():
+    """
+    Job automático para marcar parcelas vencidas e atualizar status
+    """
+    hoje = datetime.now(timezone.utc).date()
+    
+    # Verificar Contas a Receber
+    contas_receber = await db.contas_receber.find({
+        "status": {"$in": ["pendente", "recebido_parcial"]},
+        "cancelada": False
+    }).to_list(10000)
+    
+    for conta in contas_receber:
+        parcelas_alteradas = False
+        for i, parcela in enumerate(conta["parcelas"]):
+            if parcela["status"] == "pendente":
+                vencimento = datetime.fromisoformat(parcela["data_vencimento"]).date()
+                if vencimento < hoje:
+                    dias_atraso = (hoje - vencimento).days
+                    
+                    # Atualizar parcela
+                    await db.contas_receber.update_one(
+                        {"id": conta["id"]},
+                        {
+                            "$set": {
+                                f"parcelas.{i}.status": "vencido",
+                                f"parcelas.{i}.dias_atraso": dias_atraso,
+                                "status": "vencido",
+                                "dias_atraso": dias_atraso
+                            }
+                        }
+                    )
+                    parcelas_alteradas = True
+                    
+                    # Log automático
+                    await registrar_log_financeiro(
+                        usuario_id="sistema",
+                        usuario_nome="Sistema Automático",
+                        acao="parcela_vencida_automatica",
+                        modulo="contas_receber",
+                        registro_id=conta["id"],
+                        registro_numero=conta["numero"],
+                        detalhes={
+                            "numero_parcela": parcela["numero_parcela"],
+                            "dias_atraso": dias_atraso,
+                            "valor_pendente": parcela["valor"]
+                        },
+                        severidade="WARNING"
+                    )
+        
+        if parcelas_alteradas:
+            # Atualizar cliente como inadimplente
+            await db.clientes.update_one(
+                {"id": conta["cliente_id"]},
+                {"$set": {"inadimplente": True}}
+            )
+    
+    # Verificar Contas a Pagar (similar)
+    contas_pagar = await db.contas_pagar.find({
+        "status": {"$in": ["pendente", "pago_parcial"]},
+        "cancelada": False
+    }).to_list(10000)
+    
+    for conta in contas_pagar:
+        for i, parcela in enumerate(conta["parcelas"]):
+            if parcela["status"] == "pendente":
+                vencimento = datetime.fromisoformat(parcela["data_vencimento"]).date()
+                if vencimento < hoje:
+                    dias_atraso = (hoje - vencimento).days
+                    
+                    await db.contas_pagar.update_one(
+                        {"id": conta["id"]},
+                        {
+                            "$set": {
+                                f"parcelas.{i}.status": "vencido",
+                                f"parcelas.{i}.dias_atraso": dias_atraso,
+                                "status": "vencido",
+                                "dias_atraso": dias_atraso
+                            }
+                        }
+                    )
+                    
+                    # Log automático
+                    await registrar_log_financeiro(
+                        usuario_id="sistema",
+                        usuario_nome="Sistema Automático",
+                        acao="parcela_vencida_automatica",
+                        modulo="contas_pagar",
+                        registro_id=conta["id"],
+                        registro_numero=conta["numero"],
+                        detalhes={
+                            "numero_parcela": parcela["numero_parcela"],
+                            "dias_atraso": dias_atraso,
+                            "valor_pendente": parcela["valor"]
+                        },
+                        severidade="WARNING"
+                    )
+
+# ==================== FIM FUNÇÕES DE LOG FINANCEIRO ====================
+
 async def log_seguranca(tipo: str, ip: str, detalhes: dict, user_id: str = None, user_email: str = None, user_agent: str = None):
     """
     Log específico para eventos de segurança
