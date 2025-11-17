@@ -1464,6 +1464,28 @@ async def initialize_default_roles_and_permissions():
             key = f"{modulo}:{acao}"
             permission_map[key] = perm.id
     
+    # Criar permissões especiais para Contas a Receber
+    for acao in acoes_financeiras_receber:
+        perm = Permission(
+            modulo="contas_receber",
+            acao=acao,
+            descricao=f"Permissão para {acao} contas a receber"
+        )
+        await db.permissions.insert_one(perm.model_dump())
+        key = f"contas_receber:{acao}"
+        permission_map[key] = perm.id
+    
+    # Criar permissões especiais para Contas a Pagar
+    for acao in acoes_financeiras_pagar:
+        perm = Permission(
+            modulo="contas_pagar",
+            acao=acao,
+            descricao=f"Permissão para {acao} contas a pagar"
+        )
+        await db.permissions.insert_one(perm.model_dump())
+        key = f"contas_pagar:{acao}"
+        permission_map[key] = perm.id
+    
     # Criar papéis padrão
     # 1. Admin - Todas permissões
     all_perm_ids = list(permission_map.values())
