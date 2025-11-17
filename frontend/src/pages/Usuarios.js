@@ -277,7 +277,19 @@ const Usuarios = () => {
                 </Label>
                 <Select value={formData.role_id} onValueChange={(value) => setFormData({...formData, role_id: value})}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione um papel" />
+                    <SelectValue placeholder="Selecione um papel">
+                      {formData.role_id && getRoleById(formData.role_id) ? (
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: getRoleById(formData.role_id).cor }}
+                          />
+                          <span>{getRoleById(formData.role_id).nome}</span>
+                        </div>
+                      ) : (
+                        "Selecione um papel"
+                      )}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {roles.map((role) => (
