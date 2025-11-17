@@ -7565,7 +7565,9 @@ async def relatorio_vendas_vendedor(
     """
     Relatório de vendas por vendedor/usuário
     """
-    vendas = await db.vendas.find({"status": "efetivada"}, {"_id": 0}).to_list(10000)
+    vendas = await db.vendas.find({
+        "status_venda": {"$nin": ["rascunho", "cancelada"]}
+    }, {"_id": 0}).to_list(10000)
     usuarios = await db.users.find({}, {"_id": 0}).to_list(1000)
     
     if data_inicio and data_fim:
