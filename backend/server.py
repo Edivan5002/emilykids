@@ -7620,7 +7620,7 @@ async def relatorio_dre(
         for item in venda.get("itens", []):
             produto = next((p for p in produtos if p["id"] == item["produto_id"]), None)
             if produto:
-                cmv += item["quantidade"] * produto["preco_custo"]
+                cmv += item["quantidade"] * produto.get("preco_medio", 0)
     
     # Lucro Bruto
     lucro_bruto = receita_liquida - cmv
