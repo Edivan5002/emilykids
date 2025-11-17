@@ -33,6 +33,9 @@ const Relatorios = () => {
   // Produtos e clientes para referência
   const [produtos, setProdutos] = useState([]);
   const [clientes, setClientes] = useState([]);
+  const [marcas, setMarcas] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [subcategorias, setSubcategorias] = useState([]);
 
   useEffect(() => {
     fetchReferenceData();
