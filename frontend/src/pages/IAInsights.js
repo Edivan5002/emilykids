@@ -23,6 +23,9 @@ const IAInsights = () => {
   const [loading, setLoading] = useState(false);
   const [produtos, setProdutos] = useState([]);
   const [clientes, setClientes] = useState([]);
+  const [marcas, setMarcas] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [subcategorias, setSubcategorias] = useState([]);
   
   // Estados para cada análise
   const [previsaoData, setPrevisaoData] = useState(null);
