@@ -194,7 +194,7 @@ const Dashboard = () => {
       )}
 
       {/* Vendas por Período */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card data-testid="vendas-chart-card">
           <CardHeader>
             <CardTitle>Vendas dos Últimos 7 Dias</CardTitle>
