@@ -258,8 +258,8 @@ const Layout = ({ children }) => {
                       )}
                     </div>
                     
-                    {/* Subitens - Clientes, Fornecedores, etc */}
-                    {cadastrosOpen && sidebarOpen && visibleChildren && (
+                    {/* Subitens - Clientes, Fornecedores, Contas a Receber, etc */}
+                    {((item.label === 'Cadastros' && cadastrosOpen) || (item.label === 'Financeiro' && financeiroOpen)) && sidebarOpen && visibleChildren && (
                       <div className="ml-4">
                         {visibleChildren.map((child) => {
                           const ChildIcon = child.icon;
