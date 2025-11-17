@@ -85,12 +85,16 @@ const PapeisPermissoes = () => {
 
   const fetchPermissions = async () => {
     try {
-      const [allPerms, byModule] = await Promise.all([
-        axios.get(`${API}/permissions`),
-        axios.get(`${API}/permissions/by-module`)
-      ]);
+      const allPerms = await axios.get(`${API}/permissions`);
       setPermissions(allPerms.data);
-      setPermissionsByModule(byModule.data);
+      
+      try {
+        const byModule = await axios.get(`${API}/permissions/by-module`);
+        setPermissionsByModule(byModule.data);
+      } catch (err) {
+        console.log('Erro ao carregar permissões por módulo');
+        setPermissionsByModule({});
+      }
     } catch (error) {
       toast.error('Erro ao carregar permissões');
     }
