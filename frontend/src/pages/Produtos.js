@@ -1532,18 +1532,18 @@ const Produtos = () => {
         <table className="min-w-full">
           <thead>
             <tr>
-              <th className="hidden sm:table-cell">Imagem</th>
-              <th className="hidden md:table-cell">SKU</th>
-              <th>Nome</th>
-              <th className="hidden lg:table-cell">Marca</th>
-              <th className="hidden xl:table-cell">Subcategoria</th>
-              <th className="hidden xl:table-cell">Última Compra</th>
-              <th className="hidden md:table-cell">Preço Médio</th>
-              <th>Preço Venda</th>
-              <th className="hidden lg:table-cell">Margem</th>
-              <th className="hidden sm:table-cell">Estoque</th>
-              <th>Status</th>
-              <th className="text-right">Ações</th>
+              <th className="hidden sm:table-cell w-20">Imagem</th>
+              <th className="hidden md:table-cell min-w-[100px]">SKU</th>
+              <th className="min-w-[150px]">Nome</th>
+              <th className="hidden lg:table-cell min-w-[120px]">Marca</th>
+              <th className="hidden xl:table-cell min-w-[120px]">Subcategoria</th>
+              <th className="hidden xl:table-cell min-w-[110px]">Última Compra</th>
+              <th className="hidden md:table-cell min-w-[100px]">Preço Médio</th>
+              <th className="min-w-[100px]">Preço Venda</th>
+              <th className="hidden lg:table-cell min-w-[80px]">Margem</th>
+              <th className="hidden sm:table-cell min-w-[80px]">Estoque</th>
+              <th className="min-w-[80px]">Status</th>
+              <th className="text-right min-w-[120px] sticky right-0 bg-white">Ações</th>
             </tr>
           </thead>
           <tbody>
