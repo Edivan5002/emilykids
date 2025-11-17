@@ -6728,9 +6728,8 @@ async def analise_preditiva(current_user: dict = Depends(get_current_user)):
         top_produtos = sorted(vendas_por_produto.items(), key=lambda x: x[1], reverse=True)[:10]
         top_produtos_info = []
         for pid, qtd in top_produtos:
-            p = await db.produtos.find_one({"id": pid}, {"_id": 0})
-            if p:
-                top_produtos_info.append(f"{p['nome']} ({qtd} unidades)")
+            descricao = await get_produto_descricao_completa(pid)
+            top_produtos_info.append(f"{descricao} ({qtd} unidades)")
         
         # Produtos com estoque baixo
         produtos_estoque_baixo = [p for p in produtos if p["estoque_atual"] <= p["estoque_minimo"]]
