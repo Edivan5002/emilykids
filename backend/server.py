@@ -586,6 +586,12 @@ class Venda(BaseModel):
     # Origem
     orcamento_id: Optional[str] = None
     
+    # INTEGRAÇÃO FINANCEIRA - Contas a Receber
+    contas_receber_ids: List[str] = []
+    status_financeiro: str = "pendente"  # pendente, recebido_parcial, recebido_total
+    centro_custo: Optional[str] = None
+    projeto: Optional[str] = None
+    
     # Auditoria
     user_id: str
     vendedor_nome: Optional[str] = None
