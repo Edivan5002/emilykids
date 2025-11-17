@@ -22,7 +22,11 @@ import {
   Shield,
   ChevronDown,
   ChevronRight,
-  FolderOpen
+  FolderOpen,
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  Activity
 } from 'lucide-react';
 
 // Componente para ícone Emily Kids (boneca com balão)
