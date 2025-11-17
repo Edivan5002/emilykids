@@ -112,9 +112,6 @@ const Vendas = () => {
   };
 
   // CRIAR VENDA
-  const handleAddItem = async () => {
-    if (!novoItem.produto_id || novoItem.quantidade <= 0) {
-
   // Função para obter descrição completa do produto
   const getProdutoDescricaoCompleta = (produto_id) => {
     const produto = produtos.find(p => p.id === produto_id);
@@ -131,6 +128,8 @@ const Vendas = () => {
     return `${marcaNome} | ${categoriaNome} | ${subcategoriaNome} | ${produto.nome}`;
   };
 
+  const handleAddItem = async () => {
+    if (!novoItem.produto_id || novoItem.quantidade <= 0) {
       toast.error('Selecione um produto e quantidade válida');
       return;
     }
