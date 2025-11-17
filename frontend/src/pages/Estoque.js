@@ -1475,9 +1475,9 @@ const Estoque = () => {
                             }`}>
                               <td className="p-3 text-sm font-mono">{item.produto_sku}</td>
                               <td className="p-3 text-sm">{item.produto_nome}</td>
-                              <td className="p-3 text-sm text-gray-600 hidden lg:table-cell">{getMarcaNome(item.marca_id || item.produto_marca_id)}</td>
-                              <td className="p-3 text-sm text-gray-600 hidden lg:table-cell">{getCategoriaNome(item.categoria_id || item.produto_categoria_id)}</td>
-                              <td className="p-3 text-sm text-gray-600 hidden xl:table-cell">{getSubcategoriaNome(item.subcategoria_id || item.produto_subcategoria_id)}</td>
+                              <td className="p-3 text-sm text-gray-600 hidden lg:table-cell">{getMarcaNome(getItemMarcaId(item))}</td>
+                              <td className="p-3 text-sm text-gray-600 hidden lg:table-cell">{getCategoriaNome(getItemCategoriaId(item))}</td>
+                              <td className="p-3 text-sm text-gray-600 hidden xl:table-cell">{getSubcategoriaNome(getItemSubcategoriaId(item))}</td>
                               <td className="p-3 text-sm text-center font-semibold">{item.estoque_sistema}</td>
                               <td className="p-3 text-sm text-center">
                                 {item.estoque_contado !== null ? (
