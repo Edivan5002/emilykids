@@ -1450,9 +1450,15 @@ const Produtos = () => {
       {/* Filtros Avançados */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center gap-2"><Search size={20} />Filtros Avançados</span>
-            <Button variant="ghost" size="sm" onClick={limparFiltros}>Limpar Filtros</Button>
+          <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <span className="flex items-center gap-2">
+              <Search size={18} className="hidden sm:block" />
+              <Search size={16} className="block sm:hidden" />
+              <span className="text-base sm:text-lg">Filtros Avançados</span>
+            </span>
+            <Button variant="ghost" size="sm" onClick={limparFiltros} className="btn-responsive-sm w-fit">
+              <span className="text-xs sm:text-sm">Limpar Filtros</span>
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
