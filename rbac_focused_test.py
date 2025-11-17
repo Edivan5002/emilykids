@@ -6,7 +6,7 @@ Focused RBAC Test - Test the corrected endpoints
 import requests
 import json
 
-BACKEND_URL = "https://iainsights-update.preview.emergentagent.com/api"
+BACKEND_URL = "https://contas-manager.preview.emergentagent.com/api"
 
 def test_corrected_endpoints():
     """Test the endpoints that were just corrected"""

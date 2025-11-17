@@ -1,78 +1,105 @@
 <analysis>
-I have conducted a thorough chronological analysis of the provided trajectory. The AI engineer's work began by addressing a critical data consistency bug in the Emily Kids application, specifically where converting a budget to a sale with edits did not update the original budget record. The engineer successfully fixed this by modifying the backend endpoint () to update the budget document in MongoDB with the final values.
+The trajectory details an extensive development cycle for the Emily Kids ERP application. The work began with a series of feature enhancements and bug fixes before moving to a major new development effort.
 
-Following this fix, the user requested a new feature: when a sale originating from a budget is canceled, the budget's status must be updated to cancelado and display the reason. The engineer implemented this by enhancing the  endpoint and updating the  frontend to display the new information.
+Initially, the focus was on standardizing the user experience by ensuring a complete product description (Brand, Category, Subcategory, Name) was displayed consistently across various modules, starting with  and extending to  and . This required coordinated changes in both the frontend (creating a  helper function) and backend (modifying API endpoints to provide the necessary data).
 
-Subsequently, the user requested a general code cleanup. The engineer ran a linter, identified and fixed numerous issues in , including unreachable code, unused variables, and ambiguous variable names, improving code quality without altering functionality.
+During this process, several critical bugs were identified and fixed. A recurring issue was the incorrect use of the deprecated  field instead of the new , which caused errors in the  and  modules. Another significant bug involved the reporting endpoints incorrectly filtering sales data, which was resolved by adjusting the logic to correctly use .
 
-The work continued with two administrative and UI-focused tasks: changing the  stored in the  file and, most recently, enhancing the product selection dropdown in the Nota Fiscal module. For this last task, the engineer modified  to fetch and display more detailed product information (brand, category, subcategory, name, and SKU), improving user experience. All tasks were followed by appropriate testing or verification steps.
+Following these fixes, a large-scale task was undertaken to make the entire application responsive. This involved creating a global CSS file and systematically applying responsive classes to grids, tables, and form elements across all major page components. A layout bug on the  page, identified via a user-provided screenshot, was subsequently fixed by adjusting flexbox properties and making the Actions table column sticky.
 
-The user's primary language is Portuguese. The next agent must respond in Portuguese only.
+The most recent and substantial task is the development of new Contas a Pagar and Contas a Receber modules. The AI engineer created a detailed, multi-phase implementation plan, which was approved by the user. Several initial phases, including backend data modeling (Fase 1), RBAC setup (Fase 2), logging implementation (Fase 3), and building the Contas a Receber backend endpoints (Fase 6), have already been completed. The work is currently paused after providing the user with a recommended sequence for the remaining phases.
+
+The user's primary language is Portuguese. The next agent must respond in Portuguese.
 </analysis>
+
 <product_requirements>
-The Emily Kids application is an integrated ERP system for managing sales, inventory, and business intelligence. The development documented in the trajectory focused on enhancing reliability, adding new features based on user workflow, and improving administrative control and UI clarity.
+The Emily Kids application is a comprehensive ERP system designed to manage inventory, sales, purchasing, and business intelligence for a children's retail business.
 
-**Implemented Features & Fixes:**
-1.  **Budget-to-Sale Data Consistency:** A bug was fixed where converting a budget to a sale with edited items failed to update the original budget record. The system now correctly updates the budget with the final items and total value after conversion.
-2.  **Sale Cancellation Propagation:** A new feature was implemented where canceling a sale that originated from a budget automatically updates the budget's status to cancelado and displays the cancellation reason provided during the sale cancellation process.
-3.  **Code Quality and Refactoring:** A comprehensive cleanup of the backend code () was performed to remove unused variables, dead code, and improve variable naming, leading to a more maintainable codebase.
-4.  **Administrative Security:** The master password for administrative actions was successfully changed by updating the  environment variable.
-5.  **Enhanced Product Information Display:** In the Nota Fiscal creation form, the product selection dropdown was enhanced to display a detailed string including the product's brand, category, subcategory, name, and SKU, providing more context to the user.
+**Previously Implemented Requirements:**
+*   **Standardized Product Display:** Ensure that a full product description (Marca - Categoria - Subcategoria - Nome) is used consistently across all modules, including Sales, Quotes, Invoices, IA Insights, Reports, and Inventory.
+*   **System-wide Responsiveness:** The entire application UI must be fully responsive, adapting gracefully to various screen sizes from mobile phones to desktops. All information and actions should remain accessible.
+*   **Bug Fixes:** Correct critical bugs related to the outdated  field in reports and the incorrect filtering of sales data in the reporting module.
+
+**New & In-Progress Requirements: Financial Modules (Contas a Pagar/Receber)**
+The core new requirement is to build two deeply integrated financial modules:
+1.  **Contas a Receber:**
+    *   Triggered from the **Vendas** and **Orçamentos** modules upon sale completion.
+    *   Must support various payment methods, including single and installment payments (Pix, Dinheiro, Cartão de Crédito/Débito).
+    *   For installment plans, allow setting the number of installments, value, and due dates, automatically generating entries in Contas a Receber.
+    *   Allow manual creation of receivables.
+    *   Entries must link back to the originating sale/client and be editable.
+2.  **Contas a Pagar:**
+    *   Triggered from the **Notas Fiscais** module upon purchase confirmation.
+    *   Must support installment payments for purchases, automatically generating entries.
+    *   Allow manual creation of payables (e.g., rent, salaries).
+    *   Entries must link to the originating invoice/supplier.
+3.  **Integrations:** Both modules must be fully integrated with RBAC (Papéis e Permissões), Relatórios (DRE, Fluxo de Caixa), and existing entities like Clientes and Fornecedores.
 </product_requirements>
+
 <key_technical_concepts>
-- **Backend:** FastAPI, Pydantic for data validation and modeling.
-- **Frontend:** React, Axios for API calls.
+- **Backend:** FastAPI (Python), Pydantic for data modeling.
+- **Frontend:** React, React Context for authentication.
 - **Database:** MongoDB.
-- **Styling:** Tailwind CSS, Shadcn UI components (, , ).
-- **Authentication:** JWT-based Role-Based Access Control (RBAC) with a master password for destructive admin actions.
-- **Environment Management:** Use of  files for configuration (database URLs, passwords).
+- **Authentication:** JWT-based Role-Based Access Control (RBAC). Permissions are defined in the backend and drive UI rendering in the frontend.
+- **UI/Styling:** Shadcn UI components, Tailwind CSS for styling and responsiveness.
+- **Core Pattern:** A monolithic backend () contains all business logic, API endpoints, and database models. The frontend pages fetch data and conditionally render UI based on permissions from an .
 </key_technical_concepts>
+
 <code_architecture>
-The application uses a monolithic repository with a standard client-server architecture, containing a React frontend and a FastAPI backend.
-
-**Directory Structure:**
+The application is a monorepo with a React frontend and a FastAPI backend.
 
 
--   ****
-    -   **Importance:** This is the application's core, containing all API endpoints, business logic, and database interaction logic.
-    -   **Summary of Changes:**
-        -   The  endpoint was modified to update the original budget document with edited items, total value, and other fields upon successful sale conversion.
-        -   The  endpoint was updated to check if the sale originated from a budget. If so, it now updates the corresponding budget's status to cancelado and saves the cancellation reason.
-        -   The  Pydantic model was extended to include , , and .
-        -   Multiple code quality improvements were made, including removing unused variables (, , ), fixing unreachable code, and renaming ambiguous variables ( to ).
 
--   ****
-    -   **Importance:** Stores sensitive configuration and environment variables for the backend.
-    -   **Summary of Changes:** The  was changed from  to .
+- ****
+    - **Importance:** This single file acts as the entire backend, defining all data models (Pydantic), API endpoints, business logic, and database interactions. It is the most critical file in the project.
+    - **Summary of Changes:**
+        - **Financial Models (New):** Added numerous Pydantic models for the new financial system, including , , , , , and .
+        - **Model Updates (Existing):** Modified , , , and  models to include new financial fields and relationships.
+        - **RBAC (New):** Added 13 new financial permissions (e.g., , ) and integrated them into the default Gerente role.
+        - **Endpoints (New):** Created a new section for Contas a Receber with endpoints for CRUD operations (), marking as paid, getting summaries, and fetching by client.
+        - **Endpoints (Modified):** Corrected multiple reporting endpoints (, , etc.) to use  instead of  and to correctly filter sales by  (excluding cancelada and rascunho).
+        - **Helper Function (New):** Added  to build a standardized product description string for use in various endpoints.
 
--   ****
-    -   **Importance:** Manages the display and interaction with customer budgets.
-    -   **Summary of Changes:** Code was added to conditionally render the cancellation reason and other details on a budget card if its  is cancelado, leveraging the new fields populated by the backend.
+- ** (Multiple Files)**
+    - **Importance:** These files (, , , , etc.) constitute the core UI and logic for each application module.
+    - **Summary of Changes:**
+        - **Full Product Description:** Systematically updated these files to fetch , , and , and used a new  helper function to display the full product name in selects, tables, and cards.
+        - **Responsiveness:** Applied a wide range of Tailwind CSS classes (, , ) to make grids, forms, and tables responsive across all modules.
+        - **Bug Fixes:** In , added fallback functions () to correctly display data for older inventory items. In , fixed layout issues by adjusting flex properties and making the actions column sticky.
 
--   ****
-    -   **Importance:** Handles the creation and management of fiscal notes (invoices).
-    -   **Summary of Changes:**
-        -   The  function was expanded to also fetch , , and  from the API.
-        -   A new helper function, , was created to find the related brand/category names and construct a detailed product string.
-        -   The JSX for the product  component was updated to use this new helper function, changing the display from  to a full description: .
+- ****
+    - **Importance:** Defines the main application shell, including the crucial sidebar navigation.
+    - **Summary of Changes:**
+        - **New Menu:** Added a Financeiro main menu item with Contas a Receber and Contas a Pagar sub-items, complete with icons.
+        - **Permissions:** Linked the visibility of the new menu items to the corresponding RBAC permissions (, ).
+        - **State Management:** Refactored the submenu toggle logic to be more generic, allowing for multiple collapsible main menu items.
+
+- ****
+    - **Importance:** A new file created to hold global CSS utility classes for the responsiveness overhaul.
+    - **Summary of Changes:**
+        - Created utility classes like  to wrap tables in a scrollable container and  to ensure the actions column in tables remains visible on smaller screens.
 </code_architecture>
+
 <pending_tasks>
-- Create a comprehensive, step-by-step user manual for the entire system. This task was previously discussed but deferred.
+- **Phase 4:** Implement Backend for Contas a Pagar (CRUD endpoints, logic).
+- **Phase 5:** Implement Frontend for Contas a Pagar (UI, forms, lists, integration).
+- **Phase 7:** Integrate financial logic into Frontend (Vendas, Orçamentos, Notas Fiscais modules).
+- **Phase 8:** Implement Frontend for Contas a Receber (UI, forms, lists, integration).
+- **Phase 9-12:** Develop advanced financial reports (Fluxo de Caixa, DRE, Balancete), Dashboard widgets, and complete all integrations.
+- Correct the Top 5 Mais Vendidos card in  to display the full product description.
 </pending_tasks>
+
 <current_work>
-The most recent task completed was an enhancement to the Nota Fiscal module as requested by the user. The goal was to provide more detailed information in the product selection dropdown when creating a new fiscal note.
+The immediate past work involved a massive, user-directed effort to build new Contas a Pagar and Contas a Receber modules. A comprehensive, multi-phase plan was created and approved. The previous engineer has already completed several foundational phases of this plan:
 
-**Request:** NO MÓDULO NOTA FISCAL AO CLICAR EM NOVA NOTA FISCAL NA ABA ITEM EM PRODUTOS DEVE APARECER NOME DA MARCA, NOME DA CATEGORIA, NOME DA SUBCATEGORIA, NOME DO PRODUTO E SKU (In the Nota Fiscal module, when clicking on New Nota Fiscal, in the Item tab, for Products, it should show brand name, category name, subcategory name, product name, and SKU).
+*   **Fase 1: Backend Data Modeling:** All necessary Pydantic models for the financial modules (, , , , etc.) have been defined and added to . Existing models like  and  have been updated with fields for payment information.
+*   **Fase 2: Role-Based Access Control (RBAC):** New permissions for the financial modules have been created in the backend. The main frontend layout () has been updated to include a new Financeiro menu, with its visibility controlled by these new permissions.
+*   **Fase 3: Logging & Auditing:** Helper functions (, ) have been added to  to ensure all financial transactions and modifications will be logged.
+*   **Fase 6: Backend for Contas a Receber:** All backend API endpoints required for managing Contas a Receber (e.g., creating, listing, updating, marking as paid) have been implemented in .
 
-**Implementation:**
-The work was performed in .
-1.  The  function, which already fetched products, was modified to also fetch lists of brands, categories, and subcategories.
-2.  State variables (, , ) were added to store this new data.
-3.  A new helper function, , was created. This function takes a product object, finds its corresponding brand, category, and subcategory from the state, and constructs a descriptive string: .
-4.  The  component responsible for rendering the product list was updated to call  for each product, thereby displaying the detailed information in the dropdown.
-
-The task was concluded, and a summary was prepared for the user. No testing has been performed on this specific frontend change yet.
+The last interaction was the user asking for the ideal implementation sequence for the remaining phases. The AI provided this sequence, and the project is now awaiting the user's go-ahead to begin the next phase. No new code is currently being written.
 </current_work>
+
 <optional_next_step>
-Testar a nova exibição de produtos no formulário de Nota Fiscal para garantir que todas as informações (Marca, Categoria, etc.) são exibidas corretamente e sem erros.
+Inicie a implementação da **Fase 4: Backend - Contas a Pagar Completo**, conforme a sequência de implementação recomendada e solicitada pelo usuário.
 </optional_next_step>

@@ -27,7 +27,7 @@ import sys
 import os
 
 # Backend URL from environment
-BACKEND_URL = "https://iainsights-update.preview.emergentagent.com/api"
+BACKEND_URL = "https://contas-manager.preview.emergentagent.com/api"
 
 class DeleteDependenciesValidator:
     def __init__(self):
