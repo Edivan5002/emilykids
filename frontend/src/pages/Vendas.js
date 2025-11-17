@@ -18,6 +18,9 @@ const Vendas = () => {
   const [vendas, setVendas] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [produtos, setProdutos] = useState([]);
+  const [marcas, setMarcas] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [subcategorias, setSubcategorias] = useState([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cancelDialog, setCancelDialog] = useState({ open: false, vendaId: null, motivo: '' });
