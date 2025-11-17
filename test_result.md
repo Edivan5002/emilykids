@@ -105,20 +105,17 @@
 user_problem_statement: "FASE 4: Implementar Backend Completo para Contas a Pagar - Sistema financeiro de gerenciamento de pagamentos a fornecedores com CRUD completo, liquidação de parcelas, cancelamento, dashboard e relatórios."
 
 backend:
-  - task: "Novas funcionalidades do módulo Produtos - Campos obrigatórios e endpoint histórico"
+  - task: "Fase 4 - Backend Contas a Pagar - Endpoints CRUD Completos"
     implemented: true
-    working: true
+    working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "✅ NOVAS FUNCIONALIDADES IMPLEMENTADAS: (1) CAMPOS OBRIGATÓRIOS: Marca, Categoria e Subcategoria agora são campos obrigatórios no modelo Produto (marca_id, categoria_id, subcategoria_id); (2) NOVO ENDPOINT: GET /api/produtos/{produto_id}/historico-compras-completo com paginação (page e limit); (3) RELACIONAMENTOS EM CASCATA: Categorias devem ter marca_id e subcategorias devem ter categoria_id (relacionamento hierárquico); (4) ESTRUTURA DE RESPOSTA: Endpoint retorna data, total, page, limit, total_pages com itens contendo data_emissao, numero_nf, serie, fornecedor_nome, fornecedor_cnpj, quantidade, preco_unitario, subtotal, nota_id."
-      - working: true
-        agent: "testing"
-        comment: "✅ TESTADO E FUNCIONANDO PERFEITAMENTE: Executei os 6 TESTES OBRIGATÓRIOS especificados na review_request com 100% SUCCESS RATE (7/7 testes passaram). VALIDAÇÕES CONFIRMADAS: (1) RELACIONAMENTOS EM CASCATA - 2 marcas → 2 categorias (todas com marca_id) → 2 subcategorias (todas com categoria_id) ✅; (2) CAMPOS OBRIGATÓRIOS - Criação sem marca_id, categoria_id, subcategoria_id falha corretamente com 422 ✅; (3) CRIAÇÃO VÁLIDA - Produto criado com sucesso usando IDs válidos ✅; (4) ENDPOINT HISTÓRICO - GET /api/produtos/{id}/historico-compras-completo funcionando com estrutura correta e paginação ✅; (5) PRODUTO INEXISTENTE - Retorna 404 corretamente ✅; (6) ESTRUTURA RESPOSTA - Campos obrigatórios validados ✅. RESULTADO: TODAS as novas funcionalidades estão 100% operacionais!"
+        comment: "✅ FASE 4 IMPLEMENTADA COMPLETAMENTE: ENDPOINTS CRUD (8 endpoints principais): (1) GET /api/contas-pagar - Listar com filtros avançados (fornecedor, status, origem, categoria, prioridade, datas, paginação); (2) POST /api/contas-pagar - Criar conta manual (com ou sem fornecedor, parcelamento automático); (3) GET /api/contas-pagar/{id} - Obter detalhes de uma conta; (4) PUT /api/contas-pagar/{id} - Editar conta (descrição, observação, prioridade, tags, centro de custo, projeto); (5) DELETE /api/contas-pagar/{id} - Cancelar conta (com motivo obrigatório); (6) POST /api/contas-pagar/{id}/liquidar-parcela - Liquidar/pagar parcela (com juros, multa, desconto); (7) GET /api/contas-pagar/dashboard/kpis - Dashboard completo (valores, estatísticas, por forma de pagamento, categoria, prioridade, top 5 fornecedores); (8) GET /api/contas-pagar/resumo - Resumo rápido (pendentes, vencidas, pagas); (9) GET /api/contas-pagar/fornecedor/{fornecedor_id} - Contas por fornecedor específico. FUNCIONALIDADES IMPLEMENTADAS: ✅ Funções auxiliares: gerar_numero_conta_pagar(), atualizar_status_conta_pagar(), registrar_criacao_conta_pagar(), registrar_pagamento_parcela(), registrar_cancelamento_conta_pagar(); ✅ Geração automática de número sequencial (CP-000001); ✅ Criação automática de parcelas (à vista ou parcelado); ✅ Atualização automática de status baseado nas parcelas (pendente, pago_parcial, pago_total, vencido, cancelado); ✅ Cálculo de valor final de parcela (valor + juros + multa - desconto); ✅ Atualização de dados do fornecedor ao pagar (total_pago, data_ultimo_pagamento); ✅ Sistema de logging completo em todas as operações; ✅ Sistema de histórico de alterações; ✅ Validações de negócio (conta cancelada não pode ser editada/paga, parcela já paga); ✅ RBAC completo em todos os endpoints (contas_pagar:ler/criar/editar/liquidar/deletar); ✅ Filtros avançados (múltiplos critérios); ✅ Paginação. Backend compilado sem erros, servidor reiniciado com sucesso (status RUNNING)."
 
   - task: "Exibição detalhada de produtos no módulo Nota Fiscal"
     implemented: true
