@@ -383,7 +383,7 @@ const IAInsights = () => {
                       <CardTitle className="text-lg">📦 {getProdutoDescricaoCompleta(precificacaoData.produto.id)}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="filters-grid-4">
                         <div className="text-center p-3 bg-white rounded">
                           <p className="text-xs text-gray-500">SKU</p>
                           <p className="text-sm font-bold">{precificacaoData.produto.sku}</p>
@@ -416,7 +416,7 @@ const IAInsights = () => {
                       <CardTitle className="text-lg">📊 Performance de Vendas</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="filters-grid-4">
                         <div className="text-center p-3 bg-gray-50 rounded">
                           <p className="text-xs text-gray-500">Qtd. Vendida</p>
                           <p className="text-xl font-bold text-blue-600">
@@ -451,7 +451,7 @@ const IAInsights = () => {
                       <CardTitle className="text-lg">🎯 Análise de Mercado</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="filters-grid-4">
                         <div className="text-center p-3 bg-gray-50 rounded">
                           <p className="text-xs text-gray-500">Preço Médio Categoria</p>
                           <p className="text-lg font-bold text-blue-600">
