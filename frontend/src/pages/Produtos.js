@@ -1612,7 +1612,7 @@ const Produtos = () => {
                     {p.ativo ? 'Ativo' : 'Inativo'}
                   </span>
                 </td>
-                <td className="text-right sticky right-0 bg-white">
+                <td className="text-right sticky right-0" style={{backgroundColor: '#F5F2E9'}}>
                   <div className="flex justify-end gap-1 sm:gap-2">
                     <Button variant="ghost" size="sm" onClick={() => handleVerHistorico(p.id)} title="Histórico de Preços" className="hidden sm:flex p-1">
                       <History size={16} />
