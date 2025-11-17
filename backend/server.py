@@ -1496,8 +1496,12 @@ async def login(login_data: UserLogin, request: Request):
         detalhes={"dispositivo": user_agent[:100]}
     )
     
-    # Remover dados sensíveis
+    # Remover dados sensíveis e adicionar permissões legíveis
     user_data = {k: v for k, v in user.items() if k not in ["senha_hash", "senha_historia", "locked_until"]}
+    
+    # Obter permissões legíveis (módulo:ação)
+    permissions = await get_user_permissions(user["id"])
+    user_data["permissoes"] = [f"{p['modulo']}:{p['acao']}" for p in permissions if 'modulo' in p and 'acao' in p]
     
     return Token(access_token=access_token, token_type="bearer", user=user_data)
 
