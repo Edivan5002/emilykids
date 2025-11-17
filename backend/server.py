@@ -6652,7 +6652,7 @@ PERFIL DO CLIENTE:
 - Número de Compras: {len(vendas)}
 
 HISTÓRICO DE COMPRAS (produtos já comprados):
-{chr(10).join([f"- {p['nome']} ({p['quantidade']}x) - R$ {p['valor']:.2f}" for p in produtos_comprados[:15]])}
+{chr(10).join([f"- {p['descricao_completa']} ({p['quantidade']}x) - R$ {p['valor']:.2f}" for p in produtos_comprados[:15]])}
 
 PRODUTOS DISPONÍVEIS NO CATÁLOGO:
 {chr(10).join([f"- {p}" for p in produtos_catalogo])}
