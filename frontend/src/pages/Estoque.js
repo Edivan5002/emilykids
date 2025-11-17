@@ -314,6 +314,11 @@ const Estoque = () => {
     if (filtros.categoria && filtros.categoria !== 'todas' && p.categoria_id !== filtros.categoria) {
       return false;
     }
+    
+    // Subcategoria
+    if (filtros.subcategoria && filtros.subcategoria !== 'todas' && p.subcategoria_id !== filtros.subcategoria) {
+      return false;
+    }
 
     // Status de alerta
     if (filtros.status === 'alerta_minimo' && p.estoque_atual > p.estoque_minimo) {
