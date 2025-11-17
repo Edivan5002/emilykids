@@ -495,7 +495,7 @@ const Relatorios = () => {
                               {index + 1}
                             </div>
                             <div>
-                              <p className="font-medium">{getProdutoNome(item.produto_id)}</p>
+                              <p className="font-medium">{item.produto_descricao || getProdutoNome(item.produto_id)}</p>
                               <p className="text-sm text-gray-600">R$ {item.faturamento.toFixed(2)}</p>
                             </div>
                           </div>
