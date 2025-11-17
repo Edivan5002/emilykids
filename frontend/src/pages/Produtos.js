@@ -1563,6 +1563,7 @@ const Produtos = () => {
                   {p.tags && p.tags.map(tag => <Badge key={tag} variant="outline" className="ml-1">{tag}</Badge>)}
                 </td>
                 <td className="hidden lg:table-cell">{getMarcaNome(p.marca_id)}</td>
+                <td className="hidden xl:table-cell">{getSubcategoriaNome(p.subcategoria_id)}</td>
                 <td className="hidden xl:table-cell">
                   {p.preco_ultima_compra ? formatarMoeda(p.preco_ultima_compra) : '-'}
                 </td>
