@@ -416,7 +416,7 @@ const Estoque = () => {
             </CardHeader>
             <CardContent>
               {/* Filtros */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                 <div>
                   <Label>Buscar Produto</Label>
                   <div className="relative">
@@ -453,6 +453,20 @@ const Estoque = () => {
                       <SelectItem value="todas">Todas</SelectItem>
                       {categorias.map(c => (
                         <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Subcategoria</Label>
+                  <Select value={filtros.subcategoria} onValueChange={(value) => setFiltros({...filtros, subcategoria: value === 'todas' ? '' : value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas</SelectItem>
+                      {subcategorias.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
