@@ -45,8 +45,11 @@ const Layout = ({ children }) => {
 
   // Função para verificar se usuário tem permissão em um módulo
   const hasModulePermission = (module) => {
-    if (!user?.permissoes) return false;
+    // Admin sempre tem acesso
     if (user?.papel === 'admin') return true;
+    
+    // Se não tem permissões definidas, não tem acesso
+    if (!user?.permissoes) return false;
     
     // Verifica se tem qualquer permissão (ler, criar, editar, deletar) no módulo
     return user.permissoes.some(perm => 
