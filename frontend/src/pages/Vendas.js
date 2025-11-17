@@ -694,17 +694,25 @@ const Vendas = () => {
                   ) : null}
 
                   <div className="mb-4">
-                    <p className="text-sm font-semibold mb-2">Itens:</p>
-                    <div className="space-y-1">
-                      {venda.itens.map((item, idx) => {
-                        const produto = produtos.find(p => p.id === item.produto_id);
-                        return (
-                          <div key={idx} className="text-sm text-gray-600 flex justify-between">
-                            <span>{produto?.nome || 'Produto'} x{item.quantidade}</span>
-                            <span>R$ {(item.quantidade * item.preco_unitario).toFixed(2)}</span>
+                    <p className="text-sm font-semibold mb-2">Itens ({venda.itens.length}):</p>
+                    <div className="grid grid-cols-1 gap-2">
+                      {venda.itens.map((item, idx) => (
+                        <div key={idx} className="bg-gradient-to-r from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-blue-700">
+                                {getProdutoDescricaoCompleta(item.produto_id)}
+                              </p>
+                              <p className="text-xs text-gray-600 mt-1">
+                                Quantidade: <span className="font-semibold">{item.quantidade}</span> x R$ {item.preco_unitario.toFixed(2)}
+                              </p>
+                            </div>
+                            <span className="font-bold text-green-600 ml-2">
+                              R$ {(item.quantidade * item.preco_unitario).toFixed(2)}
+                            </span>
                           </div>
-                        );
-                      })}
+                        </div>
+                      ))}
                     </div>
                   </div>
 
