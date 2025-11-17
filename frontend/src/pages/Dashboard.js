@@ -4,14 +4,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Users, Package, ShoppingCart, DollarSign, AlertCircle, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [vendasPorPeriodo, setVendasPorPeriodo] = useState([]);
   const [alertas, setAlertas] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Verificar se tem permissão em um módulo
+  const hasPermission = (module) => {
+    if (!user?.permissoes) return false;
+    if (user?.papel === 'admin') return true;
+    return user.permissoes.some(perm => perm.startsWith(`${module}:`));
+  };
 
   useEffect(() => {
     fetchData();
@@ -19,25 +28,43 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [statsRes, vendasRes, alertasRes] = await Promise.all([
-        axios.get(`${API}/relatorios/dashboard`),
-        axios.get(`${API}/relatorios/vendas-por-periodo`),
-        axios.get(`${API}/estoque/alertas`)
-      ]);
+      const requests = [];
+      
+      // Só buscar dados se tiver permissão
+      if (hasPermission('relatorios')) {
+        requests.push(
+          axios.get(`${API}/relatorios/dashboard`).catch(err => ({ data: null })),
+          axios.get(`${API}/relatorios/vendas-por-periodo`).catch(err => ({ data: {} }))
+        );
+      } else {
+        requests.push(
+          Promise.resolve({ data: null }),
+          Promise.resolve({ data: {} })
+        );
+      }
+      
+      if (hasPermission('estoque')) {
+        requests.push(axios.get(`${API}/estoque/alertas`).catch(err => ({ data: null })));
+      } else {
+        requests.push(Promise.resolve({ data: null }));
+      }
+
+      const [statsRes, vendasRes, alertasRes] = await Promise.all(requests);
 
       setStats(statsRes.data);
       
-      const vendasArray = Object.entries(vendasRes.data).map(([data, info]) => ({
-        data: new Date(data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-        quantidade: info.quantidade,
-        total: info.total
-      })).slice(-7);
-      setVendasPorPeriodo(vendasArray);
+      if (vendasRes.data && Object.keys(vendasRes.data).length > 0) {
+        const vendasArray = Object.entries(vendasRes.data).map(([data, info]) => ({
+          data: new Date(data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+          quantidade: info.quantidade,
+          total: info.total
+        })).slice(-7);
+        setVendasPorPeriodo(vendasArray);
+      }
       
       setAlertas(alertasRes.data);
     } catch (error) {
-      toast.error('Erro ao carregar dados do dashboard');
-      console.error(error);
+      console.error('Erro ao carregar dados do dashboard:', error);
     } finally {
       setLoading(false);
     }
