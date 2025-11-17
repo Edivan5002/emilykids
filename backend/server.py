@@ -1441,10 +1441,15 @@ async def initialize_default_roles_and_permissions():
     modulos = [
         "dashboard", "produtos", "categorias", "subcategorias", "marcas",
         "clientes", "fornecedores", "estoque", "notas_fiscais",
-        "orcamentos", "vendas", "relatorios", "usuarios", "logs", "configuracoes"
+        "orcamentos", "vendas", "relatorios", "usuarios", "logs", "configuracoes",
+        "contas_receber", "contas_pagar"  # NOVOS MÓDULOS FINANCEIROS
     ]
     
     acoes = ["ler", "criar", "editar", "deletar", "exportar", "aprovar"]
+    
+    # Permissões especiais para módulos financeiros
+    acoes_financeiras_receber = ["receber", "estornar", "negociar"]
+    acoes_financeiras_pagar = ["pagar", "estornar", "aprovar_pagamento"]
     
     permission_map = {}
     
