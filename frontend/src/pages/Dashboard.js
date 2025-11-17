@@ -118,7 +118,7 @@ const Dashboard = () => {
 
   return (
     <div className="page-container" data-testid="dashboard-page">
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-4xl font-bold" style={{color: '#F26C4F'}}>E</span>
           <span className="text-4xl font-bold" style={{color: '#F4A261'}}>M</span>
