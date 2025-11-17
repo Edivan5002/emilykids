@@ -1506,6 +1506,7 @@ const Produtos = () => {
               <th className="hidden md:table-cell">SKU</th>
               <th>Nome</th>
               <th className="hidden lg:table-cell">Marca</th>
+              <th className="hidden xl:table-cell">Subcategoria</th>
               <th className="hidden xl:table-cell">Última Compra</th>
               <th className="hidden md:table-cell">Preço Médio</th>
               <th>Preço Venda</th>
