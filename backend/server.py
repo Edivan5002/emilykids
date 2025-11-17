@@ -7685,9 +7685,13 @@ async def relatorio_curva_abc(current_user: dict = Depends(require_permission("r
         else:
             classe = "C"
         
+        # Obter descrição completa do produto
+        descricao = await get_produto_descricao_completa(pid)
+        
         curva_abc.append({
             "produto_id": pid,
             "produto_nome": produto["nome"] if produto else "Desconhecido",
+            "produto_descricao": descricao,
             "faturamento": faturamento,
             "percentual": percentual,
             "percentual_acumulado": percentual_acumulado,
