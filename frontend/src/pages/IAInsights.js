@@ -271,22 +271,24 @@ const IAInsights = () => {
                 <div className="mt-6 space-y-4" data-testid="previsao-result">
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <h3 className="font-bold text-lg mb-2">Produto Analisado</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="space-y-3">
                       <div>
-                        <p className="text-gray-600">Nome:</p>
-                        <p className="font-medium">{previsaoData.produto.nome}</p>
+                        <p className="text-gray-600 text-sm">Descrição Completa:</p>
+                        <p className="font-medium">{getProdutoDescricaoCompleta(previsaoData.produto.id)}</p>
                       </div>
-                      <div>
-                        <p className="text-gray-600">SKU:</p>
-                        <p className="font-medium">{previsaoData.produto.sku}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">Estoque Atual:</p>
-                        <p className="font-medium">{previsaoData.produto.estoque_atual} un</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">Estoque Mínimo:</p>
-                        <p className="font-medium">{previsaoData.produto.estoque_minimo} un</p>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-600">SKU:</p>
+                          <p className="font-medium">{previsaoData.produto.sku}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Estoque Atual:</p>
+                          <p className="font-medium">{previsaoData.produto.estoque_atual} un</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Estoque Mínimo:</p>
+                          <p className="font-medium">{previsaoData.produto.estoque_minimo} un</p>
+                        </div>
                       </div>
                     </div>
                   </div>
