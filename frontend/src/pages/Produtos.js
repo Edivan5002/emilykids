@@ -1612,18 +1612,18 @@ const Produtos = () => {
                     {p.ativo ? 'Ativo' : 'Inativo'}
                   </span>
                 </td>
-                <td className="text-right">
+                <td className="text-right sticky right-0 bg-white">
                   <div className="flex justify-end gap-1 sm:gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleVerHistorico(p.id)} title="Histórico de Preços" className="hidden sm:flex">
+                    <Button variant="ghost" size="sm" onClick={() => handleVerHistorico(p.id)} title="Histórico de Preços" className="hidden sm:flex p-1">
                       <History size={16} />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar">
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar" className="p-1">
                       <Edit size={16} />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setToggleDialog({ open: true, id: p.id, nome: p.nome, ativo: p.ativo })} title={p.ativo ? 'Inativar' : 'Ativar'} className="hidden sm:flex">
+                    <Button variant="ghost" size="sm" onClick={() => setToggleDialog({ open: true, id: p.id, nome: p.nome, ativo: p.ativo })} title={p.ativo ? 'Inativar' : 'Ativar'} className="hidden sm:flex p-1">
                       <Power size={16} className={p.ativo ? 'text-orange-500' : 'text-green-500'} />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setDeleteDialog({ open: true, id: p.id, nome: p.nome })} title="Excluir" className="hidden sm:flex">
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteDialog({ open: true, id: p.id, nome: p.nome })} title="Excluir" className="hidden sm:flex p-1">
                       <Trash2 size={16} className="text-red-500" />
                     </Button>
                   </div>
