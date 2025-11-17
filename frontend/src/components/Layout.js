@@ -180,9 +180,14 @@ const Layout = ({ children }) => {
               // Se for um submenu (Cadastros)
               if (item.isSubmenu) {
                 // Filtrar filhos por permissão
-                const visibleChildren = item.children?.filter(child => 
-                  !child.module || hasModulePermission(child.module)
-                ) || [];
+                const visibleChildren = item.children?.filter(child => {
+                  // Admin vê tudo
+                  if (user?.papel === 'admin') return true;
+                  // Se não tem módulo definido, mostrar
+                  if (!child.module) return true;
+                  // Verificar permissão
+                  return hasModulePermission(child.module);
+                }) || [];
                 
                 // Se não há filhos visíveis, não mostrar o submenu
                 if (visibleChildren.length === 0) {
