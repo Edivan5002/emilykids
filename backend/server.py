@@ -7421,8 +7421,8 @@ async def get_kpis_dashboard(data_inicio: str = None, data_fim: str = None, curr
     """
     Retorna KPIs principais do dashboard executivo
     """
-    # Buscar todos os dados necessários
-    vendas = await db.vendas.find({}, {"_id": 0}).to_list(10000)
+    # Buscar todos os dados necessários - apenas vendas efetivadas
+    vendas = await db.vendas.find({"status": "efetivada"}, {"_id": 0}).to_list(10000)
     produtos = await db.produtos.find({}, {"_id": 0}).to_list(10000)
     clientes = await db.clientes.find({}, {"_id": 0}).to_list(10000)
     orcamentos = await db.orcamentos.find({}, {"_id": 0}).to_list(10000)
