@@ -7516,7 +7516,7 @@ async def relatorio_vendas_periodo(
     """
     Relatório de vendas agrupadas por período com comparação
     """
-    vendas = await db.vendas.find({}, {"_id": 0}).to_list(10000)
+    vendas = await db.vendas.find({"status": "efetivada"}, {"_id": 0}).to_list(10000)
     
     # Filtrar por período
     vendas_periodo = [v for v in vendas if data_inicio <= v["created_at"][:10] <= data_fim]
