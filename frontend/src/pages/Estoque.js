@@ -516,6 +516,7 @@ const Estoque = () => {
                           <td className="p-3 text-sm font-medium">{produto.nome}</td>
                           <td className="p-3 text-sm text-gray-600 hidden lg:table-cell">{getMarcaNome(produto.marca_id)}</td>
                           <td className="p-3 text-sm text-gray-600 hidden lg:table-cell">{getCategoriaNome(produto.categoria_id)}</td>
+                          <td className="p-3 text-sm text-gray-600 hidden xl:table-cell">{getSubcategoriaNome(produto.subcategoria_id)}</td>
                           <td className="p-3 text-sm text-center">
                             <span className={`font-bold ${status.color}`}>{produto.estoque_atual}</span>
                           </td>
