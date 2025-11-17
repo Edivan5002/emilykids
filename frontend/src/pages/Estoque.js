@@ -41,6 +41,7 @@ const Estoque = () => {
     busca: '',
     marca: 'todas',
     categoria: 'todas',
+    subcategoria: 'todas',
     status: 'todos' // todos, alerta_minimo, alerta_maximo
   });
 
