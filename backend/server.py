@@ -7438,7 +7438,7 @@ async def get_kpis_dashboard(data_inicio: str = None, data_fim: str = None, curr
     total_frete = sum(v.get("frete", 0) for v in vendas)
     
     # Estoque
-    valor_estoque = sum(p["estoque_atual"] * p["preco_custo"] for p in produtos)
+    valor_estoque = sum(p["estoque_atual"] * p.get("preco_medio", 0) for p in produtos)
     produtos_alerta_minimo = len([p for p in produtos if p["estoque_atual"] <= p["estoque_minimo"]])
     
     # Orçamentos
