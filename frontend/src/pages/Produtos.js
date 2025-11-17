@@ -1543,7 +1543,7 @@ const Produtos = () => {
               <th className="hidden lg:table-cell min-w-[80px]">Margem</th>
               <th className="hidden sm:table-cell min-w-[80px]">Estoque</th>
               <th className="min-w-[80px]">Status</th>
-              <th className="text-right min-w-[120px] sticky right-0 bg-white">Ações</th>
+              <th className="text-right min-w-[120px] sticky right-0" style={{backgroundColor: '#F5F2E9'}}>Ações</th>
             </tr>
           </thead>
           <tbody>
