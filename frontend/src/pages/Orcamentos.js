@@ -97,6 +97,23 @@ const Orcamentos = () => {
       
       // Tentar carregar marcas
       try {
+
+  // Função para obter descrição completa do produto
+  const getProdutoDescricaoCompleta = (produto_id) => {
+    const produto = produtos.find(p => p.id === produto_id);
+    if (!produto) return 'Produto não encontrado';
+    
+    const marca = marcas.find(m => m.id === produto.marca_id);
+    const categoria = categorias.find(c => c.id === produto.categoria_id);
+    const subcategoria = subcategorias.find(s => s.id === produto.subcategoria_id);
+    
+    const marcaNome = marca?.nome || 'N/A';
+    const categoriaNome = categoria?.nome || 'N/A';
+    const subcategoriaNome = subcategoria?.nome || 'N/A';
+    
+    return `${marcaNome} | ${categoriaNome} | ${subcategoriaNome} | ${produto.nome}`;
+  };
+
         const marcasRes = await axios.get(`${API}/marcas?limit=0`);
         setMarcas(marcasRes.data);
       } catch (err) {
