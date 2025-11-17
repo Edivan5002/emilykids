@@ -219,10 +219,16 @@ const Layout = ({ children }) => {
                 const hasActiveChild = visibleChildren.some(child => location.pathname === child.path);
                 return (
                   <div key={index}>
-                    {/* Menu pai - Cadastros */}
+                    {/* Menu pai - Cadastros ou Financeiro */}
                     <div
                       data-testid={`menu-item-${item.label.toLowerCase().replace(/ /g, '-')}`}
-                      onClick={() => setCadastrosOpen(!cadastrosOpen)}
+                      onClick={() => {
+                        if (item.label === 'Cadastros') {
+                          setCadastrosOpen(!cadastrosOpen);
+                        } else if (item.label === 'Financeiro') {
+                          setFinanceiroOpen(!financeiroOpen);
+                        }
+                      }}
                       className={`sidebar-item mx-2 mb-1 flex items-center gap-3`}
                       style={{
                         backgroundColor: hasActiveChild ? '#267698' : 'transparent',
