@@ -253,7 +253,7 @@ const Layout = ({ children }) => {
                       {sidebarOpen && (
                         <>
                           <span className="flex-1">{item.label}</span>
-                          {cadastrosOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                          {((item.label === 'Cadastros' && cadastrosOpen) || (item.label === 'Financeiro' && financeiroOpen)) ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                         </>
                       )}
                     </div>
