@@ -593,7 +593,7 @@ const NotasFiscais = () => {
       {/* Estatísticas */}
       <div className="filters-grid-4 mb-4 sm:mb-6">
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="card-content-responsive">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-lg bg-blue-500">
                 <FileText className="text-white" size={24} />
@@ -606,7 +606,7 @@ const NotasFiscais = () => {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="card-content-responsive">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-lg bg-green-500">
                 <Check className="text-white" size={24} />
@@ -619,7 +619,7 @@ const NotasFiscais = () => {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="card-content-responsive">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-lg bg-orange-500">
                 <AlertCircle className="text-white" size={24} />
@@ -632,7 +632,7 @@ const NotasFiscais = () => {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="card-content-responsive">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-lg bg-red-500">
                 <AlertCircle className="text-white" size={24} />
@@ -858,7 +858,7 @@ const NotasFiscais = () => {
               </p>
               {historicoDialog.historico.map((compra, index) => (
                 <Card key={index} className="border border-gray-200">
-                  <CardContent className="p-4">
+                  <CardContent className="card-content-responsive">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-xs text-gray-500">Data da Compra</p>
