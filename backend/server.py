@@ -7729,7 +7729,9 @@ async def relatorio_rfm(current_user: dict = Depends(require_permission("relator
     """
     Análise RFM (Recência, Frequência, Valor Monetário) dos clientes
     """
-    vendas = await db.vendas.find({"status": "efetivada"}, {"_id": 0}).to_list(10000)
+    vendas = await db.vendas.find({
+        "status_venda": {"$nin": ["rascunho", "cancelada"]}
+    }, {"_id": 0}).to_list(10000)
     clientes = await db.clientes.find({}, {"_id": 0}).to_list(10000)
     
     data_referencia = datetime.now(timezone.utc)
