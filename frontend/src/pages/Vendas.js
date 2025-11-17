@@ -521,14 +521,20 @@ const Vendas = () => {
               <CardContent>
                 <div className="space-y-3">
                   {produtosMaisVendidos().map((item, index) => {
-                    const produto = produtos.find(p => p.id === item.produto_id);
                     return (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="font-medium">{index + 1}. {produto?.nome || 'Produto'}</p>
-                          <p className="text-sm text-gray-600">R$ {item.faturamento.toFixed(2)}</p>
+                      <div key={index} className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                        <div className="flex-1">
+                          <p className="font-medium text-blue-700">
+                            {index + 1}. {getProdutoDescricaoCompleta(item.produto_id)}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Faturamento: <span className="font-bold text-green-600">R$ {item.faturamento.toFixed(2)}</span>
+                          </p>
                         </div>
-                        <span className="text-lg font-bold" style={{color: '#2C9AA1'}}>{item.quantidade} un</span>
+                        <div className="text-right ml-4">
+                          <span className="text-lg font-bold" style={{color: '#2C9AA1'}}>{item.quantidade}</span>
+                          <p className="text-xs text-gray-500">unidades</p>
+                        </div>
                       </div>
                     );
                   })}
