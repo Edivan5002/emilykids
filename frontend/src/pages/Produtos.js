@@ -826,7 +826,7 @@ const Produtos = () => {
 
                 {/* ABA BÁSICO */}
                 <TabsContent value="basico" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="form-grid-2">
                     <div>
                       <Label>SKU *</Label>
                       <Input value={formData.sku} onChange={(e) => setFormData({ ...formData, sku: e.target.value })} required />
@@ -919,7 +919,7 @@ const Produtos = () => {
                       </Select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="form-grid-2">
                     <div>
                       <Label>Estoque Mínimo</Label>
                       <Input type="number" value={formData.estoque_minimo} onChange={(e) => setFormData({ ...formData, estoque_minimo: parseInt(e.target.value) || 0 })} />
@@ -990,7 +990,7 @@ const Produtos = () => {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="form-grid-2">
                     <div>
                       <Label>Margem de Lucro (%)</Label>
                       <Input 
