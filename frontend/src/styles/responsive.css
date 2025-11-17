@@ -142,7 +142,7 @@
 /* Ajustes específicos para tabelas */
 @media (max-width: 640px) {
   .table-responsive table {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
   }
   
   .table-responsive th,
@@ -150,6 +150,22 @@
     padding: 0.5rem 0.25rem;
     white-space: nowrap;
   }
+}
+
+/* Coluna sticky para ações */
+.table-responsive th.sticky,
+.table-responsive td.sticky {
+  position: sticky;
+  right: 0;
+  z-index: 10;
+  background-color: white;
+  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Garantir larguras mínimas */
+.table-responsive th,
+.table-responsive td {
+  min-width: fit-content;
 }
 
 /* Input e Select em telas pequenas */
