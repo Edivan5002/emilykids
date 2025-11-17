@@ -836,7 +836,7 @@ const Produtos = () => {
                       <Input value={formData.nome} onChange={(e) => setFormData({ ...formData, nome: e.target.value })} required />
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="form-grid">
                     <div>
                       <Label>Marca *</Label>
                       <Select 
@@ -888,7 +888,7 @@ const Produtos = () => {
                       {!formData.subcategoria_id && <p className="text-xs text-red-500 mt-1">Campo obrigatório</p>}
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="form-grid">
                     <div>
                       <Label>Código de Barras</Label>
                       <Input value={formData.codigo_barras} onChange={(e) => setFormData({ ...formData, codigo_barras: e.target.value })} />
@@ -937,7 +937,7 @@ const Produtos = () => {
 
                 {/* ABA PREÇOS */}
                 <TabsContent value="precos" className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="form-grid">
                     {!isEditing ? (
                       // NO CADASTRO: Mostra "Preço Inicial" editável
                       <div>
@@ -1016,7 +1016,7 @@ const Produtos = () => {
                   </div>
                   <hr />
                   <h3 className="font-semibold">Preço Promocional</h3>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="form-grid">
                     <div>
                       <Label>Preço Promocional (R$)</Label>
                       <Input type="number" step="0.01" value={formData.preco_promocional} onChange={(e) => setFormData({ ...formData, preco_promocional: e.target.value })} />
@@ -1359,7 +1359,7 @@ const Produtos = () => {
                           {historicoCompras.data.map((compra, index) => (
                             <Card key={index} className="border border-gray-200 hover:shadow-md transition-shadow">
                               <CardContent className="p-4">
-                                <div className="grid grid-cols-3 gap-4">
+                                <div className="form-grid">
                                   <div>
                                     <p className="text-xs text-gray-500">Data da Compra</p>
                                     <p className="font-semibold text-sm">
