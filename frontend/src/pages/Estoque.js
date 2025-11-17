@@ -500,6 +500,7 @@ const Estoque = () => {
                       <th className="text-left p-3 text-sm font-semibold">Produto</th>
                       <th className="text-left p-3 text-sm font-semibold hidden lg:table-cell">Marca</th>
                       <th className="text-left p-3 text-sm font-semibold hidden lg:table-cell">Categoria</th>
+                      <th className="text-left p-3 text-sm font-semibold hidden xl:table-cell">Subcategoria</th>
                       <th className="text-center p-3 text-sm font-semibold">Estoque Atual</th>
                       <th className="text-center p-3 text-sm font-semibold hidden sm:table-cell">Mínimo</th>
                       <th className="text-center p-3 text-sm font-semibold hidden sm:table-cell">Máximo</th>
