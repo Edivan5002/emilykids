@@ -79,6 +79,7 @@ function AppContent() {
                     <Route path="/usuarios" element={<Usuarios />} />
                     <Route path="/papeis-permissoes" element={<PapeisPermissoes />} />
                     <Route path="/administracao" element={<Administracao />} />
+                    <Route path="/configuracoes-financeiras" element={<ConfiguracoesFinanceiras />} />
                   </Routes>
                 </Layout>
               </PrivateRoute>
