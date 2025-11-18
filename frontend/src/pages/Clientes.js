@@ -259,6 +259,15 @@ const Clientes = () => {
                 </td>
                 <td className="text-right">
                   <div className="flex justify-end gap-1 sm:gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setFinanceiroDialog({ open: true, id: c.id, nome: c.nome })} 
+                      title="Ver Dados Financeiros"
+                      className="hidden md:flex"
+                    >
+                      <DollarSign size={16} className="text-green-600" />
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => handleEdit(c)} title="Editar">
                       <Edit size={16} />
                     </Button>
