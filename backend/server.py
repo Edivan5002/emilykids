@@ -5681,6 +5681,114 @@ async def confirmar_nota_fiscal(nota_id: str, current_user: dict = Depends(get_c
         }}
     )
     
+    # INTEGRAÇÃO: Criar conta a pagar automaticamente
+    try:
+        # Obter informações de pagamento da nota fiscal
+        forma_pagamento = nota.get("forma_pagamento", "boleto")
+        tipo_pagamento = nota.get("tipo_pagamento", "avista")
+        numero_parcelas = nota.get("numero_parcelas", 1)
+        data_vencimento = nota.get("data_vencimento")
+        
+        # Se não tem data de vencimento, usar 30 dias a partir de hoje
+        if not data_vencimento:
+            data_vencimento = (datetime.now(timezone.utc) + timedelta(days=30)).date().isoformat()
+        
+        # Gerar número da conta a pagar
+        numero_conta = await gerar_numero_conta_pagar()
+        
+        # Criar parcelas
+        parcelas = []
+        valor_total = nota["valor_total"]
+        
+        if tipo_pagamento == "parcelado" and numero_parcelas > 1:
+            valor_parcela = valor_total / numero_parcelas
+            data_base = datetime.fromisoformat(data_vencimento)
+            
+            for i in range(numero_parcelas):
+                data_venc = data_base + timedelta(days=30 * i)
+                parcelas.append({
+                    "numero_parcela": i + 1,
+                    "valor": valor_parcela,
+                    "data_vencimento": data_venc.date().isoformat(),
+                    "status": "pendente",
+                    "valor_pago": 0,
+                    "valor_juros": 0,
+                    "valor_multa": 0,
+                    "valor_desconto": 0,
+                    "valor_final": 0,
+                    "dias_atraso": 0
+                })
+        else:
+            # À vista
+            parcelas.append({
+                "numero_parcela": 1,
+                "valor": valor_total,
+                "data_vencimento": data_vencimento,
+                "status": "pendente",
+                "valor_pago": 0,
+                "valor_juros": 0,
+                "valor_multa": 0,
+                "valor_desconto": 0,
+                "valor_final": 0,
+                "dias_atraso": 0
+            })
+        
+        # Criar conta a pagar
+        conta_pagar = {
+            "id": str(uuid.uuid4()),
+            "numero": numero_conta,
+            "origem": "nota_fiscal",
+            "origem_id": nota_id,
+            "origem_numero": nota.get("numero"),
+            "fornecedor_id": nota.get("fornecedor_id"),
+            "fornecedor_nome": nota.get("fornecedor_nome"),
+            "fornecedor_cpf_cnpj": nota.get("fornecedor_cnpj"),
+            "descricao": f"NF {nota.get('numero')} - {nota.get('fornecedor_nome', 'Fornecedor')}",
+            "categoria": "fornecedor",
+            "subcategoria": None,
+            "observacao": f"Conta gerada automaticamente da nota fiscal {nota.get('numero')}",
+            "valor_total": valor_total,
+            "valor_pago": 0,
+            "valor_pendente": valor_total,
+            "valor_liquido": valor_total,
+            "forma_pagamento": forma_pagamento,
+            "tipo_pagamento": tipo_pagamento,
+            "numero_parcelas": len(parcelas),
+            "parcelas": parcelas,
+            "status": "pendente",
+            "prioridade": "normal",
+            "vencida": False,
+            "cancelada": False,
+            "created_by": current_user["id"],
+            "created_by_name": current_user["nome"],
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "tags": ["nota_fiscal", "automático"],
+            "centro_custo": None,
+            "projeto": None,
+            "historico_alteracoes": []
+        }
+        
+        await db.contas_pagar.insert_one(conta_pagar)
+        
+        # Atualizar nota fiscal com ID da conta a pagar
+        await db.notas_fiscais.update_one(
+            {"id": nota_id},
+            {"$set": {"conta_pagar_id": conta_pagar["id"]}}
+        )
+        
+        # Registrar log da criação da conta
+        await registrar_criacao_conta_pagar(
+            conta=conta_pagar,
+            usuario_id=current_user["id"],
+            usuario_nome=current_user["nome"]
+        )
+        
+    except Exception as e:
+        # Se falhar na criação da conta, não impedir a confirmação da NF
+        # mas registrar o erro
+        print(f"Erro ao criar conta a pagar para NF {nota_id}: {str(e)}")
+    
     # Log
     await log_action(
         ip="0.0.0.0",
@@ -5691,7 +5799,7 @@ async def confirmar_nota_fiscal(nota_id: str, current_user: dict = Depends(get_c
         detalhes={"nota_id": nota_id, "numero": nota.get("numero")}
     )
     
-    return {"message": "Nota fiscal confirmada e estoque atualizado"}
+    return {"message": "Nota fiscal confirmada, estoque atualizado e conta a pagar criada"}
 
 @api_router.post("/notas-fiscais/{nota_id}/cancelar")
 async def cancelar_nota_fiscal(
