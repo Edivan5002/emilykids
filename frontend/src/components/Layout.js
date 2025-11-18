@@ -124,7 +124,8 @@ const Layout = ({ children }) => {
       children: [
         { path: '/contas-receber', label: 'Contas a Receber', icon: TrendingUp, module: 'contas_receber' },
         { path: '/contas-pagar', label: 'Contas a Pagar', icon: TrendingDown, module: 'contas_pagar' },
-        { path: '/fluxo-caixa', label: 'Fluxo de Caixa', icon: Activity, module: 'contas_receber' }
+        { path: '/fluxo-caixa', label: 'Fluxo de Caixa', icon: Activity, module: 'contas_receber' },
+        { path: '/configuracoes-financeiras', label: 'Configurações', icon: Settings, module: 'administracao' }
       ]
     },
     { path: '/relatorios', label: 'Relatórios', icon: BarChart3, module: 'relatorios' },
