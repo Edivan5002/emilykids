@@ -10308,6 +10308,348 @@ async def estatisticas_centro_custo(
         "quantidade_receitas": len(receitas)
     }
 
+# ========== INTEGRAÇÃO CLIENTES/FORNECEDORES - ENDPOINTS ==========
+
+# ===== DADOS FINANCEIROS DE CLIENTES =====
+
+@api_router.get("/clientes/{cliente_id}/financeiro")
+async def obter_dados_financeiros_cliente(
+    cliente_id: str,
+    current_user: dict = Depends(require_permission("clientes", "ler"))
+):
+    """
+    Obtém dados financeiros completos de um cliente
+    """
+    # Verificar se cliente existe
+    cliente = await db.clientes.find_one({"id": cliente_id}, {"_id": 0})
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    # Buscar todas as contas a receber do cliente
+    contas = await db.contas_receber.find({"cliente_id": cliente_id}, {"_id": 0}).to_list(10000)
+    
+    # Estatísticas gerais
+    total_contas = len(contas)
+    contas_ativas = [c for c in contas if not c.get("cancelada", False)]
+    
+    total_faturado = sum(c["valor_total"] for c in contas_ativas)
+    total_recebido = sum(c["valor_recebido"] for c in contas_ativas)
+    total_pendente = sum(c["valor_pendente"] for c in contas_ativas)
+    
+    contas_vencidas = [c for c in contas_ativas if c["status"] == "vencido"]
+    total_vencido = sum(c["valor_pendente"] for c in contas_vencidas)
+    
+    contas_pagas = [c for c in contas_ativas if c["status"] == "recebido_total"]
+    contas_pendentes = [c for c in contas_ativas if c["status"] in ["pendente", "recebido_parcial"]]
+    
+    # Score de crédito (0-100)
+    score = calcular_score_cliente(contas_ativas, total_faturado, total_recebido, total_vencido)
+    
+    # Histórico de pagamentos (últimas 10 contas)
+    historico = sorted(contas_ativas, key=lambda x: x.get("created_at", ""), reverse=True)[:10]
+    
+    # Média de dias para pagamento
+    dias_pagamento = []
+    for conta in contas_pagas:
+        for parcela in conta.get("parcelas", []):
+            if parcela.get("status") == "recebido" and parcela.get("data_recebimento"):
+                data_venc = parcela.get("data_vencimento")
+                data_rec = parcela.get("data_recebimento")
+                if data_venc and data_rec:
+                    from datetime import datetime
+                    try:
+                        venc = datetime.fromisoformat(data_venc[:10])
+                        rec = datetime.fromisoformat(data_rec[:10])
+                        dias = (rec - venc).days
+                        dias_pagamento.append(dias)
+                    except:
+                        pass
+    
+    media_dias_pagamento = sum(dias_pagamento) / len(dias_pagamento) if dias_pagamento else 0
+    
+    # Formas de pagamento mais usadas
+    formas_pagamento = {}
+    for conta in contas_ativas:
+        forma = conta.get("forma_pagamento", "não informado")
+        formas_pagamento[forma] = formas_pagamento.get(forma, 0) + 1
+    
+    return {
+        "cliente": {
+            "id": cliente["id"],
+            "nome": cliente["nome"],
+            "cpf_cnpj": cliente.get("cpf_cnpj")
+        },
+        "resumo": {
+            "total_contas": total_contas,
+            "total_faturado": total_faturado,
+            "total_recebido": total_recebido,
+            "total_pendente": total_pendente,
+            "total_vencido": total_vencido,
+            "contas_pagas": len(contas_pagas),
+            "contas_pendentes": len(contas_pendentes),
+            "contas_vencidas": len(contas_vencidas)
+        },
+        "score": {
+            "valor": score,
+            "classificacao": classificar_score(score),
+            "cor": cor_score(score)
+        },
+        "metricas": {
+            "media_dias_pagamento": round(media_dias_pagamento, 1),
+            "taxa_inadimplencia": round((total_vencido / total_faturado * 100) if total_faturado > 0 else 0, 2),
+            "taxa_pagamento": round((total_recebido / total_faturado * 100) if total_faturado > 0 else 0, 2)
+        },
+        "formas_pagamento": formas_pagamento,
+        "historico": historico
+    }
+
+@api_router.get("/clientes/{cliente_id}/contas-receber")
+async def listar_contas_receber_cliente(
+    cliente_id: str,
+    incluir_canceladas: bool = False,
+    current_user: dict = Depends(require_permission("clientes", "ler"))
+):
+    """
+    Lista todas as contas a receber de um cliente específico
+    """
+    query = {"cliente_id": cliente_id}
+    if not incluir_canceladas:
+        query["cancelada"] = False
+    
+    contas = await db.contas_receber.find(query, {"_id": 0})\
+        .sort("created_at", -1)\
+        .to_list(1000)
+    
+    total_valor = sum(c["valor_total"] for c in contas)
+    total_recebido = sum(c["valor_recebido"] for c in contas)
+    total_pendente = sum(c["valor_pendente"] for c in contas)
+    
+    return {
+        "contas": contas,
+        "resumo": {
+            "quantidade": len(contas),
+            "total_valor": total_valor,
+            "total_recebido": total_recebido,
+            "total_pendente": total_pendente
+        }
+    }
+
+# ===== DADOS FINANCEIROS DE FORNECEDORES =====
+
+@api_router.get("/fornecedores/{fornecedor_id}/financeiro")
+async def obter_dados_financeiros_fornecedor(
+    fornecedor_id: str,
+    current_user: dict = Depends(require_permission("fornecedores", "ler"))
+):
+    """
+    Obtém dados financeiros completos de um fornecedor
+    """
+    # Verificar se fornecedor existe
+    fornecedor = await db.fornecedores.find_one({"id": fornecedor_id}, {"_id": 0})
+    if not fornecedor:
+        raise HTTPException(status_code=404, detail="Fornecedor não encontrado")
+    
+    # Buscar todas as contas a pagar do fornecedor
+    contas = await db.contas_pagar.find({"fornecedor_id": fornecedor_id}, {"_id": 0}).to_list(10000)
+    
+    # Estatísticas gerais
+    total_contas = len(contas)
+    contas_ativas = [c for c in contas if not c.get("cancelada", False)]
+    
+    total_comprado = sum(c["valor_total"] for c in contas_ativas)
+    total_pago = sum(c["valor_pago"] for c in contas_ativas)
+    total_pendente = sum(c["valor_pendente"] for c in contas_ativas)
+    
+    contas_vencidas = [c for c in contas_ativas if c["status"] == "vencido"]
+    total_vencido = sum(c["valor_pendente"] for c in contas_vencidas)
+    
+    contas_pagas = [c for c in contas_ativas if c["status"] == "pago_total"]
+    contas_pendentes = [c for c in contas_ativas if c["status"] in ["pendente", "pago_parcial"]]
+    
+    # Score de confiabilidade (0-100)
+    score = calcular_score_fornecedor(contas_ativas, total_comprado, total_pago)
+    
+    # Histórico de pagamentos (últimas 10 contas)
+    historico = sorted(contas_ativas, key=lambda x: x.get("created_at", ""), reverse=True)[:10]
+    
+    # Média de dias para pagamento
+    dias_pagamento = []
+    for conta in contas_pagas:
+        for parcela in conta.get("parcelas", []):
+            if parcela.get("status") == "pago" and parcela.get("data_pagamento"):
+                data_venc = parcela.get("data_vencimento")
+                data_pag = parcela.get("data_pagamento")
+                if data_venc and data_pag:
+                    from datetime import datetime
+                    try:
+                        venc = datetime.fromisoformat(data_venc[:10])
+                        pag = datetime.fromisoformat(data_pag[:10])
+                        dias = (pag - venc).days
+                        dias_pagamento.append(dias)
+                    except:
+                        pass
+    
+    media_dias_pagamento = sum(dias_pagamento) / len(dias_pagamento) if dias_pagamento else 0
+    
+    # Formas de pagamento mais usadas
+    formas_pagamento = {}
+    for conta in contas_ativas:
+        forma = conta.get("forma_pagamento", "não informado")
+        formas_pagamento[forma] = formas_pagamento.get(forma, 0) + 1
+    
+    # Categorias de despesa
+    categorias = {}
+    for conta in contas_ativas:
+        cat = conta.get("categoria", "não informado")
+        categorias[cat] = categorias.get(cat, 0) + conta["valor_total"]
+    
+    return {
+        "fornecedor": {
+            "id": fornecedor["id"],
+            "razao_social": fornecedor.get("razao_social", fornecedor.get("nome")),
+            "cnpj": fornecedor.get("cnpj")
+        },
+        "resumo": {
+            "total_contas": total_contas,
+            "total_comprado": total_comprado,
+            "total_pago": total_pago,
+            "total_pendente": total_pendente,
+            "total_vencido": total_vencido,
+            "contas_pagas": len(contas_pagas),
+            "contas_pendentes": len(contas_pendentes),
+            "contas_vencidas": len(contas_vencidas)
+        },
+        "score": {
+            "valor": score,
+            "classificacao": classificar_score(score),
+            "cor": cor_score(score)
+        },
+        "metricas": {
+            "media_dias_pagamento": round(media_dias_pagamento, 1),
+            "taxa_atraso": round((total_vencido / total_comprado * 100) if total_comprado > 0 else 0, 2),
+            "taxa_pagamento": round((total_pago / total_comprado * 100) if total_comprado > 0 else 0, 2)
+        },
+        "formas_pagamento": formas_pagamento,
+        "categorias_despesa": categorias,
+        "historico": historico
+    }
+
+@api_router.get("/fornecedores/{fornecedor_id}/contas-pagar")
+async def listar_contas_pagar_fornecedor(
+    fornecedor_id: str,
+    incluir_canceladas: bool = False,
+    current_user: dict = Depends(require_permission("fornecedores", "ler"))
+):
+    """
+    Lista todas as contas a pagar de um fornecedor específico
+    """
+    query = {"fornecedor_id": fornecedor_id}
+    if not incluir_canceladas:
+        query["cancelada"] = False
+    
+    contas = await db.contas_pagar.find(query, {"_id": 0})\
+        .sort("created_at", -1)\
+        .to_list(1000)
+    
+    total_valor = sum(c["valor_total"] for c in contas)
+    total_pago = sum(c["valor_pago"] for c in contas)
+    total_pendente = sum(c["valor_pendente"] for c in contas)
+    
+    return {
+        "contas": contas,
+        "resumo": {
+            "quantidade": len(contas),
+            "total_valor": total_valor,
+            "total_pago": total_pago,
+            "total_pendente": total_pendente
+        }
+    }
+
+# ===== FUNÇÕES AUXILIARES DE SCORE =====
+
+def calcular_score_cliente(contas, total_faturado, total_recebido, total_vencido):
+    """
+    Calcula score de crédito do cliente (0-100)
+    Critérios:
+    - 40% Taxa de pagamento (total_recebido/total_faturado)
+    - 30% Inadimplência (inversamente proporcional a total_vencido)
+    - 20% Histórico de pagamentos (pontualidade)
+    - 10% Quantidade de transações
+    """
+    if not contas or total_faturado == 0:
+        return 50  # Score neutro para clientes sem histórico
+    
+    # Taxa de pagamento (0-40 pontos)
+    taxa_pagamento = (total_recebido / total_faturado) * 40
+    
+    # Inadimplência (0-30 pontos, inversamente proporcional)
+    taxa_inadimplencia = (total_vencido / total_faturado) if total_faturado > 0 else 0
+    pontos_inadimplencia = max(0, 30 - (taxa_inadimplencia * 150))  # Penaliza mais a inadimplência
+    
+    # Histórico de pagamentos (0-20 pontos)
+    contas_pagas = [c for c in contas if c["status"] == "recebido_total"]
+    contas_vencidas = [c for c in contas if c["status"] == "vencido"]
+    if len(contas) > 0:
+        pontos_historico = (len(contas_pagas) / len(contas)) * 20
+    else:
+        pontos_historico = 10
+    
+    # Quantidade de transações (0-10 pontos, bônus por cliente ativo)
+    pontos_transacoes = min(10, len(contas) / 2)
+    
+    score = taxa_pagamento + pontos_inadimplencia + pontos_historico + pontos_transacoes
+    return min(100, max(0, round(score)))
+
+def calcular_score_fornecedor(contas, total_comprado, total_pago):
+    """
+    Calcula score de confiabilidade do fornecedor (0-100)
+    Critérios similares mas focado em nosso relacionamento
+    """
+    if not contas or total_comprado == 0:
+        return 50  # Score neutro
+    
+    # Taxa de pagamento que fazemos (0-50 pontos)
+    taxa_pagamento = (total_pago / total_comprado) * 50
+    
+    # Histórico (0-30 pontos)
+    contas_pagas = [c for c in contas if c["status"] == "pago_total"]
+    if len(contas) > 0:
+        pontos_historico = (len(contas_pagas) / len(contas)) * 30
+    else:
+        pontos_historico = 15
+    
+    # Quantidade de transações (0-20 pontos)
+    pontos_transacoes = min(20, len(contas))
+    
+    score = taxa_pagamento + pontos_historico + pontos_transacoes
+    return min(100, max(0, round(score)))
+
+def classificar_score(score):
+    """Classifica o score em categorias"""
+    if score >= 90:
+        return "Excelente"
+    elif score >= 75:
+        return "Muito Bom"
+    elif score >= 60:
+        return "Bom"
+    elif score >= 40:
+        return "Regular"
+    else:
+        return "Ruim"
+
+def cor_score(score):
+    """Retorna cor para o score"""
+    if score >= 90:
+        return "#10B981"  # green-500
+    elif score >= 75:
+        return "#22C55E"  # green-400
+    elif score >= 60:
+        return "#FBBF24"  # yellow-400
+    elif score >= 40:
+        return "#F97316"  # orange-500
+    else:
+        return "#EF4444"  # red-500
+
 # ========== CONTAS A PAGAR - ENDPOINTS ==========
 
 # Função helper para gerar número de conta a pagar
