@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "FASE 5: Integração Clientes e Fornecedores - Aba Financeiro nos cadastros de clientes e fornecedores com score de crédito, resumo financeiro, histórico de contas, formas de pagamento e categorias. Backend (4 endpoints) e Frontend (2 componentes + integração) completos."
+user_problem_statement: "FASE 8: Frontend Contas a Receber Completo - Interface completa de gerenciamento de contas a receber com dashboard KPIs, listagem com filtros, criar conta manual, receber parcelas, cancelar, detalhes completos."
 
 backend:
   - task: "Fase 5 - Integração Clientes/Fornecedores - Backend Completo"
