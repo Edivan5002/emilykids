@@ -5872,6 +5872,38 @@ async def cancelar_nota_fiscal(
         }}
     )
     
+    # INTEGRAÇÃO: Cancelar conta a pagar vinculada (se existir)
+    try:
+        conta_pagar_id = nota.get("conta_pagar_id")
+        if conta_pagar_id:
+            conta = await db.contas_pagar.find_one({"id": conta_pagar_id}, {"_id": 0})
+            if conta and not conta.get("cancelada", False):
+                # Cancelar apenas se não houver parcelas pagas
+                parcelas_pagas = [p for p in conta.get("parcelas", []) if p.get("status") == "pago"]
+                if len(parcelas_pagas) == 0:
+                    await db.contas_pagar.update_one(
+                        {"id": conta_pagar_id},
+                        {"$set": {
+                            "cancelada": True,
+                            "status": "cancelado",
+                            "cancelada_por": current_user["id"],
+                            "cancelada_por_name": current_user["nome"],
+                            "cancelada_at": datetime.now(timezone.utc).isoformat(),
+                            "motivo_cancelamento": f"Nota fiscal {nota.get('numero')} cancelada: {cancelamento.motivo}"
+                        }}
+                    )
+                    
+                    # Registrar log
+                    await registrar_cancelamento_conta_pagar(
+                        conta=conta,
+                        motivo=f"Nota fiscal {nota.get('numero')} cancelada",
+                        usuario_id=current_user["id"],
+                        usuario_nome=current_user["nome"]
+                    )
+    except Exception as e:
+        # Não falhar se não conseguir cancelar a conta
+        print(f"Erro ao cancelar conta a pagar vinculada à NF {nota_id}: {str(e)}")
+    
     # Log
     await log_action(
         ip="0.0.0.0",
@@ -5886,7 +5918,7 @@ async def cancelar_nota_fiscal(
         }
     )
     
-    return {"message": "Nota fiscal cancelada com sucesso"}
+    return {"message": "Nota fiscal e conta a pagar canceladas com sucesso"}
 
 @api_router.get("/notas-fiscais/{nota_id}/historico")
 async def get_historico_nota(nota_id: str, current_user: dict = Depends(get_current_user)):
