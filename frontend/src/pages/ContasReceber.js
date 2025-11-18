@@ -292,7 +292,7 @@ const ContasReceber = () => {
         </div>
 
         {/* KPIs */}
-        {kpis && (
+        {kpis && kpis.resumo && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between mb-2">
@@ -300,10 +300,10 @@ const ContasReceber = () => {
                 <DollarSign className="w-5 h-5 text-blue-500" />
               </div>
               <div className="text-2xl font-bold text-blue-600">
-                {formatCurrency(kpis.total_receber)}
+                {formatCurrency(kpis.resumo.total_receber)}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                {kpis.quantidade_contas} conta(s)
+                {kpis.resumo.quantidade_contas} conta(s)
               </div>
             </div>
 
@@ -313,10 +313,10 @@ const ContasReceber = () => {
                 <TrendingUp className="w-5 h-5 text-green-500" />
               </div>
               <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(kpis.total_recebido)}
+                {formatCurrency(kpis.resumo.total_recebido)}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                Taxa: {kpis.taxa_recebimento.toFixed(1)}%
+                Taxa: {kpis.resumo.taxa_recebimento?.toFixed(1) || 0}%
               </div>
             </div>
 
@@ -326,10 +326,10 @@ const ContasReceber = () => {
                 <TrendingDown className="w-5 h-5 text-yellow-500" />
               </div>
               <div className="text-2xl font-bold text-yellow-600">
-                {formatCurrency(kpis.total_pendente)}
+                {formatCurrency(kpis.resumo.total_pendente)}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                {kpis.contas_recebidas} recebida(s)
+                {kpis.resumo.contas_recebidas} recebida(s)
               </div>
             </div>
 
@@ -339,10 +339,10 @@ const ContasReceber = () => {
                 <AlertCircle className="w-5 h-5 text-red-500" />
               </div>
               <div className="text-2xl font-bold text-red-600">
-                {formatCurrency(kpis.total_vencido)}
+                {formatCurrency(kpis.resumo.total_vencido)}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                {kpis.contas_vencidas} vencida(s)
+                {kpis.resumo.contas_vencidas} vencida(s)
               </div>
             </div>
           </div>
