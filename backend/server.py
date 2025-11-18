@@ -9817,6 +9817,497 @@ async def admin_get_logs_auditoria(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# ========== ADMINISTRAÇÃO E CONFIGURAÇÕES - ENDPOINTS ==========
+
+# ===== CONFIGURAÇÕES FINANCEIRAS =====
+
+@api_router.get("/configuracoes-financeiras")
+async def obter_configuracoes_financeiras(
+    current_user: dict = Depends(require_permission("administracao", "ler"))
+):
+    """Obtém as configurações financeiras do sistema"""
+    config = await db.configuracoes_financeiras.find_one({}, {"_id": 0})
+    
+    if not config:
+        # Criar configuração padrão se não existir
+        config_padrao = ConfiguracoesFinanceiras(
+            updated_by=current_user["id"],
+            updated_by_name=current_user["nome"],
+            updated_at=datetime.now(timezone.utc).isoformat()
+        )
+        await db.configuracoes_financeiras.insert_one(config_padrao.dict())
+        return config_padrao
+    
+    return config
+
+@api_router.put("/configuracoes-financeiras")
+async def atualizar_configuracoes_financeiras(
+    dados: ConfiguracoesFinanceirasUpdate,
+    current_user: dict = Depends(require_permission("administracao", "editar"))
+):
+    """Atualiza as configurações financeiras do sistema"""
+    config = await db.configuracoes_financeiras.find_one({}, {"_id": 0})
+    
+    if not config:
+        raise HTTPException(status_code=404, detail="Configurações não encontradas")
+    
+    # Preparar dados de atualização
+    update_data = {}
+    for field, value in dados.dict(exclude_unset=True).items():
+        if value is not None:
+            update_data[field] = value
+    
+    update_data["updated_by"] = current_user["id"]
+    update_data["updated_by_name"] = current_user["nome"]
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.configuracoes_financeiras.update_one(
+        {"id": config["id"]},
+        {"$set": update_data}
+    )
+    
+    # Registrar log
+    await registrar_log_financeiro(
+        usuario_id=current_user["id"],
+        usuario_nome=current_user["nome"],
+        acao="configuracoes_atualizadas",
+        modulo="administracao",
+        registro_id=config["id"],
+        registro_numero="CONFIG-001",
+        detalhes=update_data
+    )
+    
+    return {"message": "Configurações atualizadas com sucesso"}
+
+# ===== CATEGORIAS DE RECEITA =====
+
+@api_router.get("/categorias-receita")
+async def listar_categorias_receita(
+    incluir_inativas: bool = False,
+    current_user: dict = Depends(require_permission("administracao", "ler"))
+):
+    """Lista todas as categorias de receita"""
+    query = {} if incluir_inativas else {"ativo": True}
+    
+    categorias = await db.categorias_receita.find(query, {"_id": 0})\
+        .sort("ordem", 1)\
+        .to_list(1000)
+    
+    return categorias
+
+@api_router.post("/categorias-receita")
+async def criar_categoria_receita(
+    categoria: CategoriaReceitaCreate,
+    current_user: dict = Depends(require_permission("administracao", "criar"))
+):
+    """Cria uma nova categoria de receita"""
+    # Verificar se já existe
+    existe = await db.categorias_receita.find_one({"nome": categoria.nome})
+    if existe:
+        raise HTTPException(status_code=400, detail="Já existe uma categoria com este nome")
+    
+    # Obter próxima ordem
+    ultima = await db.categorias_receita.find_one(sort=[("ordem", -1)])
+    ordem = (ultima["ordem"] + 1) if ultima else 1
+    
+    nova_categoria = CategoriaReceita(
+        **categoria.dict(),
+        ordem=ordem,
+        created_by=current_user["id"],
+        created_by_name=current_user["nome"]
+    )
+    
+    await db.categorias_receita.insert_one(nova_categoria.dict())
+    
+    return nova_categoria
+
+@api_router.put("/categorias-receita/{id}")
+async def editar_categoria_receita(
+    id: str,
+    dados: CategoriaReceitaUpdate,
+    current_user: dict = Depends(require_permission("administracao", "editar"))
+):
+    """Edita uma categoria de receita"""
+    categoria = await db.categorias_receita.find_one({"id": id}, {"_id": 0})
+    if not categoria:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    
+    update_data = {}
+    for field, value in dados.dict(exclude_unset=True).items():
+        if value is not None:
+            update_data[field] = value
+    
+    update_data["updated_by"] = current_user["id"]
+    update_data["updated_by_name"] = current_user["nome"]
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.categorias_receita.update_one(
+        {"id": id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Categoria atualizada com sucesso"}
+
+@api_router.put("/categorias-receita/{id}/toggle-status")
+async def toggle_status_categoria_receita(
+    id: str,
+    current_user: dict = Depends(require_permission("administracao", "editar"))
+):
+    """Ativa/Desativa uma categoria de receita"""
+    categoria = await db.categorias_receita.find_one({"id": id}, {"_id": 0})
+    if not categoria:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    
+    novo_status = not categoria["ativo"]
+    
+    await db.categorias_receita.update_one(
+        {"id": id},
+        {"$set": {
+            "ativo": novo_status,
+            "updated_by": current_user["id"],
+            "updated_by_name": current_user["nome"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    status_texto = "ativada" if novo_status else "desativada"
+    return {"message": f"Categoria {status_texto} com sucesso"}
+
+@api_router.delete("/categorias-receita/{id}")
+async def deletar_categoria_receita(
+    id: str,
+    current_user: dict = Depends(require_permission("administracao", "deletar"))
+):
+    """Deleta uma categoria de receita"""
+    # Verificar se está sendo usada
+    contas = await db.contas_receber.count_documents({"categoria": id})
+    if contas > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Não é possível deletar. Existem {contas} conta(s) a receber usando esta categoria"
+        )
+    
+    result = await db.categorias_receita.delete_one({"id": id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    
+    return {"message": "Categoria deletada com sucesso"}
+
+# ===== CATEGORIAS DE DESPESA =====
+
+@api_router.get("/categorias-despesa")
+async def listar_categorias_despesa(
+    incluir_inativas: bool = False,
+    tipo: str = None,
+    current_user: dict = Depends(require_permission("administracao", "ler"))
+):
+    """Lista todas as categorias de despesa"""
+    query = {}
+    if not incluir_inativas:
+        query["ativo"] = True
+    if tipo and tipo != "todas":
+        query["tipo"] = tipo
+    
+    categorias = await db.categorias_despesa.find(query, {"_id": 0})\
+        .sort("ordem", 1)\
+        .to_list(1000)
+    
+    return categorias
+
+@api_router.post("/categorias-despesa")
+async def criar_categoria_despesa(
+    categoria: CategoriaDespesaCreate,
+    current_user: dict = Depends(require_permission("administracao", "criar"))
+):
+    """Cria uma nova categoria de despesa"""
+    # Verificar se já existe
+    existe = await db.categorias_despesa.find_one({"nome": categoria.nome})
+    if existe:
+        raise HTTPException(status_code=400, detail="Já existe uma categoria com este nome")
+    
+    # Obter próxima ordem
+    ultima = await db.categorias_despesa.find_one(sort=[("ordem", -1)])
+    ordem = (ultima["ordem"] + 1) if ultima else 1
+    
+    nova_categoria = CategoriaDespesa(
+        **categoria.dict(),
+        ordem=ordem,
+        created_by=current_user["id"],
+        created_by_name=current_user["nome"]
+    )
+    
+    await db.categorias_despesa.insert_one(nova_categoria.dict())
+    
+    return nova_categoria
+
+@api_router.put("/categorias-despesa/{id}")
+async def editar_categoria_despesa(
+    id: str,
+    dados: CategoriaDespesaUpdate,
+    current_user: dict = Depends(require_permission("administracao", "editar"))
+):
+    """Edita uma categoria de despesa"""
+    categoria = await db.categorias_despesa.find_one({"id": id}, {"_id": 0})
+    if not categoria:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    
+    update_data = {}
+    for field, value in dados.dict(exclude_unset=True).items():
+        if value is not None:
+            update_data[field] = value
+    
+    update_data["updated_by"] = current_user["id"]
+    update_data["updated_by_name"] = current_user["nome"]
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.categorias_despesa.update_one(
+        {"id": id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Categoria atualizada com sucesso"}
+
+@api_router.put("/categorias-despesa/{id}/toggle-status")
+async def toggle_status_categoria_despesa(
+    id: str,
+    current_user: dict = Depends(require_permission("administracao", "editar"))
+):
+    """Ativa/Desativa uma categoria de despesa"""
+    categoria = await db.categorias_despesa.find_one({"id": id}, {"_id": 0})
+    if not categoria:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    
+    novo_status = not categoria["ativo"]
+    
+    await db.categorias_despesa.update_one(
+        {"id": id},
+        {"$set": {
+            "ativo": novo_status,
+            "updated_by": current_user["id"],
+            "updated_by_name": current_user["nome"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    status_texto = "ativada" if novo_status else "desativada"
+    return {"message": f"Categoria {status_texto} com sucesso"}
+
+@api_router.delete("/categorias-despesa/{id}")
+async def deletar_categoria_despesa(
+    id: str,
+    current_user: dict = Depends(require_permission("administracao", "deletar"))
+):
+    """Deleta uma categoria de despesa"""
+    # Verificar se está sendo usada
+    contas = await db.contas_pagar.count_documents({"categoria": id})
+    if contas > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Não é possível deletar. Existem {contas} conta(s) a pagar usando esta categoria"
+        )
+    
+    result = await db.categorias_despesa.delete_one({"id": id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    
+    return {"message": "Categoria deletada com sucesso"}
+
+# ===== CENTROS DE CUSTO =====
+
+@api_router.get("/centros-custo")
+async def listar_centros_custo(
+    incluir_inativos: bool = False,
+    current_user: dict = Depends(require_permission("administracao", "ler"))
+):
+    """Lista todos os centros de custo"""
+    query = {} if incluir_inativos else {"ativo": True}
+    
+    centros = await db.centros_custo.find(query, {"_id": 0})\
+        .sort("codigo", 1)\
+        .to_list(1000)
+    
+    return centros
+
+@api_router.post("/centros-custo")
+async def criar_centro_custo(
+    centro: CentroCustoCreate,
+    current_user: dict = Depends(require_permission("administracao", "criar"))
+):
+    """Cria um novo centro de custo"""
+    # Gerar código automático
+    ultimo = await db.centros_custo.find_one(sort=[("created_at", -1)])
+    if ultimo and "codigo" in ultimo:
+        ultimo_num = int(ultimo["codigo"].replace("CC", ""))
+        novo_num = ultimo_num + 1
+    else:
+        novo_num = 1
+    codigo = f"CC{novo_num:03d}"
+    
+    # Buscar responsável se informado
+    responsavel_nome = None
+    if centro.responsavel_id:
+        responsavel = await db.usuarios.find_one({"id": centro.responsavel_id}, {"_id": 0})
+        if responsavel:
+            responsavel_nome = responsavel["nome"]
+    
+    novo_centro = CentroCusto(
+        **centro.dict(),
+        codigo=codigo,
+        responsavel_nome=responsavel_nome,
+        created_by=current_user["id"],
+        created_by_name=current_user["nome"]
+    )
+    
+    await db.centros_custo.insert_one(novo_centro.dict())
+    
+    return novo_centro
+
+@api_router.put("/centros-custo/{id}")
+async def editar_centro_custo(
+    id: str,
+    dados: CentroCustoUpdate,
+    current_user: dict = Depends(require_permission("administracao", "editar"))
+):
+    """Edita um centro de custo"""
+    centro = await db.centros_custo.find_one({"id": id}, {"_id": 0})
+    if not centro:
+        raise HTTPException(status_code=404, detail="Centro de custo não encontrado")
+    
+    update_data = {}
+    for field, value in dados.dict(exclude_unset=True).items():
+        if value is not None:
+            update_data[field] = value
+    
+    # Atualizar nome do responsável se mudou
+    if "responsavel_id" in update_data and update_data["responsavel_id"]:
+        responsavel = await db.usuarios.find_one({"id": update_data["responsavel_id"]}, {"_id": 0})
+        if responsavel:
+            update_data["responsavel_nome"] = responsavel["nome"]
+    
+    update_data["updated_by"] = current_user["id"]
+    update_data["updated_by_name"] = current_user["nome"]
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.centros_custo.update_one(
+        {"id": id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Centro de custo atualizado com sucesso"}
+
+@api_router.put("/centros-custo/{id}/toggle-status")
+async def toggle_status_centro_custo(
+    id: str,
+    current_user: dict = Depends(require_permission("administracao", "editar"))
+):
+    """Ativa/Desativa um centro de custo"""
+    centro = await db.centros_custo.find_one({"id": id}, {"_id": 0})
+    if not centro:
+        raise HTTPException(status_code=404, detail="Centro de custo não encontrado")
+    
+    novo_status = not centro["ativo"]
+    
+    await db.centros_custo.update_one(
+        {"id": id},
+        {"$set": {
+            "ativo": novo_status,
+            "updated_by": current_user["id"],
+            "updated_by_name": current_user["nome"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    status_texto = "ativado" if novo_status else "desativado"
+    return {"message": f"Centro de custo {status_texto} com sucesso"}
+
+@api_router.delete("/centros-custo/{id}")
+async def deletar_centro_custo(
+    id: str,
+    current_user: dict = Depends(require_permission("administracao", "deletar"))
+):
+    """Deleta um centro de custo"""
+    # Verificar se está sendo usado
+    contas_receber = await db.contas_receber.count_documents({"centro_custo": id})
+    contas_pagar = await db.contas_pagar.count_documents({"centro_custo": id})
+    total = contas_receber + contas_pagar
+    
+    if total > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Não é possível deletar. Existem {total} conta(s) usando este centro de custo"
+        )
+    
+    result = await db.centros_custo.delete_one({"id": id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Centro de custo não encontrado")
+    
+    return {"message": "Centro de custo deletado com sucesso"}
+
+# ===== ESTATÍSTICAS DE CENTROS DE CUSTO =====
+
+@api_router.get("/centros-custo/{id}/estatisticas")
+async def estatisticas_centro_custo(
+    id: str,
+    mes: str = None,  # formato: 2025-01
+    current_user: dict = Depends(require_permission("administracao", "ler"))
+):
+    """Obtém estatísticas de um centro de custo"""
+    centro = await db.centros_custo.find_one({"id": id}, {"_id": 0})
+    if not centro:
+        raise HTTPException(status_code=404, detail="Centro de custo não encontrado")
+    
+    # Construir query de período
+    if mes:
+        ano, mes_num = mes.split("-")
+        data_inicio = f"{ano}-{mes_num}-01"
+        # Último dia do mês
+        if mes_num == "12":
+            data_fim = f"{int(ano)+1}-01-01"
+        else:
+            data_fim = f"{ano}-{int(mes_num)+1:02d}-01"
+    else:
+        # Mês atual
+        hoje = datetime.now(timezone.utc)
+        data_inicio = hoje.replace(day=1).isoformat()[:10]
+        if hoje.month == 12:
+            data_fim = hoje.replace(year=hoje.year+1, month=1, day=1).isoformat()[:10]
+        else:
+            data_fim = hoje.replace(month=hoje.month+1, day=1).isoformat()[:10]
+    
+    # Buscar despesas
+    despesas = await db.contas_pagar.find({
+        "centro_custo": id,
+        "cancelada": False,
+        "created_at": {"$gte": data_inicio, "$lt": data_fim}
+    }, {"_id": 0}).to_list(10000)
+    
+    # Buscar receitas
+    receitas = await db.contas_receber.find({
+        "centro_custo": id,
+        "cancelada": False,
+        "created_at": {"$gte": data_inicio, "$lt": data_fim}
+    }, {"_id": 0}).to_list(10000)
+    
+    total_despesas = sum(d["valor_total"] for d in despesas)
+    total_receitas = sum(r["valor_total"] for r in receitas)
+    saldo = total_receitas - total_despesas
+    
+    # Comparar com orçamento
+    orcamento = centro.get("orcamento_mensal", 0)
+    percentual_usado = (total_despesas / orcamento * 100) if orcamento > 0 else 0
+    
+    return {
+        "centro_custo": centro,
+        "periodo": {"inicio": data_inicio, "fim": data_fim},
+        "total_despesas": total_despesas,
+        "total_receitas": total_receitas,
+        "saldo": saldo,
+        "orcamento_mensal": orcamento,
+        "percentual_usado": percentual_usado,
+        "quantidade_despesas": len(despesas),
+        "quantidade_receitas": len(receitas)
+    }
+
 # ========== CONTAS A PAGAR - ENDPOINTS ==========
 
 # Função helper para gerar número de conta a pagar
