@@ -30,6 +30,7 @@ const Clientes = () => {
   });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, nome: '' });
   const [toggleDialog, setToggleDialog] = useState({ open: false, id: null, nome: '', ativo: false });
+  const [financeiroDialog, setFinanceiroDialog] = useState({ open: false, id: null, nome: '' });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
