@@ -5920,6 +5920,28 @@ async def cancelar_nota_fiscal(
     
     return {"message": "Nota fiscal e conta a pagar canceladas com sucesso"}
 
+@api_router.get("/notas-fiscais/{nota_id}/conta-pagar")
+async def obter_conta_pagar_nota_fiscal(
+    nota_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Retorna a conta a pagar vinculada à nota fiscal
+    """
+    nota = await db.notas_fiscais.find_one({"id": nota_id}, {"_id": 0})
+    if not nota:
+        raise HTTPException(status_code=404, detail="Nota fiscal não encontrada")
+    
+    conta_pagar_id = nota.get("conta_pagar_id")
+    if not conta_pagar_id:
+        return {"conta_pagar": None, "mensagem": "Nenhuma conta a pagar vinculada"}
+    
+    conta = await db.contas_pagar.find_one({"id": conta_pagar_id}, {"_id": 0})
+    if not conta:
+        return {"conta_pagar": None, "mensagem": "Conta a pagar não encontrada"}
+    
+    return {"conta_pagar": conta}
+
 @api_router.get("/notas-fiscais/{nota_id}/historico")
 async def get_historico_nota(nota_id: str, current_user: dict = Depends(get_current_user)):
     """
