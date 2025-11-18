@@ -959,35 +959,167 @@ class AprovarContaPagar(BaseModel):
     aprovado: bool
     observacao: Optional[str] = None
 
+# ========== MODELOS DE ADMINISTRAÇÃO E CONFIGURAÇÕES ==========
+
 # Configurações Financeiras
 class ConfiguracoesFinanceiras(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    
     # Contas a Receber
     dias_alerta_vencimento_receber: int = 5
     permitir_desconto_recebimento: bool = True
-    desconto_maximo_recebimento: float = 10
+    desconto_maximo_recebimento: float = 10.0
     permitir_juros_atraso: bool = True
-    taxa_juros_mes: float = 2
+    taxa_juros_mes: float = 2.0
+    taxa_multa_atraso: float = 2.0
     
     # Contas a Pagar
     dias_alerta_vencimento_pagar: int = 3
     exigir_aprovacao_pagamento: bool = True
-    valor_minimo_aprovacao: float = 1000
+    valor_minimo_aprovacao: float = 1000.0
     permitir_antecipacao_pagamento: bool = True
-    desconto_antecipacao: float = 1
+    desconto_antecipacao: float = 1.0
     
     # Geral
     regime_contabil: str = "caixa"  # caixa ou competencia
     moeda: str = "BRL"
     
-    # Categorias Personalizadas
-    categorias_receita: List[str] = []
-    categorias_despesa: List[str] = []
+    # Integração Bancária
+    integrar_banco: bool = False
+    banco_api_key: Optional[str] = None
     
-    # Centros de Custo
-    centros_custo: List[dict] = []
-    
-    # Aprovadores
+    # Aprovadores (IDs dos usuários)
     aprovadores_financeiro: List[str] = []
+    
+    # Auditoria
+    updated_by: Optional[str] = None
+    updated_by_name: Optional[str] = None
+    updated_at: Optional[str] = None
+
+class ConfiguracoesFinanceirasUpdate(BaseModel):
+    dias_alerta_vencimento_receber: Optional[int] = None
+    permitir_desconto_recebimento: Optional[bool] = None
+    desconto_maximo_recebimento: Optional[float] = None
+    permitir_juros_atraso: Optional[bool] = None
+    taxa_juros_mes: Optional[float] = None
+    taxa_multa_atraso: Optional[float] = None
+    dias_alerta_vencimento_pagar: Optional[int] = None
+    exigir_aprovacao_pagamento: Optional[bool] = None
+    valor_minimo_aprovacao: Optional[float] = None
+    permitir_antecipacao_pagamento: Optional[bool] = None
+    desconto_antecipacao: Optional[float] = None
+    regime_contabil: Optional[str] = None
+    moeda: Optional[str] = None
+    integrar_banco: Optional[bool] = None
+    banco_api_key: Optional[str] = None
+    aprovadores_financeiro: Optional[List[str]] = None
+
+# Categoria de Receita
+class CategoriaReceita(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nome: str
+    descricao: Optional[str] = None
+    cor: str = "#10B981"  # hex color
+    icone: str = "DollarSign"  # lucide icon name
+    ativo: bool = True
+    ordem: int = 0
+    
+    # Auditoria
+    created_by: str
+    created_by_name: str
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_by: Optional[str] = None
+    updated_by_name: Optional[str] = None
+    updated_at: Optional[str] = None
+
+class CategoriaReceitaCreate(BaseModel):
+    nome: str
+    descricao: Optional[str] = None
+    cor: str = "#10B981"
+    icone: str = "DollarSign"
+
+class CategoriaReceitaUpdate(BaseModel):
+    nome: Optional[str] = None
+    descricao: Optional[str] = None
+    cor: Optional[str] = None
+    icone: Optional[str] = None
+    ordem: Optional[int] = None
+
+# Categoria de Despesa
+class CategoriaDespesa(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nome: str
+    descricao: Optional[str] = None
+    cor: str = "#EF4444"  # hex color
+    icone: str = "CreditCard"  # lucide icon name
+    tipo: str = "operacional"  # operacional, administrativa, financeira
+    ativo: bool = True
+    ordem: int = 0
+    
+    # Auditoria
+    created_by: str
+    created_by_name: str
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_by: Optional[str] = None
+    updated_by_name: Optional[str] = None
+    updated_at: Optional[str] = None
+
+class CategoriaDespesaCreate(BaseModel):
+    nome: str
+    descricao: Optional[str] = None
+    cor: str = "#EF4444"
+    icone: str = "CreditCard"
+    tipo: str = "operacional"
+
+class CategoriaDespesaUpdate(BaseModel):
+    nome: Optional[str] = None
+    descricao: Optional[str] = None
+    cor: Optional[str] = None
+    icone: Optional[str] = None
+    tipo: Optional[str] = None
+    ordem: Optional[int] = None
+
+# Centro de Custo
+class CentroCusto(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    codigo: str  # CC001, CC002, etc
+    nome: str
+    descricao: Optional[str] = None
+    responsavel_id: Optional[str] = None
+    responsavel_nome: Optional[str] = None
+    departamento: Optional[str] = None  # Vendas, Administrativo, Operacional
+    orcamento_mensal: float = 0.0
+    ativo: bool = True
+    
+    # Auditoria
+    created_by: str
+    created_by_name: str
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_by: Optional[str] = None
+    updated_by_name: Optional[str] = None
+    updated_at: Optional[str] = None
+
+class CentroCustoCreate(BaseModel):
+    nome: str
+    descricao: Optional[str] = None
+    responsavel_id: Optional[str] = None
+    departamento: Optional[str] = None
+    orcamento_mensal: float = 0.0
+
+class CentroCustoUpdate(BaseModel):
+    nome: Optional[str] = None
+    descricao: Optional[str] = None
+    responsavel_id: Optional[str] = None
+    departamento: Optional[str] = None
+    orcamento_mensal: Optional[float] = None
 
 # ==================== FIM MODELOS FINANCEIROS ====================
 
