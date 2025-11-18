@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "FASE 4: Implementar Backend Completo para Contas a Pagar - Sistema financeiro de gerenciamento de pagamentos a fornecedores com CRUD completo, liquidação de parcelas, cancelamento, dashboard e relatórios."
+user_problem_statement: "FASE 4: Administração e Configurações - Sistema completo de configurações financeiras com categorias de receita/despesa, centros de custo e configurações gerais do sistema. Backend (18 endpoints) e Frontend (4 abas) completos."
 
 backend:
   - task: "Fase 4 - Backend Contas a Pagar - Endpoints CRUD Completos"
