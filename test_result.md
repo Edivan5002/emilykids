@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "FASES 8 e 9: Frontend Contas a Receber e Contas a Pagar Completos - Interfaces completas de gerenciamento financeiro com dashboard KPIs, listagem com filtros avançados, CRUD completo, liquidação de parcelas, cancelamento e detalhes completos."
+user_problem_statement: "FASE 12: Integração com Notas Fiscais - Geração automática de contas a pagar ao confirmar nota fiscal, sincronização de cancelamento, componente de visualização da conta vinculada."
 
 backend:
   - task: "Fase 5 - Integração Clientes/Fornecedores - Backend Completo"
