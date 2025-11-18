@@ -26,7 +26,8 @@ import {
   DollarSign,
   TrendingUp,
   TrendingDown,
-  Activity
+  Activity,
+  Settings
 } from 'lucide-react';
 
 // Componente para ícone Emily Kids (boneca com balão)
