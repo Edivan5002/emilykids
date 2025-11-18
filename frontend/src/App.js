@@ -26,6 +26,7 @@ import PapeisPermissoes from './pages/PapeisPermissoes';
 import Administracao from './pages/Administracao';
 import ConfiguracoesFinanceiras from './pages/ConfiguracoesFinanceiras';
 import ContasReceber from './pages/ContasReceber';
+import ContasPagar from './pages/ContasPagar';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // Layout
