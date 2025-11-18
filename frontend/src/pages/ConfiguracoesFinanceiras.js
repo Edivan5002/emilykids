@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../contexts/AuthContext';
 import { AlertCircle, Settings, DollarSign, CreditCard, Building2, Save, Plus, Edit2, Trash2, Check, X, Eye, EyeOff } from 'lucide-react';
 
 const ConfiguracoesFinanceiras = () => {
