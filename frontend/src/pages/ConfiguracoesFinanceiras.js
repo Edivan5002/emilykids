@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { AuthContext } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { AlertCircle, Settings, DollarSign, CreditCard, Building2, Save, Plus, Edit2, Trash2, Check, X, Eye, EyeOff } from 'lucide-react';
 
 const ConfiguracoesFinanceiras = () => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [abaAtiva, setAbaAtiva] = useState('geral');
   
