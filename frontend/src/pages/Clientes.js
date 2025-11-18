@@ -328,6 +328,26 @@ const Clientes = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog Financeiro */}
+      <Dialog open={financeiroDialog.open} onOpenChange={(open) => setFinanceiroDialog({ ...financeiroDialog, open })}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-green-600" />
+              Dados Financeiros - {financeiroDialog.nome}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            {financeiroDialog.id && (
+              <ClienteFinanceiro 
+                clienteId={financeiroDialog.id} 
+                clienteNome={financeiroDialog.nome} 
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
