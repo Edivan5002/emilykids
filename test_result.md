@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "FASE 4: Administração e Configurações - Sistema completo de configurações financeiras com categorias de receita/despesa, centros de custo e configurações gerais do sistema. Backend (18 endpoints) e Frontend (4 abas) completos."
+user_problem_statement: "FASE 5: Integração Clientes e Fornecedores - Aba Financeiro nos cadastros de clientes e fornecedores com score de crédito, resumo financeiro, histórico de contas, formas de pagamento e categorias. Backend (4 endpoints) e Frontend (2 componentes + integração) completos."
 
 backend:
   - task: "Fase 4 - Administração e Configurações - Backend Completo"
