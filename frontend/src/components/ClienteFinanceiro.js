@@ -22,7 +22,7 @@ const ClienteFinanceiro = ({ clienteId, clienteNome }) => {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [financeiro Response, contasResponse] = await Promise.all([
+      const [financeiroResponse, contasResponse] = await Promise.all([
         axios.get(`${backendUrl}/api/clientes/${clienteId}/financeiro`, { headers }),
         axios.get(`${backendUrl}/api/clientes/${clienteId}/contas-receber`, { headers })
       ]);
