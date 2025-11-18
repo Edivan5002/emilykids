@@ -24,6 +24,7 @@ import Logs from './pages/Logs';
 import Usuarios from './pages/Usuarios';
 import PapeisPermissoes from './pages/PapeisPermissoes';
 import Administracao from './pages/Administracao';
+import ConfiguracoesFinanceiras from './pages/ConfiguracoesFinanceiras';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // Layout
