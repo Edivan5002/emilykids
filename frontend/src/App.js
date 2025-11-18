@@ -83,6 +83,7 @@ function AppContent() {
                     <Route path="/administracao" element={<Administracao />} />
                     <Route path="/configuracoes-financeiras" element={<ConfiguracoesFinanceiras />} />
                     <Route path="/contas-receber" element={<ContasReceber />} />
+                    <Route path="/contas-pagar" element={<ContasPagar />} />
                   </Routes>
                 </Layout>
               </PrivateRoute>
