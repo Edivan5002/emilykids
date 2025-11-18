@@ -358,14 +358,14 @@ const ContasReceber = () => {
             <div>
               <Label>Cliente</Label>
               <Select 
-                value={filtros.cliente_id} 
-                onValueChange={(value) => setFiltros({...filtros, cliente_id: value})}
+                value={filtros.cliente_id || "todos"} 
+                onValueChange={(value) => setFiltros({...filtros, cliente_id: value === "todos" ? "" : value})}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="todos">Todos</SelectItem>
                   {clientes.map((c) => (
                     <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                   ))}
@@ -376,14 +376,14 @@ const ContasReceber = () => {
             <div>
               <Label>Status</Label>
               <Select 
-                value={filtros.status} 
-                onValueChange={(value) => setFiltros({...filtros, status: value})}
+                value={filtros.status || "todos"} 
+                onValueChange={(value) => setFiltros({...filtros, status: value === "todos" ? "" : value})}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="pendente">Pendente</SelectItem>
                   <SelectItem value="recebido_parcial">Recebido Parcial</SelectItem>
                   <SelectItem value="recebido_total">Recebido</SelectItem>
@@ -395,14 +395,14 @@ const ContasReceber = () => {
             <div>
               <Label>Forma de Pagamento</Label>
               <Select 
-                value={filtros.forma_pagamento} 
-                onValueChange={(value) => setFiltros({...filtros, forma_pagamento: value})}
+                value={filtros.forma_pagamento || "todas"} 
+                onValueChange={(value) => setFiltros({...filtros, forma_pagamento: value === "todas" ? "" : value})}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="todas">Todas</SelectItem>
                   <SelectItem value="pix">Pix</SelectItem>
                   <SelectItem value="dinheiro">Dinheiro</SelectItem>
                   <SelectItem value="cartao_credito">Cartão Crédito</SelectItem>
