@@ -738,14 +738,14 @@ const ContasReceber = () => {
                 <div className="col-span-2">
                   <Label>Forma de Recebimento</Label>
                   <Select 
-                    value={formReceber.forma_recebimento} 
-                    onValueChange={(value) => setFormReceber({...formReceber, forma_recebimento: value})}
+                    value={formReceber.forma_recebimento || "mesma"} 
+                    onValueChange={(value) => setFormReceber({...formReceber, forma_recebimento: value === "mesma" ? "" : value})}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Mesma da conta" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Mesma da conta</SelectItem>
+                      <SelectItem value="mesma">Mesma da conta</SelectItem>
                       <SelectItem value="pix">Pix</SelectItem>
                       <SelectItem value="dinheiro">Dinheiro</SelectItem>
                       <SelectItem value="cartao_credito">Cartão Crédito</SelectItem>
