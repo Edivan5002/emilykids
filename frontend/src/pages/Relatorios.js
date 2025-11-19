@@ -269,6 +269,42 @@ const Relatorios = () => {
     return cliente?.nome || 'Desconhecido';
   };
 
+  // === LÓGICA DE PAGINAÇÃO ===
+  
+  // 1. Vendas por Dia
+  const vendasDiaArray = vendasPorPeriodo ? Object.entries(vendasPorPeriodo.dados) : [];
+  const totalPaginasVendasDia = Math.ceil(vendasDiaArray.length / ITENS_POR_PAGINA);
+  const indiceInicialVendasDia = (paginaVendasDia - 1) * ITENS_POR_PAGINA;
+  const indiceFinalVendasDia = indiceInicialVendasDia + ITENS_POR_PAGINA;
+  const vendasDiaPaginadas = vendasDiaArray.slice(indiceInicialVendasDia, indiceFinalVendasDia);
+  
+  // 2. Vendas por Mês (mesmo array, páginas separadas)
+  const totalPaginasVendasMes = Math.ceil(vendasDiaArray.length / ITENS_POR_PAGINA);
+  const indiceInicialVendasMes = (paginaVendasMes - 1) * ITENS_POR_PAGINA;
+  const indiceFinalVendasMes = indiceInicialVendasMes + ITENS_POR_PAGINA;
+  const vendasMesPaginadas = vendasDiaArray.slice(indiceInicialVendasMes, indiceFinalVendasMes);
+  
+  // 3. Vendas por Vendedor
+  const vendedoresArray = vendasPorVendedor?.vendedores || [];
+  const totalPaginasVendedor = Math.ceil(vendedoresArray.length / ITENS_POR_PAGINA);
+  const indiceInicialVendedor = (paginaVendasVendedor - 1) * ITENS_POR_PAGINA;
+  const indiceFinalVendedor = indiceInicialVendedor + ITENS_POR_PAGINA;
+  const vendedoresPaginados = vendedoresArray.slice(indiceInicialVendedor, indiceFinalVendedor);
+  
+  // 4. Curva ABC
+  const produtosCurvaABC = curvaABC?.produtos || [];
+  const totalPaginasCurvaABC = Math.ceil(produtosCurvaABC.length / ITENS_POR_PAGINA);
+  const indiceInicialCurvaABC = (paginaCurvaABC - 1) * ITENS_POR_PAGINA;
+  const indiceFinalCurvaABC = indiceInicialCurvaABC + ITENS_POR_PAGINA;
+  const produtosCurvaABCPaginados = produtosCurvaABC.slice(indiceInicialCurvaABC, indiceFinalCurvaABC);
+  
+  // 5. Auditoria
+  const logsAuditoria = auditoria?.logs_recentes || [];
+  const totalPaginasAuditoria = Math.ceil(logsAuditoria.length / ITENS_POR_PAGINA);
+  const indiceInicialAuditoria = (paginaAuditoria - 1) * ITENS_POR_PAGINA;
+  const indiceFinalAuditoria = indiceInicialAuditoria + ITENS_POR_PAGINA;
+  const logsAuditoriaPaginados = logsAuditoria.slice(indiceInicialAuditoria, indiceFinalAuditoria);
+
   return (
     <div className="page-container" data-testid="relatorios-page">
       <div className="mb-8">
