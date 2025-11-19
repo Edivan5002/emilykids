@@ -1193,6 +1193,50 @@ const Relatorios = () => {
                       </div>
                     ))}
                   </div>
+
+                  {/* Paginação - Auditoria */}
+                  {logsAuditoria.length > ITENS_POR_PAGINA && (
+                    <div className="mt-4 p-4 border rounded-lg bg-white">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-600">
+                          Página {paginaAuditoria} de {totalPaginasAuditoria} | Mostrando {indiceInicialAuditoria + 1} a {Math.min(indiceFinalAuditoria, logsAuditoria.length)} de {logsAuditoria.length} ações
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPaginaAuditoria(p => Math.max(1, p - 1))}
+                            disabled={paginaAuditoria === 1}
+                          >
+                            <ChevronLeft size={16} />
+                            Anterior
+                          </Button>
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: totalPaginasAuditoria }, (_, i) => i + 1).map((pagina) => (
+                              <Button
+                                key={pagina}
+                                variant={paginaAuditoria === pagina ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setPaginaAuditoria(pagina)}
+                                className={paginaAuditoria === pagina ? "bg-blue-600 text-white" : ""}
+                              >
+                                {pagina}
+                              </Button>
+                            ))}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPaginaAuditoria(p => Math.min(totalPaginasAuditoria, p + 1))}
+                            disabled={paginaAuditoria === totalPaginasAuditoria}
+                          >
+                            Próxima
+                            <ChevronRight size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
