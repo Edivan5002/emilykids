@@ -293,7 +293,11 @@ const NotasFiscais = () => {
       fornecedor_id: '',
       data_emissao: '',
       valor_total: 0,
-      xml: ''
+      xml: '',
+      forma_pagamento: 'boleto',
+      tipo_pagamento: 'avista',
+      numero_parcelas: 1,
+      data_vencimento: ''
     });
     setItensNota([]);
     setNovoItem({
