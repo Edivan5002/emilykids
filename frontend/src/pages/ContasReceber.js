@@ -42,6 +42,10 @@ const ContasReceber = () => {
   const [modalDetalhes, setModalDetalhes] = useState({ open: false, conta: null });
   const [modalReceber, setModalReceber] = useState({ open: false, conta: null, parcela: null });
   const [modalCancelar, setModalCancelar] = useState({ open: false, conta: null });
+  
+  // Paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const ITENS_POR_PAGINA = 20;
 
   // Form data
   const [formNovaConta, setFormNovaConta] = useState({
