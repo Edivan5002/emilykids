@@ -348,7 +348,7 @@ const Fornecedores = () => {
                 </td>
               </tr>
             ) : (
-              filteredFornecedores.map((f) => (
+              fornecedoresPaginados.map((f) => (
               <tr key={f.id}>
                 <td className="font-medium">{f.razao_social}</td>
                 <td className="hidden sm:table-cell">{f.cnpj}</td>
