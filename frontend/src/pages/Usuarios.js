@@ -55,6 +55,7 @@ const Usuarios = () => {
       u.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredUsuarios(filtered);
+    setPaginaAtual(1); // Resetar página ao filtrar
   }, [searchTerm, usuarios]);
 
   const fetchUsuarios = async () => {
