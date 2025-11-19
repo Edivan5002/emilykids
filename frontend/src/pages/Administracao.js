@@ -21,7 +21,9 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Eye
+  Eye,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 
