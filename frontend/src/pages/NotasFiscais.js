@@ -333,7 +333,10 @@ const NotasFiscais = () => {
 
   const getFornecedorNome = (fornecedorId) => {
     const fornecedor = fornecedores.find(f => f.id === fornecedorId);
-    return fornecedor?.razao_social || 'Fornecedor não encontrado';
+    if (!fornecedor) return 'Fornecedor não encontrado';
+    const nome = fornecedor.razao_social || fornecedor.nome || 'N/A';
+    const cnpj = fornecedor.cnpj || 'N/A';
+    return `${nome} - CNPJ: ${cnpj}`;
   };
 
   const getProdutoNome = (produtoId) => {
