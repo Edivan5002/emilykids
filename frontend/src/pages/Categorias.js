@@ -252,7 +252,7 @@ const Categorias = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredCategorias.map((c) => (
+            {categoriasPaginadas.map((c) => (
               <tr key={c.id}>
                 <td className="font-medium">{c.nome}</td>
                 <td>{getMarcaNome(c.marca_id)}</td>
