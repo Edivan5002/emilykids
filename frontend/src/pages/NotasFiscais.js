@@ -727,7 +727,7 @@ const NotasFiscais = () => {
                   <SelectItem value="todos">Todos</SelectItem>
                   {fornecedores.map((f) => (
                     <SelectItem key={f.id} value={f.id}>
-                      {f.razao_social || f.nome}
+                      {f.razao_social || f.nome} - CNPJ: {f.cnpj || 'N/A'}
                     </SelectItem>
                   ))}
                 </SelectContent>
