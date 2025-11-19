@@ -371,6 +371,17 @@ const NotasFiscais = () => {
     .filter(nf => nf.confirmado && !nf.cancelada && nf.status !== 'cancelada')
     .reduce((sum, nf) => sum + nf.valor_total, 0);
 
+  // Lógica de paginação
+  const totalPaginas = Math.ceil(notasFiscais.length / ITENS_POR_PAGINA);
+  const indiceInicial = (paginaAtual - 1) * ITENS_POR_PAGINA;
+  const indiceFinal = indiceInicial + ITENS_POR_PAGINA;
+  const notasFiscaisPaginadas = notasFiscais.slice(indiceInicial, indiceFinal);
+
+  // Resetar página quando filtros mudarem
+  useEffect(() => {
+    setPaginaAtual(1);
+  }, [filtros]);
+
   return (
     <div className="page-container" data-testid="notas-fiscais-page">
       <div className="flex justify-between items-center mb-8">
