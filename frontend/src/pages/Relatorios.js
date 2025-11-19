@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   BarChart3, PieChart, TrendingUp, DollarSign, Users, Package, 
   FileText, Download, Calendar, Filter, RefreshCw, Award, Target,
-  Activity, ShoppingCart, AlertCircle, CheckCircle
+  Activity, ShoppingCart, AlertCircle, CheckCircle, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 
