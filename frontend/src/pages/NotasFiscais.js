@@ -1020,6 +1020,52 @@ const NotasFiscais = () => {
           </Card>
         )}
       </div>
+
+      {/* Controles de Paginação */}
+      {notasFiscais.length > ITENS_POR_PAGINA && (
+        <Card className="mt-6">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Mostrando {indiceInicial + 1} a {Math.min(indiceFinal, notasFiscais.length)} de {notasFiscais.length} notas fiscais
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPaginaAtual(p => Math.max(1, p - 1))}
+                  disabled={paginaAtual === 1}
+                >
+                  <ChevronLeft size={16} />
+                  Anterior
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((pagina) => (
+                    <Button
+                      key={pagina}
+                      variant={paginaAtual === pagina ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setPaginaAtual(pagina)}
+                      className={paginaAtual === pagina ? "bg-blue-600 text-white" : ""}
+                    >
+                      {pagina}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPaginaAtual(p => Math.min(totalPaginas, p + 1))}
+                  disabled={paginaAtual === totalPaginas}
+                >
+                  Próxima
+                  <ChevronRight size={16} />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {/* Dialog de Cancelamento */}
       <Dialog open={cancelDialog.open} onOpenChange={(open) => setCancelDialog({ ...cancelDialog, open })}>
         <DialogContent className="max-w-md">
