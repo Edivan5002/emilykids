@@ -55,6 +55,11 @@ const PapeisPermissoes = () => {
   
   // Loading
   const [loading, setLoading] = useState(false);
+  
+  // Paginação
+  const [paginaRoles, setPaginaRoles] = useState(1);
+  const [paginaHistorico, setPaginaHistorico] = useState(1);
+  const ITENS_POR_PAGINA = 20;
 
   useEffect(() => {
     const token = localStorage.getItem('token');
