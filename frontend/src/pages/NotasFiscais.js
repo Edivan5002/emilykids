@@ -848,7 +848,7 @@ const NotasFiscais = () => {
 
       {/* Lista de Notas Fiscais */}
       <div className="space-y-4">
-        {notasFiscais.map((nota) => (
+        {notasFiscaisPaginadas.map((nota) => (
           <Card key={nota.id} data-testid={`nf-${nota.id}`}>
             <CardHeader>
               <div className="flex items-center justify-between">
