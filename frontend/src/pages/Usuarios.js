@@ -199,6 +199,12 @@ const Usuarios = () => {
     return roles.find(r => r.id === roleId);
   };
 
+  // Lógica de paginação
+  const totalPaginas = Math.ceil(filteredUsuarios.length / ITENS_POR_PAGINA);
+  const indiceInicial = (paginaAtual - 1) * ITENS_POR_PAGINA;
+  const indiceFinal = indiceInicial + ITENS_POR_PAGINA;
+  const usuariosPaginados = filteredUsuarios.slice(indiceInicial, indiceFinal);
+
   if (user?.papel !== 'admin') {
     return (
       <div className="page-container">
