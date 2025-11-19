@@ -446,7 +446,7 @@ const PapeisPermissoes = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {permissionHistory.map((entry, idx) => (
+                {historicoPaginado.map((entry, idx) => (
                   <div 
                     key={idx} 
                     className="p-4 border-2 rounded-lg hover:shadow-md transition-shadow bg-gradient-to-r from-white to-gray-50"
