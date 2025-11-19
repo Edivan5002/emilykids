@@ -885,9 +885,23 @@ const NotasFiscais = () => {
               </div>
 
               <div className="mb-4">
-                <p className="text-sm font-semibold mb-2">Itens ({nota.itens.length}):</p>
-                <div className="grid grid-cols-1 gap-2">
-                  {nota.itens.map((item, idx) => (
+                <div 
+                  className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded mb-2"
+                  onClick={() => setItensExpandidos({...itensExpandidos, [nota.id]: !itensExpandidos[nota.id]})}
+                >
+                  <p className="text-sm font-semibold flex items-center gap-2">
+                    <Package size={16} className="text-blue-600" />
+                    Itens ({nota.itens.length})
+                  </p>
+                  {itensExpandidos[nota.id] ? (
+                    <ChevronUp size={20} className="text-gray-600" />
+                  ) : (
+                    <ChevronDown size={20} className="text-gray-600" />
+                  )}
+                </div>
+                {itensExpandidos[nota.id] && (
+                  <div className="grid grid-cols-1 gap-2">
+                    {nota.itens.map((item, idx) => (
                     <div key={idx} className="bg-gradient-to-r from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
