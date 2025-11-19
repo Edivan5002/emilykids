@@ -959,6 +959,50 @@ const Estoque = () => {
                   </div>
                 )}
               </div>
+
+              {/* Paginação - Movimentações */}
+              {movimentacoes.length > ITENS_POR_PAGINA && (
+                <div className="mt-4 p-4 border rounded-lg bg-white">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-600">
+                      Página {paginaMovimentacoes} de {totalPaginasMovimentacoes} | Mostrando {indiceInicialMovimentacoes + 1} a {Math.min(indiceFinalMovimentacoes, movimentacoes.length)} de {movimentacoes.length} movimentações
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPaginaMovimentacoes(p => Math.max(1, p - 1))}
+                        disabled={paginaMovimentacoes === 1}
+                      >
+                        <ChevronLeft size={16} />
+                        Anterior
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalPaginasMovimentacoes }, (_, i) => i + 1).map((pagina) => (
+                          <Button
+                            key={pagina}
+                            variant={paginaMovimentacoes === pagina ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setPaginaMovimentacoes(pagina)}
+                            className={paginaMovimentacoes === pagina ? "bg-blue-600 text-white" : ""}
+                          >
+                            {pagina}
+                          </Button>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPaginaMovimentacoes(p => Math.min(totalPaginasMovimentacoes, p + 1))}
+                        disabled={paginaMovimentacoes === totalPaginasMovimentacoes}
+                      >
+                        Próxima
+                        <ChevronRight size={16} />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
