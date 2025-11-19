@@ -549,7 +549,7 @@ const Administracao = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {logsAuditoria.map((log, idx) => (
+                {logsPaginados.map((log, idx) => (
                   <div key={idx} className="p-4 border rounded-lg bg-gray-50">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3 flex-1">
