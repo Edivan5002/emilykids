@@ -522,7 +522,7 @@ const ContasPagar = () => {
                     </td>
                   </tr>
                 ) : (
-                  contas.map((conta) => (
+                  contasPaginadas.map((conta) => (
                     <tr key={conta.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm font-mono">{conta.numero}</td>
                       <td className="px-4 py-3 text-sm">{conta.fornecedor_nome || '-'}</td>
