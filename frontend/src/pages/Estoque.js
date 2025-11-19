@@ -1261,9 +1261,53 @@ const Estoque = () => {
                     );
                   })}
 
-                {movimentacoes.filter(m => m.referencia_tipo === 'ajuste_manual').length === 0 && (
+                {ultimosAjustes.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     Nenhum ajuste manual registrado
+                  </div>
+                )}
+
+                {/* Paginação - Últimos Ajustes */}
+                {ultimosAjustes.length > ITENS_POR_PAGINA && (
+                  <div className="mt-4 p-4 border rounded-lg bg-white">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-600">
+                        Página {paginaUltimosAjustes} de {totalPaginasAjustes} | Mostrando {indiceInicialAjustes + 1} a {Math.min(indiceFinalAjustes, ultimosAjustes.length)} de {ultimosAjustes.length} ajustes
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPaginaUltimosAjustes(p => Math.max(1, p - 1))}
+                          disabled={paginaUltimosAjustes === 1}
+                        >
+                          <ChevronLeft size={16} />
+                          Anterior
+                        </Button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: totalPaginasAjustes }, (_, i) => i + 1).map((pagina) => (
+                            <Button
+                              key={pagina}
+                              variant={paginaUltimosAjustes === pagina ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setPaginaUltimosAjustes(pagina)}
+                              className={paginaUltimosAjustes === pagina ? "bg-blue-600 text-white" : ""}
+                            >
+                              {pagina}
+                            </Button>
+                          ))}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPaginaUltimosAjustes(p => Math.min(totalPaginasAjustes, p + 1))}
+                          disabled={paginaUltimosAjustes === totalPaginasAjustes}
+                        >
+                          Próxima
+                          <ChevronRight size={16} />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
