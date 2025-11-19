@@ -38,7 +38,6 @@ const NotasFiscais = () => {
     data_fim: '',
     status: ''
   });
-  const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [historicoDialog, setHistoricoDialog] = useState({ open: false, produtoId: null, produtoNome: '', historico: [], loading: false });
   
   const [formData, setFormData] = useState({
