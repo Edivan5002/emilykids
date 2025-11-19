@@ -66,6 +66,7 @@ const Subcategorias = () => {
     }
 
     setFilteredSubcategorias(filtered);
+    setPaginaAtual(1); // Resetar página ao filtrar
   }, [searchTerm, categoriaFilter, marcaFilter, statusFilter, subcategorias, categorias]);
 
   const fetchData = async () => {
