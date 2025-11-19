@@ -732,6 +732,12 @@ const Produtos = () => {
     });
   };
 
+  // Lógica de paginação
+  const totalPaginas = Math.ceil(produtosFiltrados.length / ITENS_POR_PAGINA);
+  const indiceInicial = (paginaAtual - 1) * ITENS_POR_PAGINA;
+  const indiceFinal = indiceInicial + ITENS_POR_PAGINA;
+  const produtosPaginados = produtosFiltrados.slice(indiceInicial, indiceFinal);
+
   return (
     <div className="page-container" data-testid="produtos-page">
       {/* Header com Relatórios */}
