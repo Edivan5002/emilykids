@@ -918,13 +918,30 @@ const NotasFiscais = () => {
                       </div>
                     </div>
                   ))}
-                </div>
+                  </div>
+                )}
               </div>
 
-              {/* Conta a Pagar Vinculada */}
+              {/* Conta a Pagar Vinculada - Colapsável */}
               {nota.confirmado && !nota.cancelada && (
                 <div className="mb-4">
-                  <ContaPagarVinculada notaId={nota.id} />
+                  <div 
+                    className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded mb-2"
+                    onClick={() => setContasExpandidas({...contasExpandidas, [nota.id]: !contasExpandidas[nota.id]})}
+                  >
+                    <p className="text-sm font-semibold flex items-center gap-2">
+                      <DollarSign size={16} className="text-green-600" />
+                      Conta a Pagar Vinculada
+                    </p>
+                    {contasExpandidas[nota.id] ? (
+                      <ChevronUp size={20} className="text-gray-600" />
+                    ) : (
+                      <ChevronDown size={20} className="text-gray-600" />
+                    )}
+                  </div>
+                  {contasExpandidas[nota.id] && (
+                    <ContaPagarVinculada notaId={nota.id} />
+                  )}
                 </div>
               )}
 
