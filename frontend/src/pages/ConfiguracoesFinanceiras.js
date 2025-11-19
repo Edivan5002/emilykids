@@ -707,6 +707,25 @@ const ConfiguracoesFinanceiras = () => {
     );
   }
 
+  // Lógica de paginação
+  // 1. Categorias de Receita
+  const totalPaginasReceitas = Math.ceil(categoriasReceita.length / ITENS_POR_PAGINA);
+  const indiceInicialReceitas = (paginaReceitas - 1) * ITENS_POR_PAGINA;
+  const indiceFinalReceitas = indiceInicialReceitas + ITENS_POR_PAGINA;
+  const receitasPaginadas = categoriasReceita.slice(indiceInicialReceitas, indiceFinalReceitas);
+  
+  // 2. Categorias de Despesa
+  const totalPaginasDespesas = Math.ceil(categoriasDespesa.length / ITENS_POR_PAGINA);
+  const indiceInicialDespesas = (paginaDespesas - 1) * ITENS_POR_PAGINA;
+  const indiceFinalDespesas = indiceInicialDespesas + ITENS_POR_PAGINA;
+  const despesasPaginadas = categoriasDespesa.slice(indiceInicialDespesas, indiceFinalDespesas);
+  
+  // 3. Centros de Custo
+  const totalPaginasCentros = Math.ceil(centrosCusto.length / ITENS_POR_PAGINA);
+  const indiceInicialCentros = (paginaCentros - 1) * ITENS_POR_PAGINA;
+  const indiceFinalCentros = indiceInicialCentros + ITENS_POR_PAGINA;
+  const centrosPaginados = centrosCusto.slice(indiceInicialCentros, indiceFinalCentros);
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
