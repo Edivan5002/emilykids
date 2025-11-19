@@ -367,7 +367,7 @@ const ConfiguracoesFinanceiras = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {categoriasReceita.map((cat) => (
+        {receitasPaginadas.map((cat) => (
           <div key={cat.id} className="bg-white p-4 rounded-lg shadow border-l-4" style={{borderLeftColor: cat.cor}}>
             <div className="flex justify-between items-start mb-2">
               <div>
