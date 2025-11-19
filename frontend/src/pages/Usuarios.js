@@ -21,6 +21,10 @@ const Usuarios = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState(null);
   
+  // Estado para paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const ITENS_POR_PAGINA = 20;
+  
   // RBAC Data
   const [roles, setRoles] = useState([]);
   const [groups, setGroups] = useState([]);
