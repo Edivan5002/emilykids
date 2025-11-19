@@ -24,6 +24,10 @@ const Vendas = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cancelDialog, setCancelDialog] = useState({ open: false, vendaId: null, motivo: '' });
+  
+  // Paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const ITENS_POR_PAGINA = 20;
 
   // Filtros
   const [filtros, setFiltros] = useState({
