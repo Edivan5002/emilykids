@@ -909,27 +909,44 @@ const Logs = () => {
                   )}
 
                   {totalPagesSeguranca > 1 && (
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-600">
-                        Página {pageSeguranca} de {totalPagesSeguranca}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPageSeguranca(p => Math.max(1, p - 1))}
-                          disabled={pageSeguranca === 1}
-                        >
-                          <ChevronLeft size={16} />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPageSeguranca(p => Math.min(totalPagesSeguranca, p + 1))}
-                          disabled={pageSeguranca === totalPagesSeguranca}
-                        >
-                          <ChevronRight size={16} />
-                        </Button>
+                    <div className="mt-4 p-4 border rounded-lg bg-white">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-600">
+                          Página {pageSeguranca} de {totalPagesSeguranca} | Mostrando {(pageSeguranca - 1) * 20 + 1} a {Math.min(pageSeguranca * 20, totalLogsSeguranca)} de {totalLogsSeguranca} registros
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPageSeguranca(p => Math.max(1, p - 1))}
+                            disabled={pageSeguranca === 1}
+                          >
+                            <ChevronLeft size={16} />
+                            Anterior
+                          </Button>
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: totalPagesSeguranca }, (_, i) => i + 1).map((pagina) => (
+                              <Button
+                                key={pagina}
+                                variant={pageSeguranca === pagina ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setPageSeguranca(pagina)}
+                                className={pageSeguranca === pagina ? "bg-blue-600 text-white" : ""}
+                              >
+                                {pagina}
+                              </Button>
+                            ))}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPageSeguranca(p => Math.min(totalPagesSeguranca, p + 1))}
+                            disabled={pageSeguranca === totalPagesSeguranca}
+                          >
+                            Próxima
+                            <ChevronRight size={16} />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )}
