@@ -5685,10 +5685,10 @@ async def confirmar_nota_fiscal(nota_id: str, current_user: dict = Depends(get_c
     
     # INTEGRAÇÃO: Criar conta a pagar automaticamente
     try:
-        # Obter informações de pagamento da nota fiscal
-        forma_pagamento = nota.get("forma_pagamento", "boleto")
-        tipo_pagamento = nota.get("tipo_pagamento", "avista")
-        numero_parcelas = nota.get("numero_parcelas", 1)
+        # Obter informações de pagamento da nota fiscal com valores padrão
+        forma_pagamento = nota.get("forma_pagamento") or "boleto"
+        tipo_pagamento = nota.get("tipo_pagamento") or "avista"
+        numero_parcelas = nota.get("numero_parcelas") or 1
         data_vencimento = nota.get("data_vencimento")
         
         # Se não tem data de vencimento, usar 30 dias a partir de hoje
