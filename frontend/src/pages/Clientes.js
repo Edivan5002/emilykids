@@ -32,6 +32,10 @@ const Clientes = () => {
   const [toggleDialog, setToggleDialog] = useState({ open: false, id: null, nome: '', ativo: false });
   const [financeiroDialog, setFinanceiroDialog] = useState({ open: false, id: null, nome: '' });
   const [loading, setLoading] = useState(false);
+  
+  // Paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const ITENS_POR_PAGINA = 20;
 
   useEffect(() => {
     fetchClientes();
