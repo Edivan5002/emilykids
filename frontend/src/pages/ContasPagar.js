@@ -924,11 +924,11 @@ const ModalDetalhes = ({ conta, onClose, formatCurrency, formatDate, getStatusBa
             </div>
             <div>
               <span className="text-sm text-gray-600">Categoria:</span>
-              <div className="font-semibold capitalize">{conta.categoria.replace('_', ' ')}</div>
+              <div className="font-semibold capitalize">{conta.categoria ? conta.categoria.replace('_', ' ') : 'Não informado'}</div>
             </div>
             <div>
               <span className="text-sm text-gray-600">Forma de Pagamento:</span>
-              <div className="font-semibold capitalize">{conta.forma_pagamento.replace('_', ' ')}</div>
+              <div className="font-semibold capitalize">{conta.forma_pagamento ? conta.forma_pagamento.replace('_', ' ') : 'Não informado'}</div>
             </div>
           </div>
 
