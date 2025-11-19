@@ -74,6 +74,11 @@ const Orcamentos = () => {
     fetchData();
   }, []);
 
+  // Resetar página ao mudar filtros
+  useEffect(() => {
+    setPaginaAtual(1);
+  }, [filtros]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
