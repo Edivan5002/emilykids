@@ -866,7 +866,7 @@ const Estoque = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {movimentacoes.map(mov => {
+                {movimentacoesPaginadas.map(mov => {
                   const produto = produtos.find(p => p.id === mov.produto_id);
                   return (
                     <div key={mov.id} className="p-4 border rounded-lg hover:bg-gray-50">
