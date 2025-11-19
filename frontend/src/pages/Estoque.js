@@ -853,6 +853,50 @@ const Estoque = () => {
                     <p className="text-center text-gray-500 py-8">Nenhum inventário concluído</p>
                   )}
                 </div>
+
+                {/* Paginação - Inventário Histórico */}
+                {inventarios.filter(inv => inv.status !== 'em_andamento').length > ITENS_POR_PAGINA && (
+                  <div className="mt-4 p-4 border rounded-lg bg-white">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-600">
+                        Página {paginaInventarioHistorico} de {totalPaginasInventario} | Mostrando {indiceInicialInventario + 1} a {Math.min(indiceFinalInventario, inventarios.length)} de {inventarios.filter(inv => inv.status !== 'em_andamento').length} inventários
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPaginaInventarioHistorico(p => Math.max(1, p - 1))}
+                          disabled={paginaInventarioHistorico === 1}
+                        >
+                          <ChevronLeft size={16} />
+                          Anterior
+                        </Button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: totalPaginasInventario }, (_, i) => i + 1).map((pagina) => (
+                            <Button
+                              key={pagina}
+                              variant={paginaInventarioHistorico === pagina ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setPaginaInventarioHistorico(pagina)}
+                              className={paginaInventarioHistorico === pagina ? "bg-blue-600 text-white" : ""}
+                            >
+                              {pagina}
+                            </Button>
+                          ))}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPaginaInventarioHistorico(p => Math.min(totalPaginasInventario, p + 1))}
+                          disabled={paginaInventarioHistorico === totalPaginasInventario}
+                        >
+                          Próxima
+                          <ChevronRight size={16} />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
