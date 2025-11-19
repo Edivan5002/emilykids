@@ -57,6 +57,7 @@ const Categorias = () => {
     }
 
     setFilteredCategorias(filtered);
+    setPaginaAtual(1); // Resetar página ao filtrar
   }, [searchTerm, marcaFilter, statusFilter, categorias]);
 
   const fetchCategorias = async () => {
