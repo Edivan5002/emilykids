@@ -25,6 +25,20 @@ const NotasFiscais = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cancelDialog, setCancelDialog] = useState({ open: false, notaId: null, confirmada: false, motivo: '' });
+  
+  // Estados para controle de expansão/colapso
+  const [itensExpandidos, setItensExpandidos] = useState({});
+  const [contasExpandidas, setContasExpandidas] = useState({});
+  
+  // Estados para filtros
+  const [filtros, setFiltros] = useState({
+    numero: '',
+    fornecedor_id: '',
+    data_inicio: '',
+    data_fim: '',
+    status: ''
+  });
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [historicoDialog, setHistoricoDialog] = useState({ open: false, produtoId: null, produtoNome: '', historico: [], loading: false });
   
   const [formData, setFormData] = useState({
