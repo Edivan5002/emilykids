@@ -715,6 +715,50 @@ const Relatorios = () => {
                       <p className="text-center text-gray-500 py-4">Nenhum dado disponível</p>
                     )}
                   </div>
+
+                  {/* Paginação - Vendas por Vendedor */}
+                  {vendedoresArray.length > ITENS_POR_PAGINA && (
+                    <div className="mt-4 p-4 border rounded-lg bg-white">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-600">
+                          Página {paginaVendasVendedor} de {totalPaginasVendedor} | Mostrando {indiceInicialVendedor + 1} a {Math.min(indiceFinalVendedor, vendedoresArray.length)} de {vendedoresArray.length} vendedores
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPaginaVendasVendedor(p => Math.max(1, p - 1))}
+                            disabled={paginaVendasVendedor === 1}
+                          >
+                            <ChevronLeft size={16} />
+                            Anterior
+                          </Button>
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: totalPaginasVendedor }, (_, i) => i + 1).map((pagina) => (
+                              <Button
+                                key={pagina}
+                                variant={paginaVendasVendedor === pagina ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setPaginaVendasVendedor(pagina)}
+                                className={paginaVendasVendedor === pagina ? "bg-blue-600 text-white" : ""}
+                              >
+                                {pagina}
+                              </Button>
+                            ))}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPaginaVendasVendedor(p => Math.min(totalPaginasVendedor, p + 1))}
+                            disabled={paginaVendasVendedor === totalPaginasVendedor}
+                          >
+                            Próxima
+                            <ChevronRight size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
