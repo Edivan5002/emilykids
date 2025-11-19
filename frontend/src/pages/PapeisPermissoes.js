@@ -248,6 +248,18 @@ const PapeisPermissoes = () => {
     }
   };
 
+  // Lógica de paginação para Roles
+  const totalPaginasRoles = Math.ceil(roles.length / ITENS_POR_PAGINA);
+  const indiceInicialRoles = (paginaRoles - 1) * ITENS_POR_PAGINA;
+  const indiceFinalRoles = indiceInicialRoles + ITENS_POR_PAGINA;
+  const rolesPaginados = roles.slice(indiceInicialRoles, indiceFinalRoles);
+
+  // Lógica de paginação para Histórico
+  const totalPaginasHistorico = Math.ceil(permissionHistory.length / ITENS_POR_PAGINA);
+  const indiceInicialHistorico = (paginaHistorico - 1) * ITENS_POR_PAGINA;
+  const indiceFinalHistorico = indiceInicialHistorico + ITENS_POR_PAGINA;
+  const historicoPaginado = permissionHistory.slice(indiceInicialHistorico, indiceFinalHistorico);
+
   return (
     <div className="page-container">
       <div className="mb-8">
