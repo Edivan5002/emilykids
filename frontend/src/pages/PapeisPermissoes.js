@@ -496,6 +496,52 @@ const PapeisPermissoes = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Controles de Paginação - Histórico */}
+          {permissionHistory.length > ITENS_POR_PAGINA && (
+            <Card className="mt-4">
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Página {paginaHistorico} de {totalPaginasHistorico} | Mostrando {indiceInicialHistorico + 1} a {Math.min(indiceFinalHistorico, permissionHistory.length)} de {permissionHistory.length} registros
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPaginaHistorico(p => Math.max(1, p - 1))}
+                      disabled={paginaHistorico === 1}
+                    >
+                      <ChevronLeft size={16} />
+                      Anterior
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPaginasHistorico }, (_, i) => i + 1).map((pagina) => (
+                        <Button
+                          key={pagina}
+                          variant={paginaHistorico === pagina ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setPaginaHistorico(pagina)}
+                          className={paginaHistorico === pagina ? "bg-blue-600 text-white" : ""}
+                        >
+                          {pagina}
+                        </Button>
+                      ))}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPaginaHistorico(p => Math.min(totalPaginasHistorico, p + 1))}
+                      disabled={paginaHistorico === totalPaginasHistorico}
+                    >
+                      Próxima
+                      <ChevronRight size={16} />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
 
