@@ -23,6 +23,10 @@ const Marcas = () => {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, nome: '' });
   const [toggleDialog, setToggleDialog] = useState({ open: false, id: null, nome: '', ativo: false });
   const [loading, setLoading] = useState(false);
+  
+  // Paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const ITENS_POR_PAGINA = 20;
 
   useEffect(() => {
     fetchMarcas();
