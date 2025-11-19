@@ -812,7 +812,7 @@ const Estoque = () => {
               <CardContent>
                 <div className="space-y-2">
                   {inventarios.filter(inv => inv.status !== 'em_andamento').length > 0 ? (
-                    inventarios.filter(inv => inv.status !== 'em_andamento').map(inv => (
+                    inventariosPaginados.filter(inv => inv.status !== 'em_andamento').map(inv => (
                       <div key={inv.id} className="border rounded-lg p-4">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
