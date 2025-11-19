@@ -387,7 +387,7 @@ const Usuarios = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {filteredUsuarios.map((usuario) => {
+            {usuariosPaginados.map((usuario) => {
               const userRole = getRoleById(usuario.role_id);
               
               return (
