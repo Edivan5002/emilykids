@@ -455,6 +455,8 @@ class NotaFiscalCreate(BaseModel):
     condicoes_pagamento: Optional[str] = None
     data_vencimento: Optional[str] = None
     numero_parcelas: int = 1
+    forma_pagamento: str = "boleto"
+    tipo_pagamento: str = "avista"
 
 class NotaFiscalUpdate(BaseModel):
     numero: Optional[str] = None
