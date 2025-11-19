@@ -63,13 +63,20 @@ const NotasFiscais = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [filtros]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Sempre carregar notas fiscais
-      const nfRes = await axios.get(`${API}/notas-fiscais`);
+      // Carregar notas fiscais com filtros
+      const params = new URLSearchParams();
+      if (filtros.numero) params.append('numero', filtros.numero);
+      if (filtros.fornecedor_id) params.append('fornecedor_id', filtros.fornecedor_id);
+      if (filtros.data_inicio) params.append('data_inicio', filtros.data_inicio);
+      if (filtros.data_fim) params.append('data_fim', filtros.data_fim);
+      if (filtros.status) params.append('status', filtros.status);
+      
+      const nfRes = await axios.get(`${API}/notas-fiscais?${params.toString()}`);
       const notasFiscaisData = nfRes.data?.data || nfRes.data || [];
       setNotasFiscais(notasFiscaisData);
       
