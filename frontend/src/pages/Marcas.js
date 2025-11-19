@@ -50,6 +50,7 @@ const Marcas = () => {
     }
 
     setFilteredMarcas(filtered);
+    setPaginaAtual(1); // Resetar página ao filtrar
   }, [searchTerm, statusFilter, marcas]);
 
   const fetchMarcas = async () => {
