@@ -28,6 +28,12 @@ const ConfiguracoesFinanceiras = () => {
   const [centroEditando, setCentroEditando] = useState(null);
   const [usuarios, setUsuarios] = useState([]);
   
+  // Estados de paginação
+  const ITENS_POR_PAGINA = 20;
+  const [paginaReceitas, setPaginaReceitas] = useState(1);
+  const [paginaDespesas, setPaginaDespesas] = useState(1);
+  const [paginaCentros, setPaginaCentros] = useState(1);
+  
   const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
 
   useEffect(() => {
