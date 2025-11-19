@@ -66,6 +66,11 @@ const Estoque = () => {
     fetchInventarios();
   }, []);
 
+  // Resetar páginas ao mudar filtros
+  useEffect(() => {
+    setPaginaVisaoGeral(1);
+  }, [filtros]);
+
   const fetchData = async () => {
     try {
       // Sempre carregar produtos
