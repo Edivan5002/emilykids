@@ -52,6 +52,15 @@ const Estoque = () => {
     motivo: ''
   });
 
+  // Estados de paginação para todas as áreas
+  const ITENS_POR_PAGINA = 20;
+  const [paginaVisaoGeral, setPaginaVisaoGeral] = useState(1);
+  const [paginaInventarioHistorico, setPaginaInventarioHistorico] = useState(1);
+  const [paginaMovimentacoes, setPaginaMovimentacoes] = useState(1);
+  const [paginaAlertasAbaixo, setPaginaAlertasAbaixo] = useState(1);
+  const [paginaAlertasAcima, setPaginaAlertasAcima] = useState(1);
+  const [paginaUltimosAjustes, setPaginaUltimosAjustes] = useState(1);
+
   useEffect(() => {
     fetchData();
     fetchInventarios();
