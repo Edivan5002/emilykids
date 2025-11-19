@@ -151,6 +151,12 @@ const Categorias = () => {
     return marca ? marca.nome : '-';
   };
 
+  // Lógica de paginação
+  const totalPaginas = Math.ceil(filteredCategorias.length / ITENS_POR_PAGINA);
+  const indiceInicial = (paginaAtual - 1) * ITENS_POR_PAGINA;
+  const indiceFinal = indiceInicial + ITENS_POR_PAGINA;
+  const categoriasPaginadas = filteredCategorias.slice(indiceInicial, indiceFinal);
+
   return (
     <div className="page-container" data-testid="categorias-page">
       <div className="flex justify-between items-center mb-6 sm:mb-8">
