@@ -362,6 +362,52 @@ const PapeisPermissoes = () => {
               </Card>
             ))}
           </div>
+
+          {/* Controles de Paginação - Roles */}
+          {roles.length > ITENS_POR_PAGINA && (
+            <Card className="mt-4">
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Página {paginaRoles} de {totalPaginasRoles} | Mostrando {indiceInicialRoles + 1} a {Math.min(indiceFinalRoles, roles.length)} de {roles.length} papéis
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPaginaRoles(p => Math.max(1, p - 1))}
+                      disabled={paginaRoles === 1}
+                    >
+                      <ChevronLeft size={16} />
+                      Anterior
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPaginasRoles }, (_, i) => i + 1).map((pagina) => (
+                        <Button
+                          key={pagina}
+                          variant={paginaRoles === pagina ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setPaginaRoles(pagina)}
+                          className={paginaRoles === pagina ? "bg-blue-600 text-white" : ""}
+                        >
+                          {pagina}
+                        </Button>
+                      ))}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPaginaRoles(p => Math.min(totalPaginasRoles, p + 1))}
+                      disabled={paginaRoles === totalPaginasRoles}
+                    >
+                      Próxima
+                      <ChevronRight size={16} />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* PERMISSIONS TAB */}
