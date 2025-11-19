@@ -911,7 +911,7 @@ const ModalDetalhes = ({ conta, onClose, formatCurrency, formatDate, getStatusBa
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-gray-600">Forma de Pagamento:</span>
-              <div className="font-semibold capitalize">{conta.forma_pagamento.replace('_', ' ')}</div>
+              <div className="font-semibold capitalize">{conta.forma_pagamento ? conta.forma_pagamento.replace('_', ' ') : 'Não informado'}</div>
             </div>
             <div>
               <span className="text-gray-600">Criado em:</span>
