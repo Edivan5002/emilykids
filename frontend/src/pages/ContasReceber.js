@@ -15,8 +15,8 @@ import {
   CheckCircle, 
   X,
   Filter,
-  Download,
-  Calendar
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 
