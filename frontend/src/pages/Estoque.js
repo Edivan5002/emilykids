@@ -401,6 +401,47 @@ const Estoque = () => {
     return tipo === 'entrada' ? 'text-green-600' : 'text-red-600';
   };
 
+  // === LÓGICA DE PAGINAÇÃO PARA TODAS AS ÁREAS ===
+  
+  // 1. Visão Geral (produtosFiltrados)
+  const totalPaginasVisaoGeral = Math.ceil(produtosFiltrados.length / ITENS_POR_PAGINA);
+  const indiceInicialVisaoGeral = (paginaVisaoGeral - 1) * ITENS_POR_PAGINA;
+  const indiceFinalVisaoGeral = indiceInicialVisaoGeral + ITENS_POR_PAGINA;
+  const produtosPaginados = produtosFiltrados.slice(indiceInicialVisaoGeral, indiceFinalVisaoGeral);
+  
+  // 2. Inventário - Histórico
+  const totalPaginasInventario = Math.ceil(inventarios.length / ITENS_POR_PAGINA);
+  const indiceInicialInventario = (paginaInventarioHistorico - 1) * ITENS_POR_PAGINA;
+  const indiceFinalInventario = indiceInicialInventario + ITENS_POR_PAGINA;
+  const inventariosPaginados = inventarios.slice(indiceInicialInventario, indiceFinalInventario);
+  
+  // 3. Movimentações
+  const totalPaginasMovimentacoes = Math.ceil(movimentacoes.length / ITENS_POR_PAGINA);
+  const indiceInicialMovimentacoes = (paginaMovimentacoes - 1) * ITENS_POR_PAGINA;
+  const indiceFinalMovimentacoes = indiceInicialMovimentacoes + ITENS_POR_PAGINA;
+  const movimentacoesPaginadas = movimentacoes.slice(indiceInicialMovimentacoes, indiceFinalMovimentacoes);
+  
+  // 4. Alertas - Estoque Abaixo
+  const alertasAbaixo = alertas?.alertas_minimo || [];
+  const totalPaginasAlertasAbaixo = Math.ceil(alertasAbaixo.length / ITENS_POR_PAGINA);
+  const indiceInicialAlertasAbaixo = (paginaAlertasAbaixo - 1) * ITENS_POR_PAGINA;
+  const indiceFinalAlertasAbaixo = indiceInicialAlertasAbaixo + ITENS_POR_PAGINA;
+  const alertasAbaixoPaginados = alertasAbaixo.slice(indiceInicialAlertasAbaixo, indiceFinalAlertasAbaixo);
+  
+  // 5. Alertas - Estoque Acima
+  const alertasAcima = alertas?.alertas_maximo || [];
+  const totalPaginasAlertasAcima = Math.ceil(alertasAcima.length / ITENS_POR_PAGINA);
+  const indiceInicialAlertasAcima = (paginaAlertasAcima - 1) * ITENS_POR_PAGINA;
+  const indiceFinalAlertasAcima = indiceInicialAlertasAcima + ITENS_POR_PAGINA;
+  const alertasAcimaPaginados = alertasAcima.slice(indiceInicialAlertasAcima, indiceFinalAlertasAcima);
+  
+  // 6. Últimos Ajustes
+  const ultimosAjustes = movimentacoes.filter(m => m.tipo === 'ajuste_manual');
+  const totalPaginasAjustes = Math.ceil(ultimosAjustes.length / ITENS_POR_PAGINA);
+  const indiceInicialAjustes = (paginaUltimosAjustes - 1) * ITENS_POR_PAGINA;
+  const indiceFinalAjustes = indiceInicialAjustes + ITENS_POR_PAGINA;
+  const ajustesPaginados = ultimosAjustes.slice(indiceInicialAjustes, indiceFinalAjustes);
+
   return (
     <div className="page-container" data-testid="estoque-page">
       <div className="mb-8">
