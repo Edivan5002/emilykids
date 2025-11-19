@@ -38,6 +38,10 @@ const Administracao = () => {
   const [confirmDialog, setConfirmDialog] = useState({ open: false, action: null, data: {} });
   const [detalhesDialog, setDetalhesDialog] = useState({ open: false, log: null });
   
+  // Paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const ITENS_POR_PAGINA = 20;
+  
   // Estados para cada tipo de operação
   const [diasVendas, setDiasVendas] = useState(90);
   const [diasOrcamentos, setDiasOrcamentos] = useState(90);
