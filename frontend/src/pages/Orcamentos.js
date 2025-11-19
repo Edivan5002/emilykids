@@ -832,7 +832,7 @@ const Orcamentos = () => {
             </CardContent>
           </Card>
         ) : (
-          orcamentosFiltrados.map((orcamento) => (
+          orcamentosPaginados.map((orcamento) => (
           <Card key={orcamento.id} data-testid={`orcamento-${orcamento.id}`}>
             <CardHeader>
               <div className="flex items-center justify-between">
