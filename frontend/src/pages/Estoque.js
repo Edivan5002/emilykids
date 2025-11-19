@@ -1041,6 +1041,50 @@ const Estoque = () => {
                     Nenhum produto com estoque abaixo do mínimo
                   </div>
                 )}
+
+                {/* Paginação - Alertas Abaixo */}
+                {alertasAbaixo.length > ITENS_POR_PAGINA && (
+                  <div className="mt-4 p-4 border rounded-lg bg-white">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-600">
+                        Página {paginaAlertasAbaixo} de {totalPaginasAlertasAbaixo} | Mostrando {indiceInicialAlertasAbaixo + 1} a {Math.min(indiceFinalAlertasAbaixo, alertasAbaixo.length)} de {alertasAbaixo.length} produtos
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPaginaAlertasAbaixo(p => Math.max(1, p - 1))}
+                          disabled={paginaAlertasAbaixo === 1}
+                        >
+                          <ChevronLeft size={16} />
+                          Anterior
+                        </Button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: totalPaginasAlertasAbaixo }, (_, i) => i + 1).map((pagina) => (
+                            <Button
+                              key={pagina}
+                              variant={paginaAlertasAbaixo === pagina ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setPaginaAlertasAbaixo(pagina)}
+                              className={paginaAlertasAbaixo === pagina ? "bg-blue-600 text-white" : ""}
+                            >
+                              {pagina}
+                            </Button>
+                          ))}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPaginaAlertasAbaixo(p => Math.min(totalPaginasAlertasAbaixo, p + 1))}
+                          disabled={paginaAlertasAbaixo === totalPaginasAlertasAbaixo}
+                        >
+                          Próxima
+                          <ChevronRight size={16} />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
