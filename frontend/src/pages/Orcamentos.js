@@ -458,6 +458,12 @@ const Orcamentos = () => {
     .filter(o => o.status === 'aberto')
     .reduce((sum, o) => sum + o.total, 0);
 
+  // Lógica de paginação
+  const totalPaginas = Math.ceil(orcamentosFiltrados.length / ITENS_POR_PAGINA);
+  const indiceInicial = (paginaAtual - 1) * ITENS_POR_PAGINA;
+  const indiceFinal = indiceInicial + ITENS_POR_PAGINA;
+  const orcamentosPaginados = orcamentosFiltrados.slice(indiceInicial, indiceFinal);
+
   return (
     <div className="page-container" data-testid="orcamentos-page">
       <div className="flex justify-between items-center mb-8">
