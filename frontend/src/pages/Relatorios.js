@@ -1048,7 +1048,7 @@ const Relatorios = () => {
                   {/* Logs Recentes */}
                   <h3 className="font-semibold mb-3">Últimas Ações</h3>
                   <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {auditoria.logs_recentes.map((log, index) => (
+                    {logsAuditoriaPaginados.map((log, index) => (
                       <div key={index} className="p-3 border rounded-lg text-sm hover:bg-gray-50">
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-medium">{log.user_nome}</span>
