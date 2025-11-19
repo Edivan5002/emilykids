@@ -21,7 +21,9 @@ import {
   History,
   Eye,
   UserCog,
-  FileEdit
+  FileEdit,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 
