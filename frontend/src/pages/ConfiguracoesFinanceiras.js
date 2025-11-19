@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { AlertCircle, Settings, DollarSign, CreditCard, Building2, Save, Plus, Edit2, Trash2, Check, X, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, Settings, DollarSign, CreditCard, Building2, Save, Plus, Edit2, Trash2, Check, X, Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const ConfiguracoesFinanceiras = () => {
   const { user } = useAuth();
