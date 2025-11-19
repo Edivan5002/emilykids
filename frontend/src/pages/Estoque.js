@@ -1223,10 +1223,7 @@ const Estoque = () => {
 
               <div className="space-y-4">
                 <h3 className="font-semibold text-gray-900">Últimos Ajustes Manuais</h3>
-                {movimentacoes
-                  .filter(m => m.referencia_tipo === 'ajuste_manual')
-                  .slice(0, 10)
-                  .map(mov => {
+                {ajustesPaginados.map(mov => {
                     const produto = produtos.find(p => p.id === mov.produto_id);
                     return (
                       <div key={mov.id} className="p-4 border rounded-lg hover:bg-gray-50">
