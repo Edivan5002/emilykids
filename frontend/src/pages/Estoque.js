@@ -578,7 +578,7 @@ const Estoque = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {produtosFiltrados.map(produto => {
+                    {produtosPaginados.map(produto => {
                       const status = getEstoqueStatus(produto);
                       return (
                         <tr key={produto.id} className="border-b hover:bg-gray-50">
