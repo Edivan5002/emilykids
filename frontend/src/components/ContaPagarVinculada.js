@@ -119,7 +119,7 @@ const ContaPagarVinculada = ({ notaId }) => {
         <div>
           <span className="text-xs text-gray-600">Forma de Pagamento</span>
           <div className="font-semibold text-gray-800 capitalize">
-            {conta.forma_pagamento.replace('_', ' ')}
+            {conta.forma_pagamento ? conta.forma_pagamento.replace('_', ' ') : 'Não informado'}
           </div>
         </div>
       </div>
