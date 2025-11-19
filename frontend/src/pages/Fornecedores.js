@@ -69,6 +69,7 @@ const Fornecedores = () => {
     }
 
     setFilteredFornecedores(filtered);
+    setPaginaAtual(1); // Resetar página ao filtrar
   }, [searchTerm, statusFilter, fornecedores]);
 
   const fetchFornecedores = async () => {
