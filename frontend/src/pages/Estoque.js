@@ -933,7 +933,7 @@ const Estoque = () => {
               <CardContent>
                 {alertas && alertas.alertas_minimo.length > 0 ? (
                   <div className="space-y-2">
-                    {alertas.alertas_minimo.map(p => (
+                    {alertasAbaixoPaginados.map(p => (
                       <div key={p.id} className="p-3 bg-red-50 rounded-lg border border-red-200">
                         <div className="flex justify-between items-center">
                           <div>
