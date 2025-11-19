@@ -24,6 +24,10 @@ const Orcamentos = () => {
   const [subcategorias, setSubcategorias] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const ITENS_POR_PAGINA = 20;
 
   const [formData, setFormData] = useState({
     cliente_id: '',
