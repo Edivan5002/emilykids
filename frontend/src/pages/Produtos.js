@@ -1574,7 +1574,7 @@ const Produtos = () => {
                 </td>
               </tr>
             ) : (
-              produtosFiltrados.map((p) => (
+              produtosPaginados.map((p) => (
               <tr key={p.id}>
                 <td className="w-20 hidden sm:table-cell">
                   {p.fotos && p.fotos.length > 0 ? (
