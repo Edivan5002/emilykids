@@ -26,6 +26,10 @@ const Subcategorias = () => {
   const [formData, setFormData] = useState({ nome: '', descricao: '', categoria_id: '', ativo: true });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, nome: '' });
   const [toggleDialog, setToggleDialog] = useState({ open: false, id: null, nome: '', ativo: false });
+  
+  // Paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const ITENS_POR_PAGINA = 20;
 
   useEffect(() => {
     fetchData();
