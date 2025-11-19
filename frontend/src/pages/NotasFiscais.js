@@ -40,6 +40,10 @@ const NotasFiscais = () => {
   });
   const [historicoDialog, setHistoricoDialog] = useState({ open: false, produtoId: null, produtoNome: '', historico: [], loading: false });
   
+  // Estado para paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const ITENS_POR_PAGINA = 20;
+  
   const [formData, setFormData] = useState({
     numero: '',
     serie: '',
