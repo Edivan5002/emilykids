@@ -854,7 +854,7 @@ const Relatorios = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {curvaABC.produtos.slice(0, 20).map((produto, index) => (
+                        {produtosCurvaABCPaginados.map((produto, index) => (
                           <tr key={index} className="border-b hover:bg-gray-50">
                             <td className="p-3 text-center">
                               <span className={`px-2 py-1 rounded font-bold text-white ${
