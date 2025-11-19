@@ -631,7 +631,7 @@ const ConfiguracoesFinanceiras = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {centrosCusto.map((centro) => (
+            {centrosPaginados.map((centro) => (
               <tr key={centro.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 text-sm font-mono">{centro.codigo}</td>
                 <td className="px-4 py-3">
