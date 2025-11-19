@@ -257,7 +257,7 @@ const Clientes = () => {
                 </td>
               </tr>
             ) : (
-              filteredClientes.map((c) => (
+              clientesPaginados.map((c) => (
               <tr key={c.id}>
                 <td className="font-medium">{c.nome}</td>
                 <td className="hidden sm:table-cell">{c.cpf_cnpj}</td>
