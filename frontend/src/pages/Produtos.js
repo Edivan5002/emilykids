@@ -34,6 +34,10 @@ const Produtos = () => {
   const [loading, setLoading] = useState(false);
   const [relatorios, setRelatorios] = useState(null);
   
+  // Paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const ITENS_POR_PAGINA = 20;
+  
   // Estados para filtros em cascata
   const [categoriasFiltradas, setCategoriasFiltradas] = useState([]);
   const [subcategoriasFiltradas, setSubcategoriasFiltradas] = useState([]);
