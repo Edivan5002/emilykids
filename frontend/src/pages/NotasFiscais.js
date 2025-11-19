@@ -714,6 +714,13 @@ const NotasFiscais = () => {
                 </div>
               </div>
 
+              {/* Conta a Pagar Vinculada */}
+              {nota.confirmado && !nota.cancelada && (
+                <div className="mb-4">
+                  <ContaPagarVinculada notaId={nota.id} />
+                </div>
+              )}
+
               {nota.status === 'cancelada' || nota.cancelada ? (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-sm text-red-800 flex items-center gap-2">
