@@ -60,6 +60,7 @@ const Clientes = () => {
     }
 
     setFilteredClientes(filtered);
+    setPaginaAtual(1); // Resetar página ao filtrar
   }, [searchTerm, statusFilter, clientes]);
 
   const fetchClientes = async () => {
