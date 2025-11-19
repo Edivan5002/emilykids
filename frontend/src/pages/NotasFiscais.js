@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, FileText, Check, Upload, AlertCircle, Package, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import ContaPagarVinculada from '../components/ContaPagarVinculada';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
