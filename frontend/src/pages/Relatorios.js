@@ -619,7 +619,7 @@ const Relatorios = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {Object.entries(vendasPorPeriodo.dados).map(([periodo, dados]) => (
+                        {vendasDiaPaginadas.map(([periodo, dados]) => (
                           <tr key={periodo} className="border-b hover:bg-gray-50">
                             <td className="p-3 text-sm">{periodo}</td>
                             <td className="p-3 text-sm text-center">{dados.quantidade}</td>
