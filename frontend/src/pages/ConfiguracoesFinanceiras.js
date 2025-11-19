@@ -764,6 +764,46 @@ const ConfiguracoesFinanceiras = () => {
         </table>
       </div>
 
+      {/* Paginação - Centros de Custo */}
+      {centrosCusto.length > ITENS_POR_PAGINA && (
+        <div className="mt-4 p-4 border rounded-lg bg-white">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Página {paginaCentros} de {totalPaginasCentros} | Mostrando {indiceInicialCentros + 1} a {Math.min(indiceFinalCentros, centrosCusto.length)} de {centrosCusto.length} centros
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPaginaCentros(p => Math.max(1, p - 1))}
+                disabled={paginaCentros === 1}
+                className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50 flex items-center gap-1"
+              >
+                <ChevronLeft size={16} />
+                Anterior
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPaginasCentros }, (_, i) => i + 1).map((pagina) => (
+                  <button
+                    key={pagina}
+                    onClick={() => setPaginaCentros(pagina)}
+                    className={`px-3 py-1 border rounded ${paginaCentros === pagina ? 'bg-blue-600 text-white' : 'hover:bg-gray-50'}`}
+                  >
+                    {pagina}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setPaginaCentros(p => Math.min(totalPaginasCentros, p + 1))}
+                disabled={paginaCentros === totalPaginasCentros}
+                className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50 flex items-center gap-1"
+              >
+                Próxima
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Centro de Custo */}
       {modalCentroAberto && (
         <ModalCentroCusto
