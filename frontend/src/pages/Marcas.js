@@ -203,7 +203,7 @@ const Marcas = () => {
                 </td>
               </tr>
             ) : (
-              filteredMarcas.map((m) => (
+              marcasPaginadas.map((m) => (
               <tr key={m.id}>
                 <td className="font-medium">{m.nome}</td>
                 <td>
