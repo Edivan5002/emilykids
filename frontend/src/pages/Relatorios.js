@@ -961,6 +961,50 @@ const Relatorios = () => {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Paginação - Curva ABC */}
+                  {produtosCurvaABC.length > ITENS_POR_PAGINA && (
+                    <div className="mt-4 p-4 border rounded-lg bg-white">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-600">
+                          Página {paginaCurvaABC} de {totalPaginasCurvaABC} | Mostrando {indiceInicialCurvaABC + 1} a {Math.min(indiceFinalCurvaABC, produtosCurvaABC.length)} de {produtosCurvaABC.length} produtos
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPaginaCurvaABC(p => Math.max(1, p - 1))}
+                            disabled={paginaCurvaABC === 1}
+                          >
+                            <ChevronLeft size={16} />
+                            Anterior
+                          </Button>
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: totalPaginasCurvaABC }, (_, i) => i + 1).map((pagina) => (
+                              <Button
+                                key={pagina}
+                                variant={paginaCurvaABC === pagina ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setPaginaCurvaABC(pagina)}
+                                className={paginaCurvaABC === pagina ? "bg-blue-600 text-white" : ""}
+                              >
+                                {pagina}
+                              </Button>
+                            ))}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPaginaCurvaABC(p => Math.min(totalPaginasCurvaABC, p + 1))}
+                            disabled={paginaCurvaABC === totalPaginasCurvaABC}
+                          >
+                            Próxima
+                            <ChevronRight size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
