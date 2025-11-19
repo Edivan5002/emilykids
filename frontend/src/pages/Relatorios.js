@@ -36,6 +36,14 @@ const Relatorios = () => {
   const [marcas, setMarcas] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [subcategorias, setSubcategorias] = useState([]);
+  
+  // Estados de paginação
+  const ITENS_POR_PAGINA = 20;
+  const [paginaVendasDia, setPaginaVendasDia] = useState(1);
+  const [paginaVendasMes, setPaginaVendasMes] = useState(1);
+  const [paginaVendasVendedor, setPaginaVendasVendedor] = useState(1);
+  const [paginaCurvaABC, setPaginaCurvaABC] = useState(1);
+  const [paginaAuditoria, setPaginaAuditoria] = useState(1);
 
   useEffect(() => {
     fetchReferenceData();
