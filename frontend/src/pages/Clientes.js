@@ -228,6 +228,10 @@ const Clientes = () => {
         </Select>
       </div>
 
+      <h3 className="text-lg font-semibold text-gray-900 mb-4 mt-6">
+        Lista de Clientes - {filteredClientes.length} {filteredClientes.length === 1 ? 'registro' : 'registros'}
+      </h3>
+
       <div className="table-responsive">
         <table className="min-w-full">
           <thead>
