@@ -210,6 +210,7 @@ const Produtos = () => {
 
       const response = await axios.get(`${API}/produtos/busca-avancada?${params.toString()}`);
       setProdutosFiltrados(response.data);
+      setPaginaAtual(1); // Resetar página ao filtrar
     } catch (error) {
       toast.error('Erro ao aplicar filtros');
     }
