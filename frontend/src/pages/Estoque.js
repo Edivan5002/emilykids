@@ -967,7 +967,7 @@ const Estoque = () => {
               <CardContent>
                 {alertas && alertas.alertas_maximo.length > 0 ? (
                   <div className="space-y-2">
-                    {alertas.alertas_maximo.map(p => (
+                    {alertasAcimaPaginados.map(p => (
                       <div key={p.id} className="p-3 bg-orange-50 rounded-lg border border-orange-200">
                         <div className="flex justify-between items-center">
                           <div>
