@@ -693,95 +693,84 @@ const NotasFiscais = () => {
       {/* Filtros Avançados */}
       <Card className="mb-4 sm:mb-6">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Filter size={20} className="text-blue-600" />
-              <h3 className="font-semibold">Filtros de Pesquisa</h3>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setMostrarFiltros(!mostrarFiltros)}
-            >
-              {mostrarFiltros ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-            </Button>
+          <div className="flex items-center gap-2">
+            <Filter size={20} className="text-blue-600" />
+            <h3 className="font-semibold">Filtros de Pesquisa</h3>
           </div>
         </CardHeader>
-        {mostrarFiltros && (
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div>
-                <Label>Número da NF</Label>
-                <Input
-                  placeholder="Ex: 123"
-                  value={filtros.numero}
-                  onChange={(e) => setFiltros({...filtros, numero: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Fornecedor</Label>
-                <Select
-                  value={filtros.fornecedor_id || "todos"}
-                  onValueChange={(v) => setFiltros({...filtros, fornecedor_id: v === "todos" ? "" : v})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos</SelectItem>
-                    {fornecedores.map((f) => (
-                      <SelectItem key={f.id} value={f.id}>
-                        {f.razao_social || f.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Status</Label>
-                <Select
-                  value={filtros.status || "todos"}
-                  onValueChange={(v) => setFiltros({...filtros, status: v === "todos" ? "" : v})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos</SelectItem>
-                    <SelectItem value="rascunho">Rascunho</SelectItem>
-                    <SelectItem value="confirmada">Confirmada</SelectItem>
-                    <SelectItem value="cancelada">Cancelada</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Data Início</Label>
-                <Input
-                  type="date"
-                  value={filtros.data_inicio}
-                  onChange={(e) => setFiltros({...filtros, data_inicio: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Data Fim</Label>
-                <Input
-                  type="date"
-                  value={filtros.data_fim}
-                  onChange={(e) => setFiltros({...filtros, data_fim: e.target.value})}
-                />
-              </div>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div>
+              <Label>Número da NF</Label>
+              <Input
+                placeholder="Ex: 123"
+                value={filtros.numero}
+                onChange={(e) => setFiltros({...filtros, numero: e.target.value})}
+              />
             </div>
-            <div className="flex justify-end mt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setFiltros({ numero: '', fornecedor_id: '', data_inicio: '', data_fim: '', status: '' })}
+            <div>
+              <Label>Fornecedor</Label>
+              <Select
+                value={filtros.fornecedor_id || "todos"}
+                onValueChange={(v) => setFiltros({...filtros, fornecedor_id: v === "todos" ? "" : v})}
               >
-                Limpar Filtros
-              </Button>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  {fornecedores.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>
+                      {f.razao_social || f.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </CardContent>
-        )}
+            <div>
+              <Label>Status</Label>
+              <Select
+                value={filtros.status || "todas"}
+                onValueChange={(v) => setFiltros({...filtros, status: v === "todas" ? "" : v})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas</SelectItem>
+                  <SelectItem value="pendente">Pendentes</SelectItem>
+                  <SelectItem value="confirmada">Confirmadas</SelectItem>
+                  <SelectItem value="cancelada">Canceladas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Data Início</Label>
+              <Input
+                type="date"
+                value={filtros.data_inicio}
+                onChange={(e) => setFiltros({...filtros, data_inicio: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label>Data Fim</Label>
+              <Input
+                type="date"
+                value={filtros.data_fim}
+                onChange={(e) => setFiltros({...filtros, data_fim: e.target.value})}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setFiltros({ numero: '', fornecedor_id: '', data_inicio: '', data_fim: '', status: '' })}
+            >
+              Limpar Filtros
+            </Button>
+          </div>
+        </CardContent>
       </Card>
 
       {/* Estatísticas */}
