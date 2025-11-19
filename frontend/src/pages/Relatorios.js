@@ -648,7 +648,7 @@ const Relatorios = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {vendasPorVendedor.vendedores.map((vendedor, index) => (
+                    {vendedoresPaginados.map((vendedor, index) => (
                       <div key={index} className="p-4 border rounded-lg hover:bg-gray-50">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-3">
