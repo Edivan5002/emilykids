@@ -418,6 +418,46 @@ const ConfiguracoesFinanceiras = () => {
           }}
         />
       )}
+
+      {/* Paginação - Categorias de Receita */}
+      {categoriasReceita.length > ITENS_POR_PAGINA && (
+        <div className="mt-4 p-4 border rounded-lg bg-white">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Página {paginaReceitas} de {totalPaginasReceitas} | Mostrando {indiceInicialReceitas + 1} a {Math.min(indiceFinalReceitas, categoriasReceita.length)} de {categoriasReceita.length} categorias
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPaginaReceitas(p => Math.max(1, p - 1))}
+                disabled={paginaReceitas === 1}
+                className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50 flex items-center gap-1"
+              >
+                <ChevronLeft size={16} />
+                Anterior
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPaginasReceitas }, (_, i) => i + 1).map((pagina) => (
+                  <button
+                    key={pagina}
+                    onClick={() => setPaginaReceitas(pagina)}
+                    className={`px-3 py-1 border rounded ${paginaReceitas === pagina ? 'bg-blue-600 text-white' : 'hover:bg-gray-50'}`}
+                  >
+                    {pagina}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setPaginaReceitas(p => Math.min(totalPaginasReceitas, p + 1))}
+                disabled={paginaReceitas === totalPaginasReceitas}
+                className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50 flex items-center gap-1"
+              >
+                Próxima
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
