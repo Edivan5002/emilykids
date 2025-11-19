@@ -457,6 +457,76 @@ const NotasFiscais = () => {
                     </div>
                   </div>
 
+                  {/* Seção de Pagamento */}
+                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                      <DollarSign size={18} />
+                      Informações de Pagamento
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-3">
+                      <div>
+                        <Label>Forma de Pagamento *</Label>
+                        <Select 
+                          value={formData.forma_pagamento} 
+                          onValueChange={(v) => setFormData({ ...formData, forma_pagamento: v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="boleto">Boleto</SelectItem>
+                            <SelectItem value="pix">Pix</SelectItem>
+                            <SelectItem value="transferencia">Transferência</SelectItem>
+                            <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                            <SelectItem value="cheque">Cheque</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>Tipo de Pagamento *</Label>
+                        <Select 
+                          value={formData.tipo_pagamento} 
+                          onValueChange={(v) => setFormData({ ...formData, tipo_pagamento: v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="avista">À Vista</SelectItem>
+                            <SelectItem value="parcelado">Parcelado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      {formData.tipo_pagamento === 'parcelado' && (
+                        <div>
+                          <Label>Número de Parcelas</Label>
+                          <Input
+                            type="number"
+                            min="2"
+                            max="12"
+                            value={formData.numero_parcelas}
+                            onChange={(e) => setFormData({ ...formData, numero_parcelas: parseInt(e.target.value) || 1 })}
+                          />
+                        </div>
+                      )}
+                      <div>
+                        <Label>Data de Vencimento {formData.tipo_pagamento === 'parcelado' ? '(1ª Parcela)' : ''}</Label>
+                        <Input
+                          type="date"
+                          value={formData.data_vencimento}
+                          onChange={(e) => setFormData({ ...formData, data_vencimento: e.target.value })}
+                          placeholder="Deixe vazio para 30 dias"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Deixe vazio para usar 30 dias após emissão</p>
+                      </div>
+                    </div>
+                  </div>
+
                   {itensNota.length === 0 && (
                     <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
                       <p className="text-sm text-yellow-800 flex items-center gap-2">
