@@ -294,7 +294,7 @@ const Subcategorias = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredSubcategorias.map((s) => (
+            {subcategoriasPaginadas.map((s) => (
               <tr key={s.id}>
                 <td className="font-medium">{s.nome}</td>
                 <td>{getCategoriaNome(s.categoria_id)}</td>
