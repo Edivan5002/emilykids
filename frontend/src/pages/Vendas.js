@@ -652,7 +652,7 @@ const Vendas = () => {
                 </CardContent>
               </Card>
             ) : (
-              vendasFiltradas.map((venda) => (
+              vendasPaginadas.map((venda) => (
               <Card key={venda.id} data-testid={`venda-${venda.id}`} className={venda.cancelada || venda.status_venda === 'cancelada' ? 'border-red-300 bg-red-50' : ''}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
