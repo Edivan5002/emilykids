@@ -105,7 +105,7 @@
 user_problem_statement: "FASE 12: Integração com Notas Fiscais - Geração automática de contas a pagar ao confirmar nota fiscal, sincronização de cancelamento, componente de visualização da conta vinculada."
 
 backend:
-  - task: "Fase 5 - Integração Clientes/Fornecedores - Backend Completo"
+  - task: "Fase 12 - Integração com Notas Fiscais - Backend Completo"
     implemented: true
     working: "NA"
     file: "/app/backend/server.py"
@@ -115,7 +115,20 @@ backend:
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "✅ FASE 5 - BACKEND IMPLEMENTADO COMPLETAMENTE: (1) DADOS FINANCEIROS CLIENTES - 2 endpoints: GET /api/clientes/{cliente_id}/financeiro (resumo completo, score crédito 0-100, métricas, formas pagamento, histórico), GET /api/clientes/{cliente_id}/contas-receber (lista todas contas com resumo); (2) DADOS FINANCEIROS FORNECEDORES - 2 endpoints: GET /api/fornecedores/{fornecedor_id}/financeiro (resumo completo, score confiabilidade 0-100, métricas, categorias despesa), GET /api/fornecedores/{fornecedor_id}/contas-pagar (lista todas contas); (3) CÁLCULO DE SCORE: Função calcular_score_cliente (40% taxa pagamento, 30% inadimplência, 20% histórico, 10% transações), Função calcular_score_fornecedor (50% taxa pagamento, 30% histórico, 20% transações), Classificação automática (Excelente/Muito Bom/Bom/Regular/Ruim), Cores dinâmicas (verde/amarelo/laranja/vermelho); (4) MÉTRICAS CALCULADAS: Média dias pagamento, Taxa inadimplência/atraso, Taxa de pagamento, Total faturado/comprado, Total recebido/pago, Total pendente/vencido; (5) ANÁLISES: Formas de pagamento preferidas, Categorias de despesa (fornecedores), Histórico de contas (últimas 10), Quantidade de contas por status. TOTAL: 4 ENDPOINTS + 3 FUNÇÕES AUXILIARES. Backend compilado SEM ERROS, servidor RUNNING."
+        comment: "✅ FASE 12 - BACKEND IMPLEMENTADO COMPLETAMENTE: (1) INTEGRAÇÃO AUTOMÁTICA: Modificado endpoint POST /api/notas-fiscais/{nota_id}/confirmar para criar automaticamente conta a pagar ao confirmar NF; (2) GERAÇÃO DE CONTA: Cria conta com origem='nota_fiscal', origem_id=nota_id, número automático (CP-XXXXXX), parcelas baseadas em tipo_pagamento (à vista ou parcelado), valores corretos (valor_total da NF), fornecedor vinculado; (3) SINCRONIZAÇÃO DE CANCELAMENTO: Modificado endpoint DELETE /api/notas-fiscais/{nota_id}/cancelar para cancelar automaticamente a conta a pagar vinculada (apenas se não houver parcelas pagas); (4) ENDPOINT CONSULTA: Novo GET /api/notas-fiscais/{nota_id}/conta-pagar para buscar conta vinculada; (5) TRATAMENTO DE ERROS: Sistema não falha se criação de conta falhar, continua confirmando a NF; (6) LOGS COMPLETOS: Registra criação e cancelamento de contas no sistema de auditoria; (7) ATUALIZAÇÃO NF: Campo conta_pagar_id adicionado à nota fiscal para manter vínculo. Backend compilado SEM ERROS, servidor RUNNING."
+
+frontend:
+  - task: "Fase 12 - Integração com Notas Fiscais - Frontend Completo"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/ContaPagarVinculada.js, /app/frontend/src/pages/NotasFiscais.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ FASE 12 - FRONTEND IMPLEMENTADO COMPLETAMENTE: (1) COMPONENTE ContaPagarVinculada: Novo componente reutilizável para exibir conta a pagar vinculada; Busca dados via GET /api/notas-fiscais/{nota_id}/conta-pagar; Design com gradiente azul e cards informativos; Mostra número, status, forma pagamento, valores (total, pago, pendente); Lista de parcelas com status individual; Botão para navegar ao módulo Contas a Pagar; Loading states e tratamento de erros; (2) INTEGRAÇÃO NA PÁGINA: Importado componente em NotasFiscais.js; Exibido automaticamente quando nota está confirmada; Posicionado após lista de itens, antes dos botões de ação; Não exibido em notas canceladas; (3) VISUALIZAÇÃO: Cards coloridos para valores (azul=total, verde=pago, amarelo=pendente); Badges de status com ícones (Clock, CheckCircle, AlertCircle); Link externo para módulo de contas a pagar; Scroll em lista de parcelas se houver muitas; (4) UX: Feedback visual claro; Responsive design; Integração fluida com página existente. Frontend compilado SEM ERROS, servidor RUNNING."
 
 frontend:
   - task: "Fase 4 - Administração e Configurações - Frontend Completo"
