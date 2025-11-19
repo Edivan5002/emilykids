@@ -305,6 +305,12 @@ const ContasPagar = () => {
     );
   }
 
+  // Lógica de paginação
+  const totalPaginas = Math.ceil(contas.length / ITENS_POR_PAGINA);
+  const indiceInicial = (paginaAtual - 1) * ITENS_POR_PAGINA;
+  const indiceFinal = indiceInicial + ITENS_POR_PAGINA;
+  const contasPaginadas = contas.slice(indiceInicial, indiceFinal);
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
