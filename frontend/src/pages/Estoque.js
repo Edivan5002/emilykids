@@ -611,6 +611,52 @@ const Estoque = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Paginação - Visão Geral */}
+          {produtosFiltrados.length > ITENS_POR_PAGINA && (
+            <Card className="mt-4">
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Página {paginaVisaoGeral} de {totalPaginasVisaoGeral} | Mostrando {indiceInicialVisaoGeral + 1} a {Math.min(indiceFinalVisaoGeral, produtosFiltrados.length)} de {produtosFiltrados.length} produtos
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPaginaVisaoGeral(p => Math.max(1, p - 1))}
+                      disabled={paginaVisaoGeral === 1}
+                    >
+                      <ChevronLeft size={16} />
+                      Anterior
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPaginasVisaoGeral }, (_, i) => i + 1).map((pagina) => (
+                        <Button
+                          key={pagina}
+                          variant={paginaVisaoGeral === pagina ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setPaginaVisaoGeral(pagina)}
+                          className={paginaVisaoGeral === pagina ? "bg-blue-600 text-white" : ""}
+                        >
+                          {pagina}
+                        </Button>
+                      ))}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPaginaVisaoGeral(p => Math.min(totalPaginasVisaoGeral, p + 1))}
+                      disabled={paginaVisaoGeral === totalPaginasVisaoGeral}
+                    >
+                      Próxima
+                      <ChevronRight size={16} />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* TAB: INVENTÁRIO PERIÓDICO */}
