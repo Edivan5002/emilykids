@@ -630,6 +630,50 @@ const Relatorios = () => {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Paginação - Vendas por Dia */}
+                  {vendasDiaArray.length > ITENS_POR_PAGINA && (
+                    <div className="mt-4 p-4 border rounded-lg bg-white">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-600">
+                          Página {paginaVendasDia} de {totalPaginasVendasDia} | Mostrando {indiceInicialVendasDia + 1} a {Math.min(indiceFinalVendasDia, vendasDiaArray.length)} de {vendasDiaArray.length} registros
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPaginaVendasDia(p => Math.max(1, p - 1))}
+                            disabled={paginaVendasDia === 1}
+                          >
+                            <ChevronLeft size={16} />
+                            Anterior
+                          </Button>
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: totalPaginasVendasDia }, (_, i) => i + 1).map((pagina) => (
+                              <Button
+                                key={pagina}
+                                variant={paginaVendasDia === pagina ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setPaginaVendasDia(pagina)}
+                                className={paginaVendasDia === pagina ? "bg-blue-600 text-white" : ""}
+                              >
+                                {pagina}
+                              </Button>
+                            ))}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPaginaVendasDia(p => Math.min(totalPaginasVendasDia, p + 1))}
+                            disabled={paginaVendasDia === totalPaginasVendasDia}
+                          >
+                            Próxima
+                            <ChevronRight size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
