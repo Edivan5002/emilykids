@@ -104,6 +104,7 @@ const ContasReceber = () => {
       setContas(contasResp.data.data || contasResp.data);
       setClientes(clientesResp.data);
       setKpis(kpisResp.data);
+      setPaginaAtual(1); // Resetar página ao buscar/filtrar
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar contas a receber');
