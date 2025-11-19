@@ -322,6 +322,12 @@ const Vendas = () => {
     vendasBoleto: vendasEfetivadas.filter(v => v.forma_pagamento === 'boleto').length
   };
 
+  // Lógica de paginação
+  const totalPaginas = Math.ceil(vendasFiltradas.length / ITENS_POR_PAGINA);
+  const indiceInicial = (paginaAtual - 1) * ITENS_POR_PAGINA;
+  const indiceFinal = indiceInicial + ITENS_POR_PAGINA;
+  const vendasPaginadas = vendasFiltradas.slice(indiceInicial, indiceFinal);
+
   // Top produtos mais vendidos (apenas vendas efetivadas)
   const produtosMaisVendidos = () => {
     const produtosMap = {};
