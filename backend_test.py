@@ -310,47 +310,48 @@ class VendasContasReceberTester:
         except Exception as e:
             self.log_test("Test 1 - Fetch Parcelada Contas", False, f"Error calling endpoint: {str(e)}")
     
-    def test_cancel_direct_sale(self):
-        """Test 2: Cancel sale NOT originated from budget"""
-        print("\n=== TEST 2: CANCELAR VENDA NÃO ORIGINADA DE ORÇAMENTO ===")
+    def test_fetch_contas_receber_avista(self):
+        """Test 2: Fetch contas a receber from à vista sale"""
+        print("\n=== TEST 2: BUSCAR CONTAS A RECEBER DE VENDA À VISTA ===")
         
         # 1. Create test client
-        client_id = self.create_test_client()
+        client_id = self.create_test_client(" - À Vista")
         if not client_id:
             self.log_test("Test 2 - Setup", False, "Failed to create test client")
             return
         
         # 2. Create test product
-        product_id = self.create_test_product(" - Teste 2")
+        product_id = self.create_test_product(" - À Vista")
         if not product_id:
             self.log_test("Test 2 - Setup", False, "Failed to create test product")
             return
         
-        # 3. Create direct sale (no budget)
-        sale_id = self.create_direct_sale(client_id, product_id)
+        # 3. Create à vista sale
+        sale_id = self.create_avista_sale(client_id, product_id)
         if not sale_id:
-            self.log_test("Test 2 - Setup", False, "Failed to create direct sale")
+            self.log_test("Test 2 - Setup", False, "Failed to create à vista sale")
             return
         
-        print("   ✓ Direct sale created successfully")
+        print(f"   ✓ Created à vista sale: {sale_id}")
         
-        # 4. Cancel the sale
-        cancellation_reason = "Teste de cancelamento de venda direta"
-        cancellation_data = {
-            "motivo": cancellation_reason
-        }
-        
+        # 4. Call the new endpoint
         try:
-            response = requests.post(f"{self.base_url}/vendas/{sale_id}/cancelar", 
-                                   json=cancellation_data, headers=self.get_headers())
+            response = requests.get(f"{self.base_url}/vendas/{sale_id}/contas-receber", headers=self.get_headers())
+            
             if response.status_code == 200:
-                self.log_test("Test 2 - Cancel Direct Sale", True, 
-                            "✅ Direct sale canceled successfully without errors (no budget propagation)")
+                contas = response.json()
+                
+                if len(contas) == 0:  # Should return empty list for à vista sales
+                    self.log_test("Test 2 - Fetch À Vista Contas", True, 
+                                "✅ Status 200, returned empty list (vendas à vista não geram contas a receber)")
+                else:
+                    self.log_test("Test 2 - Fetch À Vista Contas", False, 
+                                f"Expected empty list, got {len(contas)} contas", {"contas": contas})
             else:
-                self.log_test("Test 2 - Cancel Direct Sale", False, 
-                            f"Failed to cancel direct sale: {response.status_code} - {response.text}")
+                self.log_test("Test 2 - Fetch À Vista Contas", False, 
+                            f"Expected status 200, got {response.status_code}: {response.text}")
         except Exception as e:
-            self.log_test("Test 2 - Cancel Direct Sale", False, f"Error canceling direct sale: {str(e)}")
+            self.log_test("Test 2 - Fetch À Vista Contas", False, f"Error calling endpoint: {str(e)}")
     
     def test_validate_canceled_budget_fields(self):
         """Test 3: Validate all fields in canceled budget"""
