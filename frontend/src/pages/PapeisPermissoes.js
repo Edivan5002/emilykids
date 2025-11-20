@@ -67,6 +67,10 @@ const PapeisPermissoes = () => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
     
+    // Limpar cache de permissões ao carregar
+    localStorage.removeItem('permissions_cache');
+    localStorage.removeItem('roles_cache');
+    
     initializeRBAC();
     fetchRoles();
     fetchPermissions();
