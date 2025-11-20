@@ -462,17 +462,32 @@ const PapeisPermissoes = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Matriz de Permissões ({permissions.length} total)</CardTitle>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    fetchPermissions();
-                    toast.success('Permissões atualizadas');
-                  }}
-                >
-                  <Clock size={16} className="mr-2" />
-                  Atualizar Dados
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      fetchPermissions();
+                      toast.success('Permissões atualizadas');
+                    }}
+                  >
+                    <Clock size={16} className="mr-2" />
+                    Atualizar Dados
+                  </Button>
+                  <Button 
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      const token = localStorage.getItem('token');
+                      localStorage.clear();
+                      sessionStorage.clear();
+                      if (token) localStorage.setItem('token', token);
+                      window.location.reload(true);
+                    }}
+                  >
+                    🔄 Forçar Reload
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
