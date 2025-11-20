@@ -190,57 +190,39 @@ class VendasContasReceberTester:
             print(f"   ⚠ Error creating test product: {str(e)}")
             return None
     
-    def create_test_budget(self, client_id, product_id):
-        """Create a test budget"""
-        budget_data = {
+    def create_parcelada_sale(self, client_id, product_id):
+        """Create a parcelada sale (cartao payment with 3 parcelas)"""
+        sale_data = {
             "cliente_id": client_id,
             "itens": [
                 {
                     "produto_id": product_id,
                     "quantidade": 2,
-                    "preco_unitario": 100.0
+                    "preco_unitario": 150.0
                 }
             ],
             "desconto": 0,
-            "frete": 10.0,
-            "observacoes": "Orçamento teste para cancelamento"
+            "frete": 20.0,
+            "forma_pagamento": "cartao",
+            "numero_parcelas": 3,
+            "observacoes": "Venda parcelada para teste de contas a receber"
         }
         
         try:
-            response = requests.post(f"{self.base_url}/orcamentos", json=budget_data, headers=self.get_headers())
-            if response.status_code == 200:
-                budget = response.json()
-                self.created_budgets.append(budget["id"])
-                return budget["id"]
-            else:
-                print(f"   ⚠ Failed to create test budget: {response.status_code} - {response.text}")
-                return None
-        except Exception as e:
-            print(f"   ⚠ Error creating test budget: {str(e)}")
-            return None
-    
-    def convert_budget_to_sale(self, budget_id):
-        """Convert budget to sale"""
-        conversion_data = {
-            "forma_pagamento": "pix"
-        }
-        
-        try:
-            response = requests.post(f"{self.base_url}/orcamentos/{budget_id}/converter-venda", 
-                                   json=conversion_data, headers=self.get_headers())
+            response = requests.post(f"{self.base_url}/vendas", json=sale_data, headers=self.get_headers())
             if response.status_code == 200:
                 sale = response.json()
-                self.created_sales.append(sale["venda_id"])
-                return sale["venda_id"]
+                self.created_sales.append(sale["id"])
+                return sale["id"]
             else:
-                print(f"   ⚠ Failed to convert budget to sale: {response.status_code} - {response.text}")
+                print(f"   ⚠ Failed to create parcelada sale: {response.status_code} - {response.text}")
                 return None
         except Exception as e:
-            print(f"   ⚠ Error converting budget to sale: {str(e)}")
+            print(f"   ⚠ Error creating parcelada sale: {str(e)}")
             return None
     
-    def create_direct_sale(self, client_id, product_id):
-        """Create a direct sale (not from budget)"""
+    def create_avista_sale(self, client_id, product_id):
+        """Create an à vista sale"""
         sale_data = {
             "cliente_id": client_id,
             "itens": [
@@ -251,8 +233,10 @@ class VendasContasReceberTester:
                 }
             ],
             "desconto": 0,
-            "frete": 5.0,
-            "forma_pagamento": "cartao"
+            "frete": 10.0,
+            "forma_pagamento": "avista",
+            "numero_parcelas": 1,
+            "observacoes": "Venda à vista para teste de contas a receber"
         }
         
         try:
@@ -262,10 +246,10 @@ class VendasContasReceberTester:
                 self.created_sales.append(sale["id"])
                 return sale["id"]
             else:
-                print(f"   ⚠ Failed to create direct sale: {response.status_code} - {response.text}")
+                print(f"   ⚠ Failed to create à vista sale: {response.status_code} - {response.text}")
                 return None
         except Exception as e:
-            print(f"   ⚠ Error creating direct sale: {str(e)}")
+            print(f"   ⚠ Error creating à vista sale: {str(e)}")
             return None
     
     def get_budget_by_id(self, budget_id):
