@@ -86,11 +86,11 @@ class VendasContasReceberTester:
             "Content-Type": "application/json"
         }
     
-    def create_test_client(self):
+    def create_test_client(self, name_suffix=""):
         """Create a test client for the tests"""
         client_data = {
-            "nome": "Cliente Teste Cancelamento",
-            "cpf_cnpj": "12345678901"
+            "nome": f"Cliente Teste Contas Receber{name_suffix}",
+            "cpf_cnpj": f"123456789{str(uuid.uuid4().int)[:2]}"
         }
         
         try:
