@@ -1097,7 +1097,7 @@ const Estoque = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-orange-600">
                   <TrendingUp size={20} />
-                  Estoque Acima do Máximo
+                  Estoque Acima do Máximo ({alertasAcima.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
