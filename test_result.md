@@ -105,6 +105,21 @@
 user_problem_statement: "FASE 12: Integração com Notas Fiscais - Geração automática de contas a pagar ao confirmar nota fiscal, sincronização de cancelamento, componente de visualização da conta vinculada."
 
 backend:
+  - task: "Fase 10 - Integração Vendas com Contas a Receber - Backend Completo"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ FASE 10 - BACKEND IMPLEMENTADO: Novo endpoint GET /api/vendas/{venda_id}/contas-receber (linha 7622) com permissão contas_receber:ler. Lógica automática de criação de contas a receber ao finalizar venda (linhas 7066-7100) já existia mas tinha bugs."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO PERFEITAMENTE: Executei os 4 TESTES OBRIGATÓRIOS especificados na review_request com 100% SUCCESS RATE. VALIDAÇÕES CONFIRMADAS: (1) VENDA PARCELADA (cartão, 3 parcelas) - Status 200, retorna lista com 3 contas, cada conta tem origem='venda' e origem_id=venda_id ✅; (2) VENDA À VISTA - Status 200, retorna lista vazia (vendas à vista não geram contas a receber) ✅; (3) VENDA INEXISTENTE - Status 404, mensagem 'Venda não encontrada' ✅; (4) ESTRUTURA DAS CONTAS - Todos os campos obrigatórios validados: id, numero, cliente_id, descricao, valor_total, forma_pagamento, parcelas (com data_vencimento), origem, origem_id, status ✅. BUGS CRÍTICOS CORRIGIDOS: (1) Campo 'data_venda' não existia no modelo Venda - corrigido para 'created_at'; (2) Campos incorretos no ContaReceber - corrigido para usar origem/origem_id ao invés de referencia_tipo/referencia_id; (3) Função parse_from_mongo ausente - implementada remoção manual do _id. RESULTADO: Endpoint funcionando 100% conforme especificado!"
+
   - task: "Fase 12 - Integração com Notas Fiscais - Backend Completo"
     implemented: true
     working: "NA"
