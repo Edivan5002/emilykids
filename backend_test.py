@@ -376,71 +376,76 @@ class VendasContasReceberTester:
         except Exception as e:
             self.log_test("Test 3 - Invalid Sale ID", False, f"Error calling endpoint: {str(e)}")
     
-    def test_stock_reversion(self):
-        """Test 4: Verify stock is correctly reverted"""
-        print("\n=== TEST 4: ESTOQUE É REVERTIDO CORRETAMENTE ===")
+    def test_validate_contas_structure(self):
+        """Test 4: Validate structure of returned contas"""
+        print("\n=== TEST 4: VALIDAR ESTRUTURA DAS CONTAS RETORNADAS ===")
         
-        # 1. Create test client
-        client_id = self.create_test_client()
-        if not client_id:
-            self.log_test("Test 4 - Setup", False, "Failed to create test client")
+        # Use the first parcelada sale from previous tests
+        if not self.created_sales:
+            self.log_test("Test 4 - Validate Structure", False, "No sales available from previous tests")
             return
         
-        # 2. Create test product
-        product_id = self.create_test_product(" - Teste 4")
-        if not product_id:
-            self.log_test("Test 4 - Setup", False, "Failed to create test product")
-            return
-        
-        # 3. Get initial stock
-        initial_stock = self.get_product_stock(product_id)
-        print(f"   ✓ Initial stock: {initial_stock}")
-        
-        # 4. Create budget and convert to sale
-        budget_id = self.create_test_budget(client_id, product_id)
-        if not budget_id:
-            self.log_test("Test 4 - Setup", False, "Failed to create test budget")
-            return
-        
-        sale_id = self.convert_budget_to_sale(budget_id)
-        if not sale_id:
-            self.log_test("Test 4 - Setup", False, "Failed to convert budget to sale")
-            return
-        
-        # 5. Verify stock was decremented
-        stock_after_sale = self.get_product_stock(product_id)
-        expected_stock_after_sale = initial_stock - 2  # 2 items in the budget
-        
-        if stock_after_sale != expected_stock_after_sale:
-            self.log_test("Test 4 - Stock After Sale", False, 
-                        f"Stock after sale should be {expected_stock_after_sale}, got {stock_after_sale}")
-            return
-        
-        print(f"   ✓ Stock after sale: {stock_after_sale} (decremented correctly)")
-        
-        # 6. Cancel the sale
-        cancellation_data = {
-            "motivo": "Teste de reversão de estoque"
-        }
+        # Find a parcelada sale (we'll use the first one created)
+        sale_id = self.created_sales[0]
         
         try:
-            response = requests.post(f"{self.base_url}/vendas/{sale_id}/cancelar", 
-                                   json=cancellation_data, headers=self.get_headers())
+            response = requests.get(f"{self.base_url}/vendas/{sale_id}/contas-receber", headers=self.get_headers())
+            
             if response.status_code == 200:
-                # 7. Verify stock was reverted
-                stock_after_cancellation = self.get_product_stock(product_id)
+                contas = response.json()
                 
-                if stock_after_cancellation == initial_stock:
-                    self.log_test("Test 4 - Stock Reversion", True, 
-                                f"✅ Stock correctly reverted: {initial_stock} → {stock_after_sale} → {stock_after_cancellation}")
+                if len(contas) > 0:
+                    # Validate structure of first conta
+                    conta = contas[0]
+                    required_fields = [
+                        "id", "numero", "cliente_id", "descricao", "valor_total", 
+                        "data_vencimento", "forma_pagamento", "parcelas", 
+                        "referencia_tipo", "referencia_id", "status"
+                    ]
+                    
+                    missing_fields = []
+                    for field in required_fields:
+                        if field not in conta:
+                            missing_fields.append(field)
+                    
+                    if not missing_fields:
+                        # Additional validations
+                        validations = {
+                            "referencia_tipo_is_venda": conta.get("referencia_tipo") == "venda",
+                            "referencia_id_matches": conta.get("referencia_id") == sale_id,
+                            "has_valid_id": conta.get("id") is not None,
+                            "has_valid_numero": conta.get("numero") is not None,
+                            "has_valid_cliente_id": conta.get("cliente_id") is not None,
+                            "has_valid_descricao": conta.get("descricao") is not None,
+                            "has_valid_valor": isinstance(conta.get("valor_total"), (int, float)),
+                            "has_valid_data_vencimento": conta.get("data_vencimento") is not None,
+                            "has_valid_forma_pagamento": conta.get("forma_pagamento") is not None,
+                            "has_valid_parcelas": isinstance(conta.get("parcelas"), list),
+                            "has_valid_status": conta.get("status") is not None
+                        }
+                        
+                        all_valid = all(validations.values())
+                        
+                        if all_valid:
+                            self.log_test("Test 4 - Validate Structure", True, 
+                                        "✅ All required fields present and valid: id, numero, cliente_id, descricao, valor_total, data_vencimento, forma_pagamento, parcelas, referencia_tipo, referencia_id, status")
+                        else:
+                            failed_validations = [k for k, v in validations.items() if not v]
+                            self.log_test("Test 4 - Validate Structure", False, 
+                                        f"Structure validation failed for: {failed_validations}", 
+                                        {"conta_sample": conta})
+                    else:
+                        self.log_test("Test 4 - Validate Structure", False, 
+                                    f"Missing required fields: {missing_fields}", 
+                                    {"conta_sample": conta})
                 else:
-                    self.log_test("Test 4 - Stock Reversion", False, 
-                                f"Stock not correctly reverted. Expected: {initial_stock}, Got: {stock_after_cancellation}")
+                    self.log_test("Test 4 - Validate Structure", False, 
+                                "No contas returned to validate structure")
             else:
-                self.log_test("Test 4 - Stock Reversion", False, 
-                            f"Failed to cancel sale for stock test: {response.status_code} - {response.text}")
+                self.log_test("Test 4 - Validate Structure", False, 
+                            f"Failed to fetch contas for structure validation: {response.status_code}")
         except Exception as e:
-            self.log_test("Test 4 - Stock Reversion", False, f"Error in stock reversion test: {str(e)}")
+            self.log_test("Test 4 - Validate Structure", False, f"Error validating structure: {str(e)}")
     
     def _is_valid_iso_date(self, date_string):
         """Check if string is a valid ISO date"""
