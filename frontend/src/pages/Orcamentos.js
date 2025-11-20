@@ -285,7 +285,7 @@ const Orcamentos = () => {
     });
   };
 
-  const handleAdicionarItemConversao = () => {
+  const handleAdicionarItemConversao = async () => {
     if (!novoItemConversao.produto_id || novoItemConversao.quantidade <= 0 || novoItemConversao.preco_unitario <= 0) {
       toast.error('Preencha todos os campos do item');
       return;
@@ -301,6 +301,24 @@ const Orcamentos = () => {
     const itemJaExiste = modalConversao.itens.some(item => item.produto_id === novoItemConversao.produto_id);
     if (itemJaExiste) {
       toast.error('Item já adicionado! Para alterar a quantidade, remova o item e adicione novamente.');
+      return;
+    }
+
+    // Verificar estoque antes de adicionar
+    try {
+      const checkResponse = await axios.post(`${API}/estoque/check-disponibilidade`, {
+        produto_id: novoItemConversao.produto_id,
+        quantidade: novoItemConversao.quantidade
+      });
+
+      if (!checkResponse.data.disponivel) {
+        toast.error(checkResponse.data.mensagem, { duration: 5000 });
+        return;
+      }
+
+      toast.success(`${produto.nome}: ${checkResponse.data.estoque_disponivel} unidades disponíveis`, { duration: 3000 });
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao verificar estoque');
       return;
     }
 
