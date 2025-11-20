@@ -6,8 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ShoppingCart, Plus, DollarSign, TrendingUp, Users, CreditCard, Search, Calendar, X, AlertCircle, Ban, Trash2, Shield, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ShoppingCart, Plus, DollarSign, TrendingUp, Users, CreditCard, Search, Calendar, X, AlertCircle, Ban, Trash2, Shield, ChevronLeft, ChevronRight, Clock, CheckCircle, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 
