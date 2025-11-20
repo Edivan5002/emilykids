@@ -73,8 +73,8 @@ const Estoque = () => {
 
   const fetchData = async () => {
     try {
-      // Sempre carregar produtos
-      const prodRes = await axios.get(`${API}/produtos`);
+      // Sempre carregar produtos - IMPORTANTE: limit=0 para pegar todos os produtos
+      const prodRes = await axios.get(`${API}/produtos?limit=0`);
       setProdutos(prodRes.data);
       
       // Tentar carregar movimentações
