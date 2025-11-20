@@ -1218,9 +1218,9 @@ const Vendas = () => {
               {/* ABA: ITENS */}
               <TabsContent value="itens" className="space-y-4">
 
-            {/* Adicionar Itens */}
-            <div className="border rounded-lg p-4 bg-gray-50">
-              <h3 className="font-semibold mb-3">Adicionar Produtos</h3>
+                {/* Adicionar Itens */}
+                <div className="border rounded-lg p-4 bg-gray-50">
+                  <h3 className="font-semibold mb-3">Adicionar Produtos</h3>
               <div className="grid grid-cols-12 gap-2 mb-3">
                 <div className="col-span-5">
                   <Label>Produto</Label>
