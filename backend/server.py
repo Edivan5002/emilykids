@@ -9766,6 +9766,8 @@ async def admin_get_estatisticas(current_user: dict = Depends(require_permission
             "vendas_canceladas": await db.vendas.count_documents({"$or": [{"cancelada": True}, {"status": "cancelada"}]}),
             "orcamentos": await db.orcamentos.count_documents({}),
             "notas_fiscais": await db.notas_fiscais.count_documents({}),
+            "contas_receber": await db.contas_receber.count_documents({}),
+            "contas_pagar": await db.contas_pagar.count_documents({}),
             "produtos": await db.produtos.count_documents({}),
             "clientes": await db.clientes.count_documents({}),
             "fornecedores": await db.fornecedores.count_documents({}),
