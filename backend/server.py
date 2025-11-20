@@ -7369,6 +7369,33 @@ async def cancelar_venda(
                 }}
             )
     
+    # FASE 10: Cancelar contas a receber vinculadas à venda
+    contas_vinculadas = await db.contas_receber.find({
+        "origem": "venda",
+        "origem_id": venda_id
+    }).to_list(length=None)
+    
+    if contas_vinculadas:
+        for conta in contas_vinculadas:
+            # Atualizar status de todas as parcelas para cancelada
+            parcelas_atualizadas = []
+            for parcela in conta.get("parcelas", []):
+                parcela["status"] = "cancelada"
+                parcelas_atualizadas.append(parcela)
+            
+            # Atualizar conta a receber
+            await db.contas_receber.update_one(
+                {"id": conta["id"]},
+                {"$set": {
+                    "status": "cancelada",
+                    "parcelas": parcelas_atualizadas,
+                    "motivo_cancelamento": f"Venda cancelada - {cancelamento.motivo}",
+                    "cancelada_por": current_user["id"],
+                    "data_cancelamento": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }}
+            )
+    
     # Log
     await log_action(
         ip="0.0.0.0",
