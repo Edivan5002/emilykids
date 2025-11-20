@@ -811,7 +811,7 @@ const Estoque = () => {
             {/* Histórico de Inventários */}
             <Card>
               <CardHeader>
-                <CardTitle>Histórico de Inventários</CardTitle>
+                <CardTitle>Histórico de Inventários ({inventarios.filter(inv => inv.status !== 'em_andamento').length})</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
