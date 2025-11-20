@@ -399,8 +399,8 @@ class VendasContasReceberTester:
                     conta = contas[0]
                     required_fields = [
                         "id", "numero", "cliente_id", "descricao", "valor_total", 
-                        "data_vencimento", "forma_pagamento", "parcelas", 
-                        "referencia_tipo", "referencia_id", "status"
+                        "forma_pagamento", "parcelas", 
+                        "origem", "origem_id", "status"
                     ]
                     
                     missing_fields = []
