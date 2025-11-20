@@ -252,30 +252,7 @@ class VendasContasReceberTester:
             print(f"   ⚠ Error creating à vista sale: {str(e)}")
             return None
     
-    def get_budget_by_id(self, budget_id):
-        """Get budget details by ID"""
-        try:
-            response = requests.get(f"{self.base_url}/orcamentos?incluir_inativos=true", headers=self.get_headers())
-            if response.status_code == 200:
-                budgets = response.json()
-                return next((b for b in budgets if b["id"] == budget_id), None)
-            return None
-        except Exception as e:
-            print(f"   ⚠ Error getting budget: {str(e)}")
-            return None
-    
-    def get_product_stock(self, product_id):
-        """Get current product stock"""
-        try:
-            response = requests.get(f"{self.base_url}/produtos?incluir_inativos=true", headers=self.get_headers())
-            if response.status_code == 200:
-                products = response.json()
-                product = next((p for p in products if p["id"] == product_id), None)
-                return product.get("estoque_atual", 0) if product else 0
-            return 0
-        except Exception as e:
-            print(f"   ⚠ Error getting product stock: {str(e)}")
-            return 0
+    # Helper methods removed - not needed for contas a receber tests
     
     def test_cancel_sale_from_budget(self):
         """Test 1: Cancel sale originated from budget"""
