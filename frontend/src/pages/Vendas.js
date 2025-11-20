@@ -1079,46 +1079,144 @@ const Vendas = () => {
           <DialogHeader>
             <DialogTitle>Nova Venda</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmitVenda} className="space-y-4">
-            {/* Cliente e Forma de Pagamento */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Cliente *</Label>
-                <Select 
-                  value={formVenda.cliente_id} 
-                  onValueChange={(value) => setFormVenda({...formVenda, cliente_id: value})}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clientes.map(c => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.nome} - {c.cpf_cnpj}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Forma de Pagamento *</Label>
-                <Select 
-                  value={formVenda.forma_pagamento} 
-                  onValueChange={(value) => setFormVenda({...formVenda, forma_pagamento: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cartao">Cartão</SelectItem>
-                    <SelectItem value="pix">PIX</SelectItem>
-                    <SelectItem value="boleto">Boleto</SelectItem>
-                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+          
+          <Tabs defaultValue="dados" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="dados">Dados da Venda</TabsTrigger>
+              <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
+              <TabsTrigger value="itens">Itens ({itensVenda.length})</TabsTrigger>
+            </TabsList>
+
+            <form onSubmit={handleSubmitVenda} className="space-y-4">
+              {/* ABA: DADOS DA VENDA */}
+              <TabsContent value="dados" className="space-y-4">
+                <div>
+                  <Label>Cliente *</Label>
+                  <Select 
+                    value={formVenda.cliente_id} 
+                    onValueChange={(value) => setFormVenda({...formVenda, cliente_id: value})}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o cliente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientes.map(c => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.nome} - {c.cpf_cnpj}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Desconto e Frete */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Desconto (R$)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formVenda.desconto}
+                      onChange={(e) => setFormVenda({...formVenda, desconto: parseFloat(e.target.value) || 0})}
+                    />
+                  </div>
+                  <div>
+                    <Label>Frete (R$)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formVenda.frete}
+                      onChange={(e) => setFormVenda({...formVenda, frete: parseFloat(e.target.value) || 0})}
+                    />
+                  </div>
+                </div>
+
+                {itensVenda.length === 0 && (
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800 flex items-center gap-2">
+                      <AlertCircle size={16} />
+                      Adicione itens e configure o pagamento antes de finalizar a venda
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* ABA: INFORMAÇÕES DE PAGAMENTO */}
+              <TabsContent value="pagamento" className="space-y-4">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                    <DollarSign size={18} />
+                    Informações de Pagamento
+                  </h3>
+                  
+                  <div className="grid grid-cols-2 gap-4 mb-3">
+                    <div>
+                      <Label>Forma de Pagamento *</Label>
+                      <Select 
+                        value={formVenda.forma_pagamento} 
+                        onValueChange={(v) => setFormVenda({ ...formVenda, forma_pagamento: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cartao">Cartão</SelectItem>
+                          <SelectItem value="pix">PIX</SelectItem>
+                          <SelectItem value="boleto">Boleto</SelectItem>
+                          <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Tipo de Pagamento *</Label>
+                      <Select 
+                        value={formVenda.tipo_pagamento} 
+                        onValueChange={(v) => setFormVenda({ ...formVenda, tipo_pagamento: v, numero_parcelas: v === 'avista' ? 1 : formVenda.numero_parcelas })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="avista">À Vista</SelectItem>
+                          <SelectItem value="parcelado">Parcelado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {formVenda.tipo_pagamento === 'parcelado' && (
+                      <div>
+                        <Label>Número de Parcelas</Label>
+                        <Input
+                          type="number"
+                          min="2"
+                          max="12"
+                          value={formVenda.numero_parcelas}
+                          onChange={(e) => setFormVenda({ ...formVenda, numero_parcelas: parseInt(e.target.value) || 2 })}
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <Label>Data de Vencimento {formVenda.tipo_pagamento === 'parcelado' ? '(1ª Parcela)' : ''}</Label>
+                      <Input
+                        type="date"
+                        value={formVenda.data_vencimento}
+                        onChange={(e) => setFormVenda({ ...formVenda, data_vencimento: e.target.value })}
+                        placeholder="Deixe vazio para 30 dias"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Deixe vazio para usar 30 dias após emissão</p>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* ABA: ITENS */}
+              <TabsContent value="itens" className="space-y-4">
 
             {/* Adicionar Itens */}
             <div className="border rounded-lg p-4 bg-gray-50">
