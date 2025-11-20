@@ -1053,3 +1053,38 @@ agent_communication:
     message: "✅ MELHORIA NO DROPDOWN DE PRODUTOS IMPLEMENTADA! IMPLEMENTAÇÃO COMPLETA: (1) NOVOS ESTADOS: Adicionados estados para marcas (setMarcas), categorias (setCategorias) e subcategorias (setSubcategorias) no componente NotasFiscais; (2) FETCH OTIMIZADO: Modificado fetchData() para buscar 6 endpoints em paralelo com Promise.all: notas-fiscais, fornecedores, produtos, marcas, categorias, subcategorias - sem impacto na performance; (3) FUNÇÃO getProdutoDetalhado(): Criada função que recebe produto e retorna string formatada: 'Marca | Categoria | Subcategoria | Nome | SKU: xxx'. Faz lookup em marcas, categorias e subcategorias usando os IDs do produto. Trata campos ausentes com fallbacks ('Sem Marca', 'Sem Categoria', 'Sem Subcategoria', 'N/A'); (4) INTERFACE MELHORADA: SelectItem do dropdown de produtos agora chama getProdutoDetalhado(p) exibindo todas as informações em uma linha separadas por pipe (|). RESULTADO: Usuário agora visualiza informações completas do produto ao selecionar, facilitando identificação correta especialmente quando há produtos com nomes similares. Frontend compilado sem erros. PRONTO PARA TESTES."
 
     message: "✅ FILTROS IMPLEMENTADOS NO MÓDULO ORÇAMENTOS COM SUCESSO! IMPLEMENTAÇÃO COMPLETA: (1) ESTADOS DE FILTRO: Criado estado filtros com campos busca, cliente, status, dataInicio, dataFim seguindo mesmo padrão de Vendas; (2) LÓGICA DE FILTRAÇÃO: Implementada função orcamentosFiltrados com filtros por: busca em ID ou nome do cliente (case-insensitive), filtro por cliente específico, filtro por status (aberto/vendido/devolvido/cancelado), intervalo de datas (início e fim com ajuste de horário); (3) UI PROFISSIONAL: Adicionado Card de Filtros antes da listagem com grid responsivo de 5 colunas contendo: campo de busca com ícone Search, dropdown de clientes com CPF/CNPJ, dropdown de status, seletores de data início e fim; (4) INTEGRAÇÃO: Lista de orçamentos atualizada para usar orcamentosFiltrados, estatísticas (abertos/vendidos/devolvidos) também baseadas na lista filtrada; (5) IMPORTS: Adicionados ícones Search e Calendar. RESULTADO: Módulo Orçamentos agora possui sistema de filtros completo e funcional, interface consistente com módulo Vendas. Frontend compilou sem erros. PRONTO PARA TESTES."
+# ============================================================================================================
+# FASE 10: INTEGRAÇÃO VENDAS COM CONTAS A RECEBER
+# ============================================================================================================
+
+user_problem_statement: "FASE 10: Integração Vendas com Contas a Receber - Geração automática de contas a receber ao finalizar venda, endpoint para buscar contas vinculadas e componente de visualização no frontend."
+
+backend:
+  - task: "Fase 10 - Integração Vendas com Contas a Receber - Backend Endpoint"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ FASE 10 - BACKEND ENDPOINT IMPLEMENTADO: (1) ENDPOINT CRIADO: Novo GET /api/vendas/{venda_id}/contas-receber para buscar todas as contas a receber vinculadas a uma venda específica; (2) LOCALIZAÇÃO: Adicionado na linha 7621 do server.py, logo após o endpoint de histórico de vendas; (3) FUNCIONALIDADE: Verifica se venda existe (404 se não encontrar), busca contas a receber onde referencia_tipo='venda' e referencia_id=venda_id, retorna lista vazia se não houver contas, retorna List[ContaReceber] com parse_from_mongo aplicado; (4) PERMISSÕES: Requer permissão 'contas_receber':'ler' via require_permission; (5) INTEGRAÇÃO: Complementa a lógica existente no endpoint POST /vendas (linhas 7066-7100) que já cria automaticamente as contas a receber ao finalizar venda. Backend compilado SEM ERROS, servidor RUNNING corretamente."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Fase 10 - Integração Vendas com Contas a Receber - Backend Endpoint"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "✅ BACKEND FASE 10 IMPLEMENTADO! Adicionei o endpoint GET /api/vendas/{venda_id}/contas-receber no server.py. Este endpoint busca todas as contas a receber geradas automaticamente ao criar uma venda. Backend reiniciado com sucesso sem erros. PRÓXIMO PASSO: Testar backend via deep_testing_backend_v2 e depois implementar frontend em Vendas.js para exibir as contas vinculadas."
