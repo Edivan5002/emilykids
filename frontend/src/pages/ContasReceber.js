@@ -399,6 +399,7 @@ const ContasReceber = () => {
                   <SelectItem value="recebido_parcial">Recebido Parcial</SelectItem>
                   <SelectItem value="recebido_total">Recebido</SelectItem>
                   <SelectItem value="vencido">Vencido</SelectItem>
+                  <SelectItem value="cancelada">Cancelada</SelectItem>
                 </SelectContent>
               </Select>
             </div>
