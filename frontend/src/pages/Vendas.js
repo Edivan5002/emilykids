@@ -298,6 +298,13 @@ const Vendas = () => {
     const produto = produtos.find(p => p.id === novoItem.produto_id);
     if (!produto) return;
 
+    // Verificar se o produto já foi adicionado
+    const itemJaExiste = itensVenda.some(item => item.produto_id === novoItem.produto_id);
+    if (itemJaExiste) {
+      toast.error('Item já adicionado! Para alterar a quantidade, remova o item e adicione novamente.');
+      return;
+    }
+
     // Verificar estoque
     try {
       const checkResponse = await axios.post(`${API}/estoque/check-disponibilidade`, {
