@@ -68,6 +68,9 @@ const Orcamentos = () => {
     dataFim: ''
   });
 
+  // Estados para controle de expansão/colapso dos itens
+  const [itensExpandidos, setItensExpandidos] = useState({});
+
   // Removed unused state variables
 
   useEffect(() => {
