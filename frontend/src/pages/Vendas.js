@@ -127,6 +127,11 @@ const ContasReceberVinculadas = ({ vendaId }) => {
                       Vencimento: {new Date(parcela.data_vencimento).toLocaleDateString('pt-BR')}
                     </p>
                   )}
+                  {(conta.status === 'cancelada' || parcela?.status === 'cancelada') && conta.motivo_cancelamento && (
+                    <p className="text-xs text-red-600 mt-1 italic">
+                      Motivo: {conta.motivo_cancelamento}
+                    </p>
+                  )}
                 </div>
                 <div className="text-right ml-3">
                   <p className="text-sm font-bold text-gray-900">
