@@ -447,16 +447,6 @@ class VendasContasReceberTester:
         except Exception as e:
             self.log_test("Test 4 - Validate Structure", False, f"Error validating structure: {str(e)}")
     
-    def _is_valid_iso_date(self, date_string):
-        """Check if string is a valid ISO date"""
-        if not date_string:
-            return False
-        try:
-            datetime.fromisoformat(date_string.replace('Z', '+00:00'))
-            return True
-        except:
-            return False
-    
     def cleanup_test_data(self):
         """Clean up test data created during tests"""
         print("\n--- Cleaning up test data ---")
@@ -471,17 +461,6 @@ class VendasContasReceberTester:
                     print(f"   ⚠ Failed to cleanup sale {sale_id}: {response.status_code}")
             except Exception as e:
                 print(f"   ⚠ Error cleaning up sale {sale_id}: {str(e)}")
-        
-        # Clean up budgets
-        for budget_id in self.created_budgets:
-            try:
-                response = requests.delete(f"{self.base_url}/orcamentos/{budget_id}", headers=self.get_headers())
-                if response.status_code == 200:
-                    print(f"   ✓ Cleaned up budget {budget_id}")
-                else:
-                    print(f"   ⚠ Failed to cleanup budget {budget_id}: {response.status_code}")
-            except Exception as e:
-                print(f"   ⚠ Error cleaning up budget {budget_id}: {str(e)}")
         
         # Clean up products
         for product_id in self.created_products:
