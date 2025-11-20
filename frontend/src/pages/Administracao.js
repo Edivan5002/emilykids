@@ -543,7 +543,7 @@ const Administracao = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Activity className="text-blue-600" size={24} />
-                Logs de Auditoria Administrativa
+                Logs de Auditoria Administrativa ({logsAuditoria.length})
               </CardTitle>
               <CardDescription>Histórico de todas as ações administrativas realizadas</CardDescription>
             </CardHeader>
