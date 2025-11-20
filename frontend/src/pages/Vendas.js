@@ -95,11 +95,15 @@ const ContasReceberVinculadas = ({ vendaId }) => {
         </p>
         {contas.map((conta, index) => {
           const parcela = conta.parcelas && conta.parcelas[0];
-          const statusIcon = parcela?.status === 'paga' ? 
+          const statusIcon = conta.status === 'cancelada' || parcela?.status === 'cancelada' ? 
+            <Ban size={14} className="text-red-600" /> :
+            parcela?.status === 'paga' ? 
             <CheckCircle size={14} className="text-green-600" /> : 
             <Clock size={14} className="text-orange-600" />;
-          const statusLabel = parcela?.status === 'paga' ? 'PAGA' : 'PENDENTE';
-          const statusColor = parcela?.status === 'paga' ? 'text-green-700 bg-green-100' : 'text-orange-700 bg-orange-100';
+          const statusLabel = conta.status === 'cancelada' || parcela?.status === 'cancelada' ? 'CANCELADA' :
+            parcela?.status === 'paga' ? 'PAGA' : 'PENDENTE';
+          const statusColor = conta.status === 'cancelada' || parcela?.status === 'cancelada' ? 'text-red-700 bg-red-100' :
+            parcela?.status === 'paga' ? 'text-green-700 bg-green-100' : 'text-orange-700 bg-orange-100';
           
           return (
             <div key={conta.id} className="bg-white p-3 rounded-lg border border-green-200">
