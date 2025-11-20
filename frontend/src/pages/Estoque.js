@@ -562,6 +562,10 @@ const Estoque = () => {
               </div>
 
               {/* Tabela de Produtos */}
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 mt-6">
+                Lista de Produtos - {produtosFiltrados.length} {produtosFiltrados.length === 1 ? 'registro' : 'registros'}
+              </h3>
+
               <div className="table-responsive">
                 <table className="w-full min-w-full">
                   <thead className="bg-gray-50">
