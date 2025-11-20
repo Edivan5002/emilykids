@@ -10027,6 +10027,10 @@ async def admin_limpar_tudo(
         deletados["orcamentos"] = (await db.orcamentos.delete_many({})).deleted_count
         deletados["notas_fiscais"] = (await db.notas_fiscais.delete_many({})).deleted_count
         
+        # Deletar módulos financeiros
+        deletados["contas_receber"] = (await db.contas_receber.delete_many({})).deleted_count
+        deletados["contas_pagar"] = (await db.contas_pagar.delete_many({})).deleted_count
+        
         # Deletar estoque
         deletados["movimentacoes_estoque"] = (await db.movimentacoes_estoque.delete_many({})).deleted_count
         deletados["inventarios"] = (await db.inventarios.delete_many({})).deleted_count
