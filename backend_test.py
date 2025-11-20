@@ -290,8 +290,8 @@ class VendasContasReceberTester:
                     # Validate each conta structure
                     all_valid = True
                     for conta in contas:
-                        if (conta.get("referencia_tipo") != "venda" or 
-                            conta.get("referencia_id") != sale_id):
+                        if (conta.get("origem") != "venda" or 
+                            conta.get("origem_id") != sale_id):
                             all_valid = False
                             break
                     
