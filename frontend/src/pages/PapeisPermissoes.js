@@ -427,7 +427,20 @@ const PapeisPermissoes = () => {
         <TabsContent value="permissions">
           <Card>
             <CardHeader>
-              <CardTitle>Matriz de Permissões ({permissions.length} total)</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Matriz de Permissões ({permissions.length} total)</CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    fetchPermissions();
+                    toast.success('Permissões atualizadas');
+                  }}
+                >
+                  <Clock size={16} className="mr-2" />
+                  Atualizar Dados
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
