@@ -83,7 +83,13 @@ const PapeisPermissoes = () => {
 
   const fetchRoles = async () => {
     try {
-      const response = await axios.get(`${API}/roles`);
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      };
+      const response = await axios.get(`${API}/roles?_t=${Date.now()}`, { headers });
       setRoles(response.data);
     } catch (error) {
       toast.error('Erro ao carregar papéis');
