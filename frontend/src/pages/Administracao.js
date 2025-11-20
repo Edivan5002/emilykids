@@ -510,6 +510,8 @@ const Administracao = () => {
                   <option value="vendas">Vendas ({stats?.vendas || 0} registros)</option>
                   <option value="orcamentos">Orçamentos ({stats?.orcamentos || 0} registros)</option>
                   <option value="notas_fiscais">Notas Fiscais ({stats?.notas_fiscais || 0} registros)</option>
+                  <option value="contas_receber">Contas a Receber ({stats?.contas_receber || 0} registros)</option>
+                  <option value="contas_pagar">Contas a Pagar ({stats?.contas_pagar || 0} registros)</option>
                   <option value="produtos">Produtos ({stats?.produtos || 0} registros)</option>
                   <option value="movimentacoes_estoque">Movimentações Estoque ({stats?.movimentacoes_estoque || 0} registros)</option>
                   <option value="inventarios">Inventários ({stats?.inventarios || 0} registros)</option>
