@@ -13,6 +13,142 @@ import { useAuth } from '../contexts/AuthContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
+// Componente para exibir Contas a Receber vinculadas à venda
+const ContasReceberVinculadas = ({ vendaId }) => {
+  const [contas, setContas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(null);
+
+  useEffect(() => {
+    const fetchContas = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${API}/vendas/${vendaId}/contas-receber`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setContas(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar contas a receber:', error);
+        setErro(error.response?.data?.detail || 'Erro ao carregar contas a receber');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (vendaId) {
+      fetchContas();
+    }
+  }, [vendaId]);
+
+  if (loading) {
+    return (
+      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-center justify-center gap-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <p className="text-sm text-blue-700">Carregando contas a receber...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (erro) {
+    return null; // Não exibir erro se não houver permissão ou outro erro
+  }
+
+  if (!contas || contas.length === 0) {
+    return null; // Não exibir nada se não houver contas vinculadas
+  }
+
+  // Calcular totais
+  const totalValor = contas.reduce((sum, conta) => sum + conta.valor_total, 0);
+  const totalPago = contas.reduce((sum, conta) => sum + (conta.valor_total - conta.valor_pendente), 0);
+  const totalPendente = contas.reduce((sum, conta) => sum + conta.valor_pendente, 0);
+
+  return (
+    <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-green-100 border border-green-300 rounded-lg">
+      <div className="flex items-center gap-2 mb-3">
+        <DollarSign size={20} className="text-green-700" />
+        <h4 className="font-semibold text-green-900">Contas a Receber Vinculadas</h4>
+      </div>
+
+      {/* Cards de resumo */}
+      <div className="grid grid-cols-3 gap-3 mb-3">
+        <div className="bg-white p-2 rounded border border-green-200">
+          <p className="text-xs text-gray-600">Total</p>
+          <p className="text-sm font-bold text-blue-700">R$ {totalValor.toFixed(2)}</p>
+        </div>
+        <div className="bg-white p-2 rounded border border-green-200">
+          <p className="text-xs text-gray-600">Pago</p>
+          <p className="text-sm font-bold text-green-600">R$ {totalPago.toFixed(2)}</p>
+        </div>
+        <div className="bg-white p-2 rounded border border-green-200">
+          <p className="text-xs text-gray-600">Pendente</p>
+          <p className="text-sm font-bold text-orange-600">R$ {totalPendente.toFixed(2)}</p>
+        </div>
+      </div>
+
+      {/* Lista de parcelas */}
+      <div className="space-y-2">
+        <p className="text-xs font-semibold text-gray-700 mb-2">
+          Parcelas ({contas.length})
+        </p>
+        {contas.map((conta, index) => {
+          const parcela = conta.parcelas && conta.parcelas[0];
+          const statusIcon = parcela?.status === 'paga' ? 
+            <CheckCircle size={14} className="text-green-600" /> : 
+            <Clock size={14} className="text-orange-600" />;
+          const statusLabel = parcela?.status === 'paga' ? 'PAGA' : 'PENDENTE';
+          const statusColor = parcela?.status === 'paga' ? 'text-green-700 bg-green-100' : 'text-orange-700 bg-orange-100';
+          
+          return (
+            <div key={conta.id} className="bg-white p-3 rounded-lg border border-green-200">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileText size={14} className="text-gray-600" />
+                    <p className="text-xs font-semibold text-gray-900">
+                      {conta.numero || `Conta #${conta.id.slice(0, 8)}`}
+                    </p>
+                    <span className={`text-xs px-2 py-0.5 rounded flex items-center gap-1 ${statusColor}`}>
+                      {statusIcon}
+                      {statusLabel}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600">
+                    {conta.descricao}
+                  </p>
+                  {parcela && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Vencimento: {new Date(parcela.data_vencimento).toLocaleDateString('pt-BR')}
+                    </p>
+                  )}
+                </div>
+                <div className="text-right ml-3">
+                  <p className="text-sm font-bold text-gray-900">
+                    R$ {conta.valor_total.toFixed(2)}
+                  </p>
+                  {conta.valor_pendente > 0 && (
+                    <p className="text-xs text-orange-600">
+                      Pendente: R$ {conta.valor_pendente.toFixed(2)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 pt-3 border-t border-green-300">
+        <p className="text-xs text-gray-600 italic">
+          💡 Estas contas foram geradas automaticamente ao finalizar a venda
+        </p>
+      </div>
+    </div>
+  );
+};
+
 const Vendas = () => {
   const { user } = useAuth();
   const [vendas, setVendas] = useState([]);
