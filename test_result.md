@@ -1146,3 +1146,63 @@ agent_communication:
     message: "BUG: Ao cancelar venda, as parcelas do contas a receber não estão sendo canceladas."
   - agent: "main"
     message: "✅ BUG CORRIGIDO! Adicionei lógica no endpoint de cancelamento de venda (POST /vendas/{venda_id}/cancelar) para: (1) Buscar todas as contas a receber vinculadas à venda; (2) Atualizar status de todas as parcelas para 'cancelada'; (3) Atualizar conta a receber com status='cancelada', motivo, data e responsável. Backend reiniciado sem erros. PRONTO PARA RETESTE! Pode testar novamente o cancelamento de venda para verificar se as contas a receber estão sendo canceladas corretamente."
+
+# ============================================================================================================
+# CORREÇÕES E PADRONIZAÇÕES - FASE 10 CONTINUAÇÃO
+# ============================================================================================================
+
+backend:
+  - task: "Fase 10 - Cancelamento automático de contas a receber ao cancelar venda"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ CANCELAMENTO AUTOMÁTICO IMPLEMENTADO: (1) LÓGICA ADICIONADA: No endpoint POST /vendas/{venda_id}/cancelar (linhas 7372-7397), adicionada busca de contas a receber vinculadas à venda (origem='venda', origem_id=venda_id); (2) ATUALIZAÇÃO EM LOTE: Para cada conta vinculada encontrada: atualiza status de todas as parcelas para 'cancelada', atualiza status da conta para 'cancelada', adiciona motivo_cancelamento, cancelada_por, data_cancelamento; (3) INTEGRAÇÃO: Funciona em conjunto com cancelamento de estoque e orçamento vinculado; (4) AUDITORIA: Mantém rastreabilidade completa do cancelamento. Backend compilado SEM ERROS, servidor RUNNING."
+
+  - task: "Correção de KPIs - Exclusão de contas canceladas dos totalizadores"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ KPIs CORRIGIDOS EM AMBOS MÓDULOS: (1) CONTAS A RECEBER (linha 9564): Query atualizada para excluir contas com status='cancelada' além de cancelada=False; Cálculos de total_receber, total_recebido, total_pendente agora filtram status != 'cancelada'; Total_vencido continua considerando apenas status='vencido'; (2) CONTAS A PAGAR (linha 11444): Mesma lógica aplicada - query com exclusão de canceladas, cálculos filtrados; (3) PADRONIZAÇÃO: Ambos módulos agora têm tratamento idêntico para contas canceladas. RESULTADO: Cards 'Total a Receber', 'Total a Pagar', 'Total Vencido' não contabilizam mais contas com status cancelada."
+
+frontend:
+  - task: "Adição filtro 'Cancelada' nos módulos Contas a Receber e Contas a Pagar"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/ContasReceber.js, /app/frontend/src/pages/ContasPagar.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ FILTRO DE STATUS COMPLETO: (1) CONTAS A RECEBER: Adicionado SelectItem value='cancelada' no filtro de status (linha 402); Agora possui 6 opções: Todos, Pendente, Recebido Parcial, Recebido, Vencido, Cancelada; (2) CONTAS A PAGAR: Adicionado SelectItem value='cancelada' no filtro de status (linha 429); Agora possui 6 opções: Todos, Pendente, Pago Parcial, Pago, Vencido, Cancelada; (3) PADRONIZAÇÃO: Ambos módulos agora têm os mesmos filtros de status disponíveis. Frontend compilado COM SUCESSO."
+
+  - task: "Atualização componente ContasReceberVinculadas - Exibir contas canceladas"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Vendas.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ EXIBIÇÃO DE CONTAS CANCELADAS IMPLEMENTADA: (1) LÓGICA DE STATUS: Atualizado para verificar conta.status === 'cancelada' OU parcela.status === 'cancelada'; StatusIcon mostra Ban (vermelho) para canceladas, CheckCircle (verde) para pagas, Clock (laranja) para pendentes; StatusLabel mostra 'CANCELADA', 'PAGA' ou 'PENDENTE'; StatusColor aplica cores apropriadas (vermelho para cancelada, verde para paga, laranja para pendente); (2) MOTIVO DE CANCELAMENTO: Adicionada exibição do campo motivo_cancelamento em texto vermelho itálico quando conta está cancelada; (3) VISUAL: Ícone Ban já estava importado do lucide-react; Texto e badges com cores apropriadas. RESULTADO: Usuário agora vê claramente quando uma conta está cancelada e o motivo do cancelamento no componente de contas vinculadas."
+
+agent_communication:
+  - agent: "user"
+    message: "BUG REPORTADO: 'testei o cancelamento da venda e ao cancelar não esta cancelamento as parcelas do contas a receber' - Ao cancelar uma venda, as contas a receber vinculadas não eram canceladas automaticamente."
+  - agent: "main"
+    message: "✅ BUG CORRIGIDO + MELHORIAS COMPLETAS IMPLEMENTADAS! CORREÇÕES: (1) BACKEND - Cancelamento Automático: Adicionada lógica no endpoint cancelar_venda para buscar e cancelar todas as contas a receber vinculadas (origem='venda', origem_id=venda_id); Atualiza status da conta e de todas as parcelas para 'cancelada'; Adiciona motivo, responsável e data do cancelamento; (2) BACKEND - KPIs Corrigidos: Endpoints de dashboard em Contas a Receber e Contas a Pagar agora excluem contas com status='cancelada' dos cálculos de totalizadores; Cards 'Total a Receber', 'Total a Pagar' e 'Total Vencido' não contabilizam mais contas canceladas; (3) FRONTEND - Filtros: Adicionado opção 'Cancelada' no filtro de status em ambos módulos (Contas a Receber e Contas a Pagar); (4) FRONTEND - Componente Vinculadas: Atualizado componente ContasReceberVinculadas para exibir visualmente contas canceladas com ícone Ban vermelho, badge 'CANCELADA' e motivo do cancelamento; (5) PADRONIZAÇÃO: Módulos Contas a Receber e Contas a Pagar agora têm estrutura idêntica de filtros e tratamento de cancelamentos. Backend e frontend compilados SEM ERROS. PRONTO PARA TESTES!"
