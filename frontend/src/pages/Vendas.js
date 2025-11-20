@@ -882,7 +882,7 @@ const Vendas = () => {
                   </div>
 
                   {/* Contas a Receber Vinculadas - Apenas para vendas não canceladas e parceladas */}
-                  {!venda.cancelada && venda.status_venda !== 'cancelada' && venda.forma_pagamento !== 'avista' && (
+                  {!venda.cancelada && venda.status_venda !== 'cancelada' && venda.numero_parcelas > 1 && (
                     <ContasReceberVinculadas vendaId={venda.id} />
                   )}
 
