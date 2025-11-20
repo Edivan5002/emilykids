@@ -297,6 +297,13 @@ const Orcamentos = () => {
       return;
     }
 
+    // Verificar se o produto já foi adicionado
+    const itemJaExiste = modalConversao.itens.some(item => item.produto_id === novoItemConversao.produto_id);
+    if (itemJaExiste) {
+      toast.error('Item já adicionado! Para alterar a quantidade, remova o item e adicione novamente.');
+      return;
+    }
+
     const itemCompleto = {
       produto_id: novoItemConversao.produto_id,
       produto_nome: produto.nome,
