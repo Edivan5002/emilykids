@@ -1125,3 +1125,24 @@ frontend:
 agent_communication:
   - agent: "main"
     message: "✅ FRONTEND FASE 10 IMPLEMENTADO COM SUCESSO! Criei o componente ContasReceberVinculadas que busca e exibe as contas a receber vinculadas a cada venda. O componente: (1) Busca automaticamente via GET /api/vendas/{venda_id}/contas-receber; (2) Exibe cards de resumo (Total, Pago, Pendente); (3) Lista todas as parcelas com status, valores e vencimentos; (4) Só aparece em vendas não canceladas e com forma_pagamento diferente de 'avista'; (5) Tem tratamento de erros e loading states. Frontend compilou sem erros. PRONTO PARA TESTES! Usuário pode testar manualmente ou eu posso chamar agente de testes frontend."
+
+  - task: "Fase 10 - Cancelamento de Venda propaga para Contas a Receber"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "BUG REPORTADO: 'testei o cancelamento da venda e ao cancelar não esta cancelamento as parcelas do contas a receber' - Ao cancelar uma venda, as contas a receber vinculadas não estão sendo canceladas."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ BUG CORRIGIDO - CANCELAMENTO PROPAGADO: (1) LOCALIZAÇÃO: Modificado endpoint POST /vendas/{venda_id}/cancelar (linhas 7372-7397); (2) LÓGICA IMPLEMENTADA: Após cancelar a venda, busca todas as contas a receber com origem='venda' e origem_id=venda_id; Itera sobre cada conta encontrada; Atualiza status de TODAS as parcelas para 'cancelada'; Atualiza conta a receber com: status='cancelada', parcelas atualizadas, motivo_cancelamento (inclui motivo da venda), cancelada_por (user_id), data_cancelamento, updated_at; (3) INTEGRAÇÃO: Código inserido após atualização do orçamento vinculado e antes do log de auditoria; Mantém consistência com resto do sistema; (4) RESULTADO: Agora quando uma venda é cancelada, todas as contas a receber vinculadas são automaticamente canceladas junto com suas parcelas. Backend reiniciado COM SUCESSO, servidor RUNNING. PRONTO PARA TESTES."
+
+agent_communication:
+  - agent: "user"
+    message: "BUG: Ao cancelar venda, as parcelas do contas a receber não estão sendo canceladas."
+  - agent: "main"
+    message: "✅ BUG CORRIGIDO! Adicionei lógica no endpoint de cancelamento de venda (POST /vendas/{venda_id}/cancelar) para: (1) Buscar todas as contas a receber vinculadas à venda; (2) Atualizar status de todas as parcelas para 'cancelada'; (3) Atualizar conta a receber com status='cancelada', motivo, data e responsável. Backend reiniciado sem erros. PRONTO PARA RETESTE! Pode testar novamente o cancelamento de venda para verificar se as contas a receber estão sendo canceladas corretamente."
