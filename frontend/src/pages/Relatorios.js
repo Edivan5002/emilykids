@@ -622,7 +622,7 @@ const Relatorios = () => {
                       <tbody>
                         {vendasDiaPaginadas.map(([periodo, dados]) => (
                           <tr key={periodo} className="border-b hover:bg-gray-50">
-                            <td className="p-3 text-sm">{periodo}</td>
+                            <td className="p-3 text-sm">{formatDateStringBR(periodo)}</td>
                             <td className="p-3 text-sm text-center">{dados.quantidade}</td>
                             <td className="p-3 text-sm text-center font-medium">R$ {dados.faturamento.toFixed(2)}</td>
                             <td className="p-3 text-sm text-center font-medium">R$ {dados.ticket_medio.toFixed(2)}</td>
