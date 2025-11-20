@@ -1474,3 +1474,26 @@ agent_communication:
     message: "SOLICITAÇÃO: 'no módulo nota fiscal ao clicar no botão nova nota fiscal na aba itens ao adicionar um item não deve ser permitido adicionar o mesmo item, onde deve informar ao usuário item já adicionado para alterar a quantidade remova o item e adicione novamente'."
   - agent: "main"
     message: "✅ VALIDAÇÃO DE ITENS DUPLICADOS IMPLEMENTADA EM 3 MÓDULOS! IMPLEMENTAÇÃO: (1) NOTAS FISCAIS (linha 213): Adicionada verificação itensNota.some(item => item.produto_id === novoItem.produto_id); Se produto já existe na lista, mostra toast.error e retorna sem adicionar; Validação antes de criar itemCompleto; (2) VENDAS (linha 300): Mesma validação aplicada em itensVenda; Posicionada ANTES da verificação de estoque (economiza chamada API); Evita processamento desnecessário; (3) ORÇAMENTOS (linha 166): Validação em itensOrcamento; Também antes da verificação de estoque reservado; Mantém consistência com outros módulos. MENSAGEM DE ERRO: 'Item já adicionado! Para alterar a quantidade, remova o item e adicione novamente.' - Clara e orientativa; Informa o que aconteceu; Orienta como proceder; Consistente em todos os módulos. BENEFÍCIOS: Evita confusão com quantidades duplicadas; Economiza verificações de estoque desnecessárias; UX melhorada com orientação clara; Comportamento consistente em toda aplicação. Frontend compilado SEM ERROS. VALIDAÇÃO FUNCIONANDO EM TODOS OS MÓDULOS!"
+
+# ============================================================================================================
+# VALIDAÇÃO DE ITENS DUPLICADOS - MODAL CONVERTER ORÇAMENTO EM VENDA
+# ============================================================================================================
+
+frontend:
+  - task: "Validação de itens duplicados no modal de conversão de orçamento em venda"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Orcamentos.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ VALIDAÇÃO IMPLEMENTADA NO MODAL DE CONVERSÃO: (1) LOCALIZAÇÃO: Função handleAdicionarItemConversao (linha 288); Modal que se abre ao clicar em 'Converter em Venda' em um orçamento; (2) VERIFICAÇÃO ADICIONADA (após linha 298): Verifica se produto_id já existe em modalConversao.itens usando .some(); Se existir, mostra toast.error e retorna sem adicionar; (3) MENSAGEM DE ERRO: 'Item já adicionado! Para alterar a quantidade, remova o item e adicione novamente.'; Consistente com outros módulos; Orienta usuário claramente; (4) POSICIONAMENTO: Após validação de campos obrigatórios (produto_id, quantidade, preco_unitario); Após verificação de existência do produto na lista; Antes de criar itemCompleto e adicionar à lista. RESULTADO: Modal de conversão também protegido contra duplicação de itens."
+
+agent_communication:
+  - agent: "user"
+    message: "CORREÇÃO NECESSÁRIA: 'você esqueceu de implementar no módulo orçamento ao clicar em converter em venda na modal que se abre para efetivar venda implemente'."
+  - agent: "main"
+    message: "✅ VALIDAÇÃO IMPLEMENTADA NO MODAL DE CONVERSÃO! CORREÇÃO: Tinha implementado apenas no formulário de criar novo orçamento, mas esqueci do modal de conversão. IMPLEMENTAÇÃO AGORA COMPLETA: (1) MODAL DE CONVERSÃO (linha 300): Adicionada verificação modalConversao.itens.some(item => item.produto_id === novoItemConversao.produto_id); Se produto já existe na lista de itens do modal, bloqueia adição; (2) MENSAGEM CONSISTENTE: Mesma mensagem usada em todos os outros módulos; 'Item já adicionado! Para alterar a quantidade, remova o item e adicione novamente.'; (3) FLUXO COMPLETO PROTEGIDO: Criar novo orçamento ✓, Editar itens do orçamento ✓, Converter orçamento em venda (modal) ✓. MÓDULOS TOTALMENTE PROTEGIDOS: Notas Fiscais (criar nova), Vendas (criar nova), Orçamentos (criar novo), Orçamentos (converter em venda). Frontend compilado SEM ERROS. VALIDAÇÃO COMPLETA EM TODOS OS PONTOS DE ENTRADA!"
