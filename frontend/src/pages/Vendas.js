@@ -375,10 +375,14 @@ const Vendas = () => {
         itens: itensParaEnvio,
         desconto: formVenda.desconto,
         frete: formVenda.frete,
-        forma_pagamento: formVenda.forma_pagamento
+        forma_pagamento: formVenda.forma_pagamento,
+        numero_parcelas: formVenda.tipo_pagamento === 'avista' ? 1 : formVenda.numero_parcelas
       };
 
-      await axios.post(`${API}/vendas`, payload);
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/vendas`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       toast.success('Venda criada com sucesso! Estoque atualizado.');
       fetchData();
       handleCloseCreate();
@@ -395,7 +399,10 @@ const Vendas = () => {
       cliente_id: '',
       desconto: 0,
       frete: 0,
-      forma_pagamento: 'cartao'
+      forma_pagamento: 'cartao',
+      tipo_pagamento: 'avista',
+      numero_parcelas: 1,
+      data_vencimento: ''
     });
     setItensVenda([]);
     setNovoItem({
