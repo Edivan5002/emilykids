@@ -1289,3 +1289,29 @@ agent_communication:
     message: "NOVA SOLICITAÇÃO: 'no módulo vendas ao criar uma nova venda você deve criar a mesma estrutura que criamos no módulo nota fiscal ao clicar em criar nota fiscal que criamos informações de pagamento para que o usuário escolha forma de pagamento, tipo de pagamento e data de vencimento, numero de parcelas etc'."
   - agent: "main"
     message: "✅ ESTRUTURA DE FORMULÁRIO IMPLEMENTADA COM SUCESSO! IMPLEMENTAÇÕES: (1) ABAS ORGANIZADAS: Formulário de Nova Venda agora tem 3 abas ('Dados da Venda', 'Pagamento', 'Itens') usando componente Tabs do Shadcn UI, mesma estrutura visual de Notas Fiscais com TabsList em grid de 3 colunas; (2) ABA PAGAMENTO COMPLETA: Seção destacada em azul com ícone DollarSign e título 'Informações de Pagamento', campos: Forma de Pagamento* (Cartão/PIX/Boleto/Dinheiro), Tipo de Pagamento* (À Vista/Parcelado), Número de Parcelas (2-12, só aparece se parcelado), Data de Vencimento (com hint de 30 dias, indica '1ª Parcela' se parcelado); (3) LÓGICA INTELIGENTE: Ao selecionar 'À Vista', numero_parcelas é automaticamente setado para 1, ao selecionar 'Parcelado', campo de parcelas aparece com mínimo 2, hint contextual na data de vencimento muda conforme tipo; (4) INTEGRAÇÃO BACKEND: Payload atualizado para enviar numero_parcelas calculado corretamente, header de autenticação Bearer token incluído; (5) ESTADOS E RESET: Form state expandido com novos campos (tipo_pagamento, numero_parcelas, data_vencimento), handleCloseCreate reseta todos os campos incluindo os novos; (6) UX CONSISTENTE: Total e botões sempre visíveis fora das abas, alerta amarelo quando não há itens, botão desabilitado se lista vazia. Frontend compilado SEM ERROS. SISTEMA PADRONIZADO E FUNCIONAL!"
+
+# ============================================================================================================
+# CORREÇÃO DE BUG - MÓDULO RELATÓRIOS
+# ============================================================================================================
+
+frontend:
+  - task: "Correção erro formatDateStringBR is not defined - Módulo Relatórios"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Relatorios.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "BUG REPORTADO: 'no módulo relatorios na aba vendas ao clicar no botão por dia ou por mês esta apresentando o erro formatDateStringBR is not defined'."
+      - working: true
+        agent: "main"
+        comment: "✅ BUG CORRIGIDO: (1) PROBLEMA IDENTIFICADO: Função formatDateStringBR estava sendo usada nas linhas 646 e 820 do Relatorios.js mas não estava importada; (2) SOLUÇÃO: Adicionada importação de formatDateStringBR do arquivo @/utils/dateFormatter; (3) VERIFICAÇÃO: Função existe e está corretamente implementada em /app/frontend/src/utils/dateFormatter.js (linhas 77-97); Formata strings de data YYYY-MM-DD para DD/MM/YYYY; Já importava formatDateBR, formatMonthYearBR e formatDateTimeBR, faltava apenas formatDateStringBR; (4) RESULTADO: Frontend compilado SEM ERROS; Botões 'Por Dia' e 'Por Mês' agora funcionam corretamente sem erro de função não definida."
+
+agent_communication:
+  - agent: "user"
+    message: "BUG: 'no módulo relatorios na aba vendas ao clicar no botão por dia ou por mês esta apresentando o erro formatDateStringBR is not defined'."
+  - agent: "main"
+    message: "✅ BUG CORRIGIDO IMEDIATAMENTE! CAUSA: Função formatDateStringBR estava sendo usada em Relatorios.js (linhas 646 e 820) mas não estava importada do arquivo de utilitários dateFormatter.js. SOLUÇÃO: Adicionada importação { formatDateStringBR } junto com as outras funções de formatação de data já importadas (formatDateBR, formatMonthYearBR, formatDateTimeBR). Frontend compilado SEM ERROS. Botões 'Por Dia' e 'Por Mês' na aba Vendas do módulo Relatórios agora funcionam perfeitamente!"
