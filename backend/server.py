@@ -5874,37 +5874,32 @@ async def cancelar_nota_fiscal(
         }}
     )
     
-    # INTEGRAÇÃO: Cancelar conta a pagar vinculada (se existir)
-    try:
-        conta_pagar_id = nota.get("conta_pagar_id")
-        if conta_pagar_id:
-            conta = await db.contas_pagar.find_one({"id": conta_pagar_id}, {"_id": 0})
-            if conta and not conta.get("cancelada", False):
-                # Cancelar apenas se não houver parcelas pagas
-                parcelas_pagas = [p for p in conta.get("parcelas", []) if p.get("status") == "pago"]
-                if len(parcelas_pagas) == 0:
-                    await db.contas_pagar.update_one(
-                        {"id": conta_pagar_id},
-                        {"$set": {
-                            "cancelada": True,
-                            "status": "cancelado",
-                            "cancelada_por": current_user["id"],
-                            "cancelada_por_name": current_user["nome"],
-                            "cancelada_at": datetime.now(timezone.utc).isoformat(),
-                            "motivo_cancelamento": f"Nota fiscal {nota.get('numero')} cancelada: {cancelamento.motivo}"
-                        }}
-                    )
-                    
-                    # Registrar log
-                    await registrar_cancelamento_conta_pagar(
-                        conta=conta,
-                        motivo=f"Nota fiscal {nota.get('numero')} cancelada",
-                        usuario_id=current_user["id"],
-                        usuario_nome=current_user["nome"]
-                    )
-    except Exception as e:
-        # Não falhar se não conseguir cancelar a conta
-        print(f"Erro ao cancelar conta a pagar vinculada à NF {nota_id}: {str(e)}")
+    # FASE 12: Cancelar contas a pagar vinculadas à nota fiscal
+    contas_vinculadas = await db.contas_pagar.find({
+        "origem": "nota_fiscal",
+        "origem_id": nota_id
+    }).to_list(length=None)
+    
+    if contas_vinculadas:
+        for conta in contas_vinculadas:
+            # Atualizar status de todas as parcelas para cancelada
+            parcelas_atualizadas = []
+            for parcela in conta.get("parcelas", []):
+                parcela["status"] = "cancelada"
+                parcelas_atualizadas.append(parcela)
+            
+            # Atualizar conta a pagar
+            await db.contas_pagar.update_one(
+                {"id": conta["id"]},
+                {"$set": {
+                    "status": "cancelada",
+                    "parcelas": parcelas_atualizadas,
+                    "motivo_cancelamento": f"Nota fiscal cancelada - {cancelamento.motivo}",
+                    "cancelada_por": current_user["id"],
+                    "data_cancelamento": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }}
+            )
     
     # Log
     await log_action(
