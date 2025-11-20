@@ -485,12 +485,12 @@ class VendasContasReceberTester:
                 print(f"   ⚠ Error cleaning up client {client_id}: {str(e)}")
     
     def run_all_tests(self):
-        """Run all sales cancellation propagation tests"""
-        print("🎯 TESTAR PROPAGAÇÃO DE CANCELAMENTO DE VENDAS PARA ORÇAMENTOS")
+        """Run all mandatory tests for FASE 10"""
+        print("🎯 TESTAR FASE 10: INTEGRAÇÃO VENDAS COM CONTAS A RECEBER")
         print("=" * 80)
-        print("NOVA FUNCIONALIDADE: Quando uma venda originada de um orçamento é cancelada,")
-        print("o orçamento correspondente deve mudar status de 'vendido' para 'cancelado'")
-        print("e armazenar o motivo do cancelamento, quem cancelou e quando.")
+        print("NOVO ENDPOINT: GET /api/vendas/{venda_id}/contas-receber")
+        print("Busca contas a receber vinculadas a uma venda específica.")
+        print("Permissão requerida: contas_receber:ler")
         print("=" * 80)
         
         # Authenticate first
@@ -499,10 +499,10 @@ class VendasContasReceberTester:
             return False
         
         # Run the 4 mandatory tests from review request
-        self.test_cancel_sale_from_budget()      # Test 1: Cancel sale from budget
-        self.test_cancel_direct_sale()           # Test 2: Cancel direct sale
-        self.test_validate_canceled_budget_fields() # Test 3: Validate budget fields
-        self.test_stock_reversion()              # Test 4: Stock reversion
+        self.test_fetch_contas_receber_parcelada()    # Test 1: Parcelada sale
+        self.test_fetch_contas_receber_avista()       # Test 2: À vista sale
+        self.test_fetch_contas_receber_invalid_sale() # Test 3: Invalid sale
+        self.test_validate_contas_structure()         # Test 4: Structure validation
         
         return True
     
