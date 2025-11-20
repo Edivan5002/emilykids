@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 """
-Backend Test Suite for Sales Cancellation Propagation to Budgets
-Tests the new functionality that propagates sales cancellation to linked budgets
+Backend Test Suite for FASE 10: INTEGRAÇÃO VENDAS COM CONTAS A RECEBER
 
-FOCUS: Testing the new feature where canceling a sale originated from a budget
-automatically updates the budget status from "vendido" to "cancelado" and stores
-cancellation details (reason, who canceled, when).
+Tests the new endpoint GET /api/vendas/{venda_id}/contas-receber that fetches
+contas a receber linked to a specific sale.
 
-CRITICAL TESTS:
-1. Cancel sale originated from budget - Budget should be updated
-2. Cancel sale NOT originated from budget - No propagation should occur  
-3. Validate all fields in canceled budget
-4. Verify stock is correctly reverted
+MANDATORY TESTS:
+1. Fetch contas a receber from parcelada sale (cartao payment with 3 parcelas)
+2. Fetch contas a receber from à vista sale (should return empty list)
+3. Fetch contas a receber from non-existent sale (should return 404)
+4. Validate structure of returned contas
 """
 
 import requests
