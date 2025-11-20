@@ -1019,7 +1019,7 @@ const Estoque = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-red-600">
                   <AlertCircle size={20} />
-                  Estoque Abaixo do Mínimo
+                  Estoque Abaixo do Mínimo ({alertasAbaixo.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
