@@ -1148,7 +1148,7 @@ const NotasFiscais = () => {
                       <div>
                         <p className="text-xs text-gray-500">Data da Compra</p>
                         <p className="font-semibold text-sm">
-                          {new Date(compra.data_emissao).toLocaleDateString('pt-BR')}
+                          {formatDateBR(compra.data_emissao)}
                         </p>
                       </div>
                       <div>
