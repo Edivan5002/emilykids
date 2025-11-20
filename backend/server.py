@@ -11444,17 +11444,17 @@ async def dashboard_contas_pagar(
     """
     KPIs e estatísticas de contas a pagar
     """
-    query = {"cancelada": False}
+    query = {"cancelada": False, "status": {"$ne": "cancelada"}}
     
     if data_inicio and data_fim:
         query["created_at"] = {"$gte": data_inicio, "$lte": data_fim}
     
     contas = await db.contas_pagar.find(query, {"_id": 0}).to_list(10000)
     
-    # Calcular KPIs
-    total_pagar = sum(c["valor_total"] for c in contas)
-    total_pago = sum(c["valor_pago"] for c in contas)
-    total_pendente = sum(c["valor_pendente"] for c in contas)
+    # Calcular KPIs (excluindo contas canceladas)
+    total_pagar = sum(c["valor_total"] for c in contas if c.get("status") != "cancelada")
+    total_pago = sum(c["valor_pago"] for c in contas if c.get("status") != "cancelada")
+    total_pendente = sum(c["valor_pendente"] for c in contas if c.get("status") != "cancelada")
     total_vencido = sum(c["valor_pendente"] for c in contas if c["status"] == "vencido")
     
     quantidade_contas = len(contas)
