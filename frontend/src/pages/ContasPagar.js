@@ -426,6 +426,7 @@ const ContasPagar = () => {
                   <SelectItem value="pago_parcial">Pago Parcial</SelectItem>
                   <SelectItem value="pago_total">Pago</SelectItem>
                   <SelectItem value="vencido">Vencido</SelectItem>
+                  <SelectItem value="cancelada">Cancelada</SelectItem>
                 </SelectContent>
               </Select>
             </div>
