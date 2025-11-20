@@ -1302,11 +1302,11 @@ const Vendas = () => {
                         <X size={16} className="text-red-500" />
                       </Button>
                     </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              </TabsContent>
+                  ))}
+                </div>
+              )}
+            </div>
+            </TabsContent>
 
               {/* Total e Botões - Fora das abas */}
               <div className="space-y-4 mt-4">
