@@ -7067,34 +7067,46 @@ async def create_venda(venda_data: VendaCreate, current_user: dict = Depends(req
     # Somente se não precisa autorização (venda confirmada) e não for pagamento à vista
     if not requer_autorizacao and venda_data.forma_pagamento != 'avista':
         try:
+            # Get client info for conta receber
+            cliente = await db.clientes.find_one({"id": venda.cliente_id}, {"_id": 0})
+            cliente_nome = cliente.get("nome", "Cliente não encontrado") if cliente else "Cliente não encontrado"
+            
             # Gerar conta a receber para cada parcela
             for idx, parcela in enumerate(venda.parcelas, start=1):
                 numero_conta = await gerar_numero_conta_receber()
                 
                 # Calcular data de vencimento baseada no número da parcela
-                data_base = datetime.fromisoformat(venda.data_venda.replace('Z', '+00:00'))
+                data_base = datetime.fromisoformat(venda.created_at.replace('Z', '+00:00'))
                 dias_para_vencimento = 30 * idx  # 30 dias para cada parcela
                 data_vencimento = (data_base + timedelta(days=dias_para_vencimento)).isoformat()
                 
-                conta_receber = ContaReceber(
-                    numero_conta=numero_conta,
-                    cliente_id=venda.cliente_id,
-                    descricao=f"Venda #{numero_venda} - Parcela {idx}/{venda.numero_parcelas}",
+                # Create ParcelaReceber for this conta
+                parcela_receber = ParcelaReceber(
+                    numero_parcela=1,
                     valor=parcela["valor"],
                     data_vencimento=data_vencimento,
-                    categoria_receita_id=None,  # Pode ser configurado depois
+                    status="pendente"
+                )
+                
+                conta_receber = ContaReceber(
+                    numero=numero_conta,
+                    origem="venda",
+                    origem_id=venda.id,
+                    origem_numero=numero_venda,
+                    cliente_id=venda.cliente_id,
+                    cliente_nome=cliente_nome,
+                    descricao=f"Venda #{numero_venda} - Parcela {idx}/{venda.numero_parcelas}",
+                    valor_total=parcela["valor"],
+                    valor_pendente=parcela["valor"],
+                    valor_liquido=parcela["valor"],
                     forma_pagamento=venda.forma_pagamento,
+                    tipo_pagamento="parcelado" if venda.numero_parcelas > 1 else "avista",
                     numero_parcelas=1,  # Cada conta representa 1 parcela
-                    parcelas=[{
-                        "numero": 1,
-                        "valor": parcela["valor"],
-                        "data_vencimento": data_vencimento,
-                        "status": "pendente"
-                    }],
-                    referencia_tipo="venda",
-                    referencia_id=venda.id,
-                    observacoes=f"Gerada automaticamente da venda {numero_venda}",
-                    user_id=current_user["id"]
+                    parcelas=[parcela_receber],
+                    observacao=f"Gerada automaticamente da venda {numero_venda}",
+                    created_by=current_user["id"],
+                    created_by_name=current_user["nome"],
+                    venda_itens=venda.itens
                 )
                 
                 await db.contas_receber.insert_one(conta_receber.model_dump())
