@@ -862,32 +862,66 @@ const Vendas = () => {
                     </div>
                   ) : null}
 
+                  {/* Itens - Colapsável */}
                   <div className="mb-4">
-                    <p className="text-sm font-semibold mb-2">Itens ({venda.itens.length}):</p>
-                    <div className="grid grid-cols-1 gap-2">
-                      {venda.itens.map((item, idx) => (
-                        <div key={idx} className="bg-gradient-to-r from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-blue-700">
-                                {getProdutoDescricaoCompleta(item.produto_id)}
-                              </p>
-                              <p className="text-xs text-gray-600 mt-1">
-                                Quantidade: <span className="font-semibold">{item.quantidade}</span> x R$ {item.preco_unitario.toFixed(2)}
-                              </p>
-                            </div>
-                            <span className="font-bold text-green-600 ml-2">
-                              R$ {(item.quantidade * item.preco_unitario).toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                    <div 
+                      className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded mb-2"
+                      onClick={() => setItensExpandidos({...itensExpandidos, [venda.id]: !itensExpandidos[venda.id]})}
+                    >
+                      <p className="text-sm font-semibold flex items-center gap-2">
+                        <Package size={16} className="text-blue-600" />
+                        Itens ({venda.itens.length})
+                      </p>
+                      {itensExpandidos[venda.id] ? (
+                        <ChevronUp size={20} className="text-gray-600" />
+                      ) : (
+                        <ChevronDown size={20} className="text-gray-600" />
+                      )}
                     </div>
+                    {itensExpandidos[venda.id] && (
+                      <div className="grid grid-cols-1 gap-2">
+                        {venda.itens.map((item, idx) => (
+                          <div key={idx} className="bg-gradient-to-r from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-blue-700">
+                                  {getProdutoDescricaoCompleta(item.produto_id)}
+                                </p>
+                                <p className="text-xs text-gray-600 mt-1">
+                                  Quantidade: <span className="font-semibold">{item.quantidade}</span> x R$ {item.preco_unitario.toFixed(2)}
+                                </p>
+                              </div>
+                              <span className="font-bold text-green-600 ml-2">
+                                R$ {(item.quantidade * item.preco_unitario).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Contas a Receber Vinculadas - Apenas para vendas não canceladas e parceladas */}
+                  {/* Contas a Receber Vinculadas - Colapsável (Apenas para vendas não canceladas e parceladas) */}
                   {!venda.cancelada && venda.status_venda !== 'cancelada' && venda.numero_parcelas > 1 && (
-                    <ContasReceberVinculadas vendaId={venda.id} />
+                    <div className="mb-4">
+                      <div 
+                        className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded mb-2"
+                        onClick={() => setContasExpandidas({...contasExpandidas, [venda.id]: !contasExpandidas[venda.id]})}
+                      >
+                        <p className="text-sm font-semibold flex items-center gap-2">
+                          <DollarSign size={16} className="text-green-600" />
+                          Contas a Receber Vinculadas
+                        </p>
+                        {contasExpandidas[venda.id] ? (
+                          <ChevronUp size={20} className="text-gray-600" />
+                        ) : (
+                          <ChevronDown size={20} className="text-gray-600" />
+                        )}
+                      </div>
+                      {contasExpandidas[venda.id] && (
+                        <ContasReceberVinculadas vendaId={venda.id} />
+                      )}
+                    </div>
                   )}
 
                   {/* Motivo do Cancelamento */}
