@@ -303,7 +303,18 @@ const PapeisPermissoes = () => {
 
         {/* ROLES TAB */}
         <TabsContent value="roles">
-          <div className="mb-4 flex justify-end">
+          <div className="mb-4 flex justify-between items-center">
+            <Button 
+              variant="outline"
+              onClick={() => {
+                fetchRoles();
+                fetchPermissions();
+                toast.success('Dados atualizados');
+              }}
+            >
+              <Clock size={16} className="mr-2" />
+              Atualizar Dados
+            </Button>
             <Button onClick={openNewRole}>
               <Plus size={16} className="mr-2" />
               Novo Papel
