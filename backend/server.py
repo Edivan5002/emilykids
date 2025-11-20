@@ -7651,7 +7651,10 @@ async def get_contas_receber_por_venda(venda_id: str, current_user: dict = Depen
     if not contas:
         return []
     
-    return [ContaReceber(**parse_from_mongo(c)) for c in contas]
+    # Remove MongoDB _id field and return as ContaReceber objects
+    for conta in contas:
+        conta.pop('_id', None)
+    return [ContaReceber(**conta) for conta in contas]
 
 
 @api_router.delete("/vendas/{venda_id}")
