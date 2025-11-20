@@ -192,7 +192,10 @@ const Vendas = () => {
     cliente_id: '',
     desconto: 0,
     frete: 0,
-    forma_pagamento: 'cartao'
+    forma_pagamento: 'cartao',
+    tipo_pagamento: 'avista',
+    numero_parcelas: 1,
+    data_vencimento: ''
   });
 
   const [itensVenda, setItensVenda] = useState([]);
