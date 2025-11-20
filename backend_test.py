@@ -254,87 +254,61 @@ class VendasContasReceberTester:
     
     # Helper methods removed - not needed for contas a receber tests
     
-    def test_cancel_sale_from_budget(self):
-        """Test 1: Cancel sale originated from budget"""
-        print("\n=== TEST 1: CANCELAR VENDA ORIGINADA DE ORÇAMENTO ===")
+    def test_fetch_contas_receber_parcelada(self):
+        """Test 1: Fetch contas a receber from parcelada sale"""
+        print("\n=== TEST 1: BUSCAR CONTAS A RECEBER DE VENDA PARCELADA ===")
         
         # 1. Create test client
-        client_id = self.create_test_client()
+        client_id = self.create_test_client(" - Parcelada")
         if not client_id:
             self.log_test("Test 1 - Setup", False, "Failed to create test client")
             return
         
         # 2. Create test product
-        product_id = self.create_test_product(" - Teste 1")
+        product_id = self.create_test_product(" - Parcelada")
         if not product_id:
             self.log_test("Test 1 - Setup", False, "Failed to create test product")
             return
         
-        # 3. Create budget
-        budget_id = self.create_test_budget(client_id, product_id)
-        if not budget_id:
-            self.log_test("Test 1 - Setup", False, "Failed to create test budget")
-            return
-        
-        # 4. Convert budget to sale
-        sale_id = self.convert_budget_to_sale(budget_id)
+        # 3. Create parcelada sale
+        sale_id = self.create_parcelada_sale(client_id, product_id)
         if not sale_id:
-            self.log_test("Test 1 - Setup", False, "Failed to convert budget to sale")
+            self.log_test("Test 1 - Setup", False, "Failed to create parcelada sale")
             return
         
-        # 5. Verify budget status changed to "vendido"
-        budget = self.get_budget_by_id(budget_id)
-        if not budget or budget.get("status") != "vendido":
-            self.log_test("Test 1 - Budget Status Check", False, f"Budget status should be 'vendido', got: {budget.get('status') if budget else 'None'}")
-            return
+        print(f"   ✓ Created parcelada sale: {sale_id}")
         
-        print("   ✓ Budget successfully converted to sale with status 'vendido'")
-        
-        # 6. Cancel the sale with specific reason
-        cancellation_reason = "Cliente desistiu da compra"
-        cancellation_data = {
-            "motivo": cancellation_reason
-        }
-        
+        # 4. Call the new endpoint
         try:
-            response = requests.post(f"{self.base_url}/vendas/{sale_id}/cancelar", 
-                                   json=cancellation_data, headers=self.get_headers())
+            response = requests.get(f"{self.base_url}/vendas/{sale_id}/contas-receber", headers=self.get_headers())
+            
             if response.status_code == 200:
-                print("   ✓ Sale canceled successfully")
+                contas = response.json()
                 
-                # 7. Verify budget was updated
-                updated_budget = self.get_budget_by_id(budget_id)
-                if not updated_budget:
-                    self.log_test("Test 1 - Budget Update", False, "Could not retrieve updated budget")
-                    return
-                
-                # Validate all required fields
-                validations = {
-                    "status": updated_budget.get("status") == "cancelado",
-                    "motivo_cancelamento": updated_budget.get("motivo_cancelamento") == cancellation_reason,
-                    "cancelado_por": updated_budget.get("cancelado_por") == self.user_id,
-                    "data_cancelamento": updated_budget.get("data_cancelamento") is not None,
-                    "historico_alteracoes": any(
-                        h.get("acao") == "cancelamento_venda_vinculada" 
-                        for h in updated_budget.get("historico_alteracoes", [])
-                    )
-                }
-                
-                all_valid = all(validations.values())
-                
-                if all_valid:
-                    self.log_test("Test 1 - Cancel Sale from Budget", True, 
-                                "✅ Budget correctly updated: status='cancelado', motivo_cancelamento set, cancelado_por set, data_cancelamento set, history entry added")
+                # Validate response
+                if len(contas) == 3:  # Should have 3 contas for 3 parcelas
+                    # Validate each conta structure
+                    all_valid = True
+                    for conta in contas:
+                        if (conta.get("referencia_tipo") != "venda" or 
+                            conta.get("referencia_id") != sale_id):
+                            all_valid = False
+                            break
+                    
+                    if all_valid:
+                        self.log_test("Test 1 - Fetch Parcelada Contas", True, 
+                                    f"✅ Status 200, returned list with 3 contas, each has referencia_tipo='venda' and referencia_id={sale_id}")
+                    else:
+                        self.log_test("Test 1 - Fetch Parcelada Contas", False, 
+                                    "Contas structure validation failed", {"contas": contas})
                 else:
-                    failed_validations = [k for k, v in validations.items() if not v]
-                    self.log_test("Test 1 - Cancel Sale from Budget", False, 
-                                f"Budget validation failed for: {failed_validations}", 
-                                {"budget_data": updated_budget})
+                    self.log_test("Test 1 - Fetch Parcelada Contas", False, 
+                                f"Expected 3 contas, got {len(contas)}", {"contas": contas})
             else:
-                self.log_test("Test 1 - Cancel Sale from Budget", False, 
-                            f"Failed to cancel sale: {response.status_code} - {response.text}")
+                self.log_test("Test 1 - Fetch Parcelada Contas", False, 
+                            f"Expected status 200, got {response.status_code}: {response.text}")
         except Exception as e:
-            self.log_test("Test 1 - Cancel Sale from Budget", False, f"Error canceling sale: {str(e)}")
+            self.log_test("Test 1 - Fetch Parcelada Contas", False, f"Error calling endpoint: {str(e)}")
     
     def test_cancel_direct_sale(self):
         """Test 2: Cancel sale NOT originated from budget"""
