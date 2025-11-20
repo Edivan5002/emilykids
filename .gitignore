@@ -320,3 +320,7 @@ frontend/node_modules/.cache/default-development/25.pack
 frontend/node_modules/.cache/default-development/27.pack
 frontend/node_modules/.cache/default-development/28.pack
 frontend/node_modules/.cache/default-development/7.pack_
+-e 
+# Environment files
+*.env
+*.env.*
