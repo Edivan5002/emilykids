@@ -879,7 +879,7 @@ const NotasFiscais = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Data de Emissão</p>
-                  <p className="font-medium">{new Date(nota.data_emissao).toLocaleDateString('pt-BR')}</p>
+                  <p className="font-medium">{formatDateBR(nota.data_emissao)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Valor Total</p>
