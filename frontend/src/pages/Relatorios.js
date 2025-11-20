@@ -1178,7 +1178,7 @@ const Relatorios = () => {
                   </div>
 
                   {/* Logs Recentes */}
-                  <h3 className="font-semibold mb-3">Últimas Ações</h3>
+                  <h3 className="font-semibold mb-3">Últimas Ações ({logsAuditoria.length})</h3>
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {logsAuditoriaPaginados.map((log, index) => (
                       <div key={index} className="p-3 border rounded-lg text-sm hover:bg-gray-50">
