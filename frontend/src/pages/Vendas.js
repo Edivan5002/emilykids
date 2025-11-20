@@ -170,6 +170,10 @@ const Vendas = () => {
   const [loading, setLoading] = useState(false);
   const [cancelDialog, setCancelDialog] = useState({ open: false, vendaId: null, motivo: '' });
   
+  // Estados para controle de expansão/colapso
+  const [itensExpandidos, setItensExpandidos] = useState({});
+  const [contasExpandidas, setContasExpandidas] = useState({});
+  
   // Paginação
   const [paginaAtual, setPaginaAtual] = useState(1);
   const ITENS_POR_PAGINA = 20;
