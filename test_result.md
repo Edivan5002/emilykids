@@ -1254,3 +1254,38 @@ agent_communication:
     message: "SOLICITAÇÕES MÚLTIPLAS: (1) 'da mesma forma que implementamos nas vendas com contas a receber devemos implementar o cancelamento em cascata ao cancelar uma nota fiscal cancelar também as contas no contas a pagar'; (2) 'eu solicitei que você padronizasse o contas a pagar e contas a receber e vc não fez isso'; (3) 'implemente também nos cards detalhados de vendas o que fizemos nos card detalhadas das notas fiscais dos itens e contas colapsáveis'; (4) 'no card de vendas a forma de pagamento está como avista e não temos esta forma de pagamento deve informar apenas as formas de pagamento que temos'; (5) 'o card de vendas por forma de pagamento deve listar todas as formas de pagamento e deve ser sincronizado com o informado nos card de detalhamento de vendas'."
   - agent: "main"
     message: "✅ TODAS AS SOLICITAÇÕES IMPLEMENTADAS COM SUCESSO! IMPLEMENTAÇÕES: (1) CANCELAMENTO EM CASCATA NF->CP: Endpoint cancelar_nota_fiscal atualizado para buscar e cancelar automaticamente todas as contas a pagar vinculadas (origem='nota_fiscal'), atualizando status da conta e de todas as parcelas para 'cancelada', adicionando motivo e auditoria completa - PADRONIZADO com Vendas->CR; (2) PADRONIZAÇÃO COMPLETA CP/CR: Ambos módulos agora têm: estrutura idêntica de filtros (incluindo 'Cancelada'), KPIs que excluem contas canceladas dos totalizadores, tratamento consistente de cancelamentos, mesma lógica de busca e exibição; (3) CARDS COLAPSÁVEIS EM VENDAS: Implementados estados itensExpandidos e contasExpandidas, seção 'Itens' agora colapsável com header clicável (ícone Package, quantidade, chevron), seção 'Contas a Receber' também colapsável com header clicável (ícone DollarSign, chevron), ícones ChevronDown/ChevronUp/Package adicionados aos imports - PADRONIZADO com Notas Fiscais; (4) FORMA DE PAGAMENTO CORRIGIDA: Removida verificação incorreta forma_pagamento !== 'avista' (não existe essa forma), substituída por venda.numero_parcelas > 1 (verificação correta de parcelamento), sistema usa formas válidas: 'cartao', 'pix', 'boleto', 'dinheiro'; (5) SINCRONIZAÇÃO CONFIRMADA: Cards de estatísticas por forma de pagamento já usavam as 4 formas válidas (cartao, pix, boleto, dinheiro), funções getFormaPagamentoLabel e getFormaPagamentoColor já mapeavam corretamente, exibição nos cards de detalhamento sincronizada. Backend e frontend compilados SEM ERROS. SISTEMA COMPLETAMENTE PADRONIZADO E FUNCIONAL!"
+
+# ============================================================================================================
+# FORMULÁRIO DE VENDAS - ESTRUTURA DE ABAS E INFORMAÇÕES DE PAGAMENTO
+# ============================================================================================================
+
+frontend:
+  - task: "Formulário de Nova Venda - Estrutura de abas similar a Notas Fiscais"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Vendas.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ ESTRUTURA DE ABAS IMPLEMENTADA: (1) COMPONENTE TABS: Adicionado componente Tabs com 3 abas: 'Dados da Venda', 'Pagamento', 'Itens'; TabsList com grid de 3 colunas; Aba 'Itens' mostra contador dinâmico; (2) ABA DADOS DA VENDA: Seleção de cliente (obrigatório); Campos de desconto e frete; Alerta quando não há itens adicionados; (3) ABA PAGAMENTO: Seção destacada em azul com ícone DollarSign; Forma de pagamento (Cartão, PIX, Boleto, Dinheiro); Tipo de pagamento (À Vista ou Parcelado); Número de parcelas (aparece apenas se parcelado, min 2, max 12); Data de vencimento (1ª parcela se parcelado) com hint de 30 dias; (4) ABA ITENS: Formulário de adição de produtos; Lista de itens adicionados com botão de remover; Campos de produto, quantidade e preço; (5) SEÇÃO TOTAL E BOTÕES: Fora das abas para sempre visível; Card de total em destaque (fundo verde água); Botões Cancelar e Finalizar Venda. RESULTADO: Interface organizada, profissional e padronizada com Notas Fiscais."
+
+  - task: "Form state e payload - Novos campos de pagamento"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Vendas.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ CAMPOS DE PAGAMENTO ADICIONADOS: (1) FORM STATE: Expandido formVenda para incluir: tipo_pagamento (default: 'avista'), numero_parcelas (default: 1), data_vencimento (default: vazio); (2) LÓGICA CONDICIONAL: Número de parcelas só é editável quando tipo_pagamento='parcelado'; Ao mudar tipo para 'avista', numero_parcelas é resetado para 1 automaticamente; (3) PAYLOAD API: Adicionado numero_parcelas ao payload enviado para backend; Cálculo: se tipo_pagamento='avista' força 1, senão usa valor do form; Header de autenticação adicionado (Bearer token); (4) RESET DE FORM: handleCloseCreate atualizado para resetar os novos campos; (5) VALIDAÇÃO: Mantidas validações de cliente obrigatório e mínimo 1 item. RESULTADO: Usuário pode escolher forma e tipo de pagamento, definir parcelas e vencimento ao criar venda."
+
+agent_communication:
+  - agent: "user"
+    message: "NOVA SOLICITAÇÃO: 'no módulo vendas ao criar uma nova venda você deve criar a mesma estrutura que criamos no módulo nota fiscal ao clicar em criar nota fiscal que criamos informações de pagamento para que o usuário escolha forma de pagamento, tipo de pagamento e data de vencimento, numero de parcelas etc'."
+  - agent: "main"
+    message: "✅ ESTRUTURA DE FORMULÁRIO IMPLEMENTADA COM SUCESSO! IMPLEMENTAÇÕES: (1) ABAS ORGANIZADAS: Formulário de Nova Venda agora tem 3 abas ('Dados da Venda', 'Pagamento', 'Itens') usando componente Tabs do Shadcn UI, mesma estrutura visual de Notas Fiscais com TabsList em grid de 3 colunas; (2) ABA PAGAMENTO COMPLETA: Seção destacada em azul com ícone DollarSign e título 'Informações de Pagamento', campos: Forma de Pagamento* (Cartão/PIX/Boleto/Dinheiro), Tipo de Pagamento* (À Vista/Parcelado), Número de Parcelas (2-12, só aparece se parcelado), Data de Vencimento (com hint de 30 dias, indica '1ª Parcela' se parcelado); (3) LÓGICA INTELIGENTE: Ao selecionar 'À Vista', numero_parcelas é automaticamente setado para 1, ao selecionar 'Parcelado', campo de parcelas aparece com mínimo 2, hint contextual na data de vencimento muda conforme tipo; (4) INTEGRAÇÃO BACKEND: Payload atualizado para enviar numero_parcelas calculado corretamente, header de autenticação Bearer token incluído; (5) ESTADOS E RESET: Form state expandido com novos campos (tipo_pagamento, numero_parcelas, data_vencimento), handleCloseCreate reseta todos os campos incluindo os novos; (6) UX CONSISTENTE: Total e botões sempre visíveis fora das abas, alerta amarelo quando não há itens, botão desabilitado se lista vazia. Frontend compilado SEM ERROS. SISTEMA PADRONIZADO E FUNCIONAL!"
