@@ -22,7 +22,7 @@ import os
 # Backend URL from environment
 BACKEND_URL = "https://erp-emily.preview.emergentagent.com/api"
 
-class SalesCancellationTester:
+class VendasContasReceberTester:
     def __init__(self):
         self.base_url = BACKEND_URL
         self.token = None
