@@ -411,17 +411,17 @@ class VendasContasReceberTester:
                     if not missing_fields:
                         # Additional validations
                         validations = {
-                            "referencia_tipo_is_venda": conta.get("referencia_tipo") == "venda",
-                            "referencia_id_matches": conta.get("referencia_id") == sale_id,
+                            "origem_is_venda": conta.get("origem") == "venda",
+                            "origem_id_matches": conta.get("origem_id") == sale_id,
                             "has_valid_id": conta.get("id") is not None,
                             "has_valid_numero": conta.get("numero") is not None,
                             "has_valid_cliente_id": conta.get("cliente_id") is not None,
                             "has_valid_descricao": conta.get("descricao") is not None,
                             "has_valid_valor": isinstance(conta.get("valor_total"), (int, float)),
-                            "has_valid_data_vencimento": conta.get("data_vencimento") is not None,
                             "has_valid_forma_pagamento": conta.get("forma_pagamento") is not None,
                             "has_valid_parcelas": isinstance(conta.get("parcelas"), list),
-                            "has_valid_status": conta.get("status") is not None
+                            "has_valid_status": conta.get("status") is not None,
+                            "parcelas_have_data_vencimento": len(conta.get("parcelas", [])) > 0 and conta["parcelas"][0].get("data_vencimento") is not None
                         }
                         
                         all_valid = all(validations.values())
