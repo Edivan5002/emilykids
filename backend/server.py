@@ -11484,6 +11484,255 @@ async def contas_por_fornecedor(
         }
     }
 
+
+# ========================================
+# FLUXO DE CAIXA
+# ========================================
+
+@api_router.get("/fluxo-caixa")
+async def get_fluxo_caixa(
+    data_inicio: str,
+    data_fim: str,
+    tipo_visao: str = "diario",  # diario, semanal, mensal
+    current_user: dict = Depends(require_permission("contas_receber", "ler"))
+):
+    """
+    Retorna o fluxo de caixa consolidado
+    """
+    try:
+        from datetime import datetime, timedelta
+        
+        # Converter datas
+        dt_inicio = datetime.fromisoformat(data_inicio.replace('Z', '+00:00'))
+        dt_fim = datetime.fromisoformat(data_fim.replace('Z', '+00:00'))
+        
+        # Buscar vendas (entradas realizadas)
+        vendas_cursor = db.vendas.find({
+            "data_venda": {"$gte": data_inicio, "$lte": data_fim},
+            "cancelada": {"$ne": True}
+        })
+        vendas = await vendas_cursor.to_list(length=None)
+        
+        # Buscar contas a receber (entradas futuras/realizadas)
+        contas_receber_cursor = db.contas_receber.find({
+            "$or": [
+                {"data_vencimento": {"$gte": data_inicio, "$lte": data_fim}},
+                {"data_recebimento": {"$gte": data_inicio, "$lte": data_fim}}
+            ],
+            "cancelada": {"$ne": True}
+        })
+        contas_receber = await contas_receber_cursor.to_list(length=None)
+        
+        # Buscar contas a pagar (saídas futuras/realizadas)
+        contas_pagar_cursor = db.contas_pagar.find({
+            "$or": [
+                {"data_vencimento": {"$gte": data_inicio, "$lte": data_fim}},
+                {"data_pagamento": {"$gte": data_inicio, "$lte": data_fim}}
+            ],
+            "cancelada": {"$ne": True}
+        })
+        contas_pagar = await contas_pagar_cursor.to_list(length=None)
+        
+        # Organizar por período
+        fluxo_por_periodo = {}
+        
+        # Processar vendas (entradas)
+        for venda in vendas:
+            data_ref = venda.get('data_venda', '').split('T')[0]
+            if data_ref not in fluxo_por_periodo:
+                fluxo_por_periodo[data_ref] = {
+                    "entradas": 0,
+                    "saidas": 0,
+                    "detalhes_entradas": [],
+                    "detalhes_saidas": []
+                }
+            valor = venda.get('total', 0)
+            fluxo_por_periodo[data_ref]["entradas"] += valor
+            fluxo_por_periodo[data_ref]["detalhes_entradas"].append({
+                "tipo": "Venda",
+                "descricao": f"Venda #{venda.get('id', '')[:8]}",
+                "valor": valor,
+                "data": venda.get('data_venda')
+            })
+        
+        # Processar contas a receber
+        for conta in contas_receber:
+            if conta.get('status') == 'recebida':
+                data_ref = conta.get('data_recebimento', '').split('T')[0]
+            else:
+                data_ref = conta.get('data_vencimento', '').split('T')[0]
+                
+            if data_ref and data_ref not in fluxo_por_periodo:
+                fluxo_por_periodo[data_ref] = {
+                    "entradas": 0,
+                    "saidas": 0,
+                    "detalhes_entradas": [],
+                    "detalhes_saidas": []
+                }
+            
+            if data_ref:
+                valor = conta.get('valor', 0)
+                fluxo_por_periodo[data_ref]["entradas"] += valor
+                status_texto = "Recebida" if conta.get('status') == 'recebida' else "A Receber"
+                fluxo_por_periodo[data_ref]["detalhes_entradas"].append({
+                    "tipo": status_texto,
+                    "descricao": conta.get('descricao', 'Conta a Receber'),
+                    "valor": valor,
+                    "data": data_ref,
+                    "status": conta.get('status')
+                })
+        
+        # Processar contas a pagar
+        for conta in contas_pagar:
+            if conta.get('status') == 'paga':
+                data_ref = conta.get('data_pagamento', '').split('T')[0]
+            else:
+                data_ref = conta.get('data_vencimento', '').split('T')[0]
+                
+            if data_ref and data_ref not in fluxo_por_periodo:
+                fluxo_por_periodo[data_ref] = {
+                    "entradas": 0,
+                    "saidas": 0,
+                    "detalhes_entradas": [],
+                    "detalhes_saidas": []
+                }
+            
+            if data_ref:
+                valor = conta.get('valor', 0)
+                fluxo_por_periodo[data_ref]["saidas"] += valor
+                status_texto = "Paga" if conta.get('status') == 'paga' else "A Pagar"
+                fluxo_por_periodo[data_ref]["detalhes_saidas"].append({
+                    "tipo": status_texto,
+                    "descricao": conta.get('descricao', 'Conta a Pagar'),
+                    "valor": valor,
+                    "data": data_ref,
+                    "status": conta.get('status')
+                })
+        
+        # Ordenar por data
+        periodos_ordenados = sorted(fluxo_por_periodo.keys())
+        
+        # Calcular saldos acumulados
+        saldo_acumulado = 0
+        fluxo_final = []
+        
+        for periodo in periodos_ordenados:
+            dados = fluxo_por_periodo[periodo]
+            saldo_periodo = dados["entradas"] - dados["saidas"]
+            saldo_acumulado += saldo_periodo
+            
+            fluxo_final.append({
+                "periodo": periodo,
+                "entradas": dados["entradas"],
+                "saidas": dados["saidas"],
+                "saldo_periodo": saldo_periodo,
+                "saldo_acumulado": saldo_acumulado,
+                "detalhes_entradas": dados["detalhes_entradas"],
+                "detalhes_saidas": dados["detalhes_saidas"]
+            })
+        
+        # Calcular totais
+        total_entradas = sum(item["entradas"] for item in fluxo_final)
+        total_saidas = sum(item["saidas"] for item in fluxo_final)
+        saldo_final = total_entradas - total_saidas
+        
+        return {
+            "periodo": {
+                "inicio": data_inicio,
+                "fim": data_fim
+            },
+            "resumo": {
+                "total_entradas": total_entradas,
+                "total_saidas": total_saidas,
+                "saldo_periodo": saldo_final,
+                "saldo_final": saldo_acumulado
+            },
+            "fluxo": fluxo_final
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar fluxo de caixa: {str(e)}")
+
+@api_router.get("/fluxo-caixa/dashboard")
+async def get_fluxo_caixa_dashboard(
+    current_user: dict = Depends(require_permission("contas_receber", "ler"))
+):
+    """
+    Retorna dados do dashboard de fluxo de caixa
+    """
+    try:
+        from datetime import datetime, timedelta
+        
+        hoje = datetime.now()
+        inicio_mes = hoje.replace(day=1).isoformat()
+        fim_mes = (hoje.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+        fim_mes_str = fim_mes.isoformat()
+        
+        # Vendas do mês
+        vendas_mes_cursor = db.vendas.find({
+            "data_venda": {"$gte": inicio_mes, "$lte": fim_mes_str},
+            "cancelada": {"$ne": True}
+        })
+        vendas_mes = await vendas_mes_cursor.to_list(length=None)
+        total_vendas = sum(v.get('total', 0) for v in vendas_mes)
+        
+        # Contas a receber do mês
+        receber_mes_cursor = db.contas_receber.find({
+            "data_vencimento": {"$gte": inicio_mes, "$lte": fim_mes_str},
+            "cancelada": {"$ne": True}
+        })
+        receber_mes = await receber_mes_cursor.to_list(length=None)
+        total_receber = sum(c.get('valor', 0) for c in receber_mes if c.get('status') != 'recebida')
+        total_recebido = sum(c.get('valor', 0) for c in receber_mes if c.get('status') == 'recebida')
+        
+        # Contas a pagar do mês
+        pagar_mes_cursor = db.contas_pagar.find({
+            "data_vencimento": {"$gte": inicio_mes, "$lte": fim_mes_str},
+            "cancelada": {"$ne": True}
+        })
+        pagar_mes = await pagar_mes_cursor.to_list(length=None)
+        total_pagar = sum(c.get('valor', 0) for c in pagar_mes if c.get('status') != 'paga')
+        total_pago = sum(c.get('valor', 0) for c in pagar_mes if c.get('status') == 'paga')
+        
+        # Projeção próximos 30 dias
+        proximo_mes = (hoje + timedelta(days=30)).isoformat()
+        
+        receber_futuro_cursor = db.contas_receber.find({
+            "data_vencimento": {"$gt": fim_mes_str, "$lte": proximo_mes},
+            "status": {"$ne": "recebida"},
+            "cancelada": {"$ne": True}
+        })
+        receber_futuro = await receber_futuro_cursor.to_list(length=None)
+        projecao_entradas = sum(c.get('valor', 0) for c in receber_futuro)
+        
+        pagar_futuro_cursor = db.contas_pagar.find({
+            "data_vencimento": {"$gt": fim_mes_str, "$lte": proximo_mes},
+            "status": {"$ne": "paga"},
+            "cancelada": {"$ne": True}
+        })
+        pagar_futuro = await pagar_futuro_cursor.to_list(length=None)
+        projecao_saidas = sum(c.get('valor', 0) for c in pagar_futuro)
+        
+        return {
+            "mes_atual": {
+                "vendas": total_vendas,
+                "recebido": total_recebido,
+                "a_receber": total_receber,
+                "pago": total_pago,
+                "a_pagar": total_pagar,
+                "saldo_mes": (total_vendas + total_recebido) - total_pago
+            },
+            "projecao_30_dias": {
+                "entradas_previstas": projecao_entradas,
+                "saidas_previstas": projecao_saidas,
+                "saldo_projetado": projecao_entradas - projecao_saidas
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar dashboard: {str(e)}")
+
+
 app.include_router(api_router)
 
 app.add_middleware(
