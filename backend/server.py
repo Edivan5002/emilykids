@@ -10090,6 +10090,58 @@ async def admin_get_logs_auditoria(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/admin/atualizar-permissoes-financeiras")
+async def admin_atualizar_permissoes_financeiras(
+    current_user: dict = Depends(require_permission("admin", "criar"))
+):
+    """Adiciona permissões dos módulos financeiros faltantes e remove módulo configuracoes antigo"""
+    try:
+        # Novos módulos financeiros que faltam
+        novos_modulos = ["fluxo_caixa", "configuracoes_financeiras"]
+        acoes = ["ler", "criar", "editar", "deletar", "exportar", "aprovar"]
+        
+        permissions_criadas = 0
+        
+        # Criar permissões para os novos módulos
+        for modulo in novos_modulos:
+            for acao in acoes:
+                # Verificar se já existe
+                exists = await db.permissions.find_one({
+                    "modulo": modulo,
+                    "acao": acao
+                })
+                
+                if not exists:
+                    perm = Permission(
+                        modulo=modulo,
+                        acao=acao,
+                        descricao=f"Permissão para {acao} em {modulo}"
+                    )
+                    await db.permissions.insert_one(perm.model_dump())
+                    permissions_criadas += 1
+        
+        # Remover permissões do módulo "configuracoes" antigo (não usado)
+        result_delete = await db.permissions.delete_many({"modulo": "configuracoes"})
+        
+        # Atualizar papel de Administrador para incluir as novas permissões
+        admin_role = await db.roles.find_one({"nome": "Administrador"})
+        if admin_role:
+            all_perms = await db.permissions.find({}, {"_id": 0, "id": 1}).to_list(10000)
+            all_perm_ids = [p["id"] for p in all_perms]
+            await db.roles.update_one(
+                {"id": admin_role["id"]},
+                {"$set": {"permissoes": all_perm_ids}}
+            )
+        
+        return {
+            "success": True,
+            "message": f"Permissões atualizadas com sucesso",
+            "permissoes_criadas": permissions_criadas,
+            "permissoes_removidas": result_delete.deleted_count
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ========== ADMINISTRAÇÃO E CONFIGURAÇÕES - ENDPOINTS ==========
 
 # ===== CONFIGURAÇÕES FINANCEIRAS =====
