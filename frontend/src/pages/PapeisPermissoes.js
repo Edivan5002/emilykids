@@ -92,11 +92,18 @@ const PapeisPermissoes = () => {
 
   const fetchPermissions = async () => {
     try {
-      const allPerms = await axios.get(`${API}/permissions`);
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      };
+      
+      const allPerms = await axios.get(`${API}/permissions?_t=${Date.now()}`, { headers });
       setPermissions(allPerms.data);
       
       try {
-        const byModule = await axios.get(`${API}/permissions/by-module`);
+        const byModule = await axios.get(`${API}/permissions/by-module?_t=${Date.now()}`, { headers });
         setPermissionsByModule(byModule.data);
       } catch (err) {
         console.log('Erro ao carregar permissões por módulo');
