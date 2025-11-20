@@ -1190,12 +1190,12 @@ const Relatorios = () => {
                       <p className="text-2xl font-bold text-blue-600">{auditoria.total_acoes}</p>
                     </div>
                     <div className="p-4 bg-green-50 rounded-lg">
-                      <p className="text-sm text-gray-600">Usuários Ativos</p>
-                      <p className="text-2xl font-bold text-green-600">{Object.keys(auditoria.acoes_por_usuario).length}</p>
+                      <p className="text-sm text-gray-600">Usuários Ativos no Sistema</p>
+                      <p className="text-2xl font-bold text-green-600">{auditoria.total_usuarios_ativos || 0}</p>
                     </div>
                     <div className="p-4 bg-purple-50 rounded-lg">
-                      <p className="text-sm text-gray-600">Telas Acessadas</p>
-                      <p className="text-2xl font-bold text-purple-600">{Object.keys(auditoria.acoes_por_tela).length}</p>
+                      <p className="text-sm text-gray-600">Clientes Cadastrados</p>
+                      <p className="text-2xl font-bold text-purple-600">{auditoria.total_clientes_cadastrados || 0}</p>
                     </div>
                   </div>
 
