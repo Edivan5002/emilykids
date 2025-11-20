@@ -211,6 +211,13 @@ const NotasFiscais = () => {
       return;
     }
 
+    // Verificar se o produto já foi adicionado
+    const itemJaExiste = itensNota.some(item => item.produto_id === novoItem.produto_id);
+    if (itemJaExiste) {
+      toast.error('Item já adicionado! Para alterar a quantidade, remova o item e adicione novamente.');
+      return;
+    }
+
     const itemCompleto = {
       ...novoItem,
       produto_nome: produto.nome,
