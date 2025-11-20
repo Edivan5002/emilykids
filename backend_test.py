@@ -428,7 +428,7 @@ class VendasContasReceberTester:
                         
                         if all_valid:
                             self.log_test("Test 4 - Validate Structure", True, 
-                                        "✅ All required fields present and valid: id, numero, cliente_id, descricao, valor_total, data_vencimento, forma_pagamento, parcelas, referencia_tipo, referencia_id, status")
+                                        "✅ All required fields present and valid: id, numero, cliente_id, descricao, valor_total, forma_pagamento, parcelas (with data_vencimento), origem, origem_id, status")
                         else:
                             failed_validations = [k for k, v in validations.items() if not v]
                             self.log_test("Test 4 - Validate Structure", False, 
