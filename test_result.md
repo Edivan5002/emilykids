@@ -1077,15 +1077,18 @@ user_problem_statement: "FASE 10: Integração Vendas com Contas a Receber - Ger
 backend:
   - task: "Fase 10 - Integração Vendas com Contas a Receber - Backend Endpoint"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "✅ FASE 10 - BACKEND ENDPOINT IMPLEMENTADO: (1) ENDPOINT CRIADO: Novo GET /api/vendas/{venda_id}/contas-receber para buscar todas as contas a receber vinculadas a uma venda específica; (2) LOCALIZAÇÃO: Adicionado na linha 7621 do server.py, logo após o endpoint de histórico de vendas; (3) FUNCIONALIDADE: Verifica se venda existe (404 se não encontrar), busca contas a receber onde referencia_tipo='venda' e referencia_id=venda_id, retorna lista vazia se não houver contas, retorna List[ContaReceber] com parse_from_mongo aplicado; (4) PERMISSÕES: Requer permissão 'contas_receber':'ler' via require_permission; (5) INTEGRAÇÃO: Complementa a lógica existente no endpoint POST /vendas (linhas 7066-7100) que já cria automaticamente as contas a receber ao finalizar venda. Backend compilado SEM ERROS, servidor RUNNING corretamente."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO PERFEITAMENTE: Executei os 4 TESTES OBRIGATÓRIOS especificados na review_request com 100% SUCCESS RATE. VALIDAÇÕES CONFIRMADAS: (1) VENDA PARCELADA (cartão, 3 parcelas) - Status 200, retorna lista com 3 contas, cada conta tem origem='venda' e origem_id=venda_id ✅; (2) VENDA À VISTA - Status 200, retorna lista vazia (vendas à vista não geram contas a receber) ✅; (3) VENDA INEXISTENTE - Status 404, mensagem 'Venda não encontrada' ✅; (4) ESTRUTURA DAS CONTAS - Todos os campos obrigatórios validados: id, numero, cliente_id, descricao, valor_total, forma_pagamento, parcelas (com data_vencimento), origem, origem_id, status ✅. BUGS CRÍTICOS CORRIGIDOS DURANTE TESTE: (1) Campo 'data_venda' não existia no modelo Venda - corrigido para 'created_at'; (2) Campos incorretos no ContaReceber - corrigido para usar origem/origem_id ao invés de referencia_tipo/referencia_id; (3) Função parse_from_mongo ausente - implementada remoção manual do _id. RESULTADO: Endpoint funcionando 100% conforme especificado na review_request!"
 
 metadata:
   created_by: "main_agent"
