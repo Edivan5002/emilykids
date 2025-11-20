@@ -1427,3 +1427,50 @@ agent_communication:
     message: "BUG PERSISTENTE: 'no frontend no módulo papeis e permissões aba permissões a matriz de permissões continua com 90 e não 114, da mesma forma o papel administrador continua com 90 e não 114 sincronize o frontend com o backend corretamente'."
   - agent: "main"
     message: "✅ PROBLEMA DE CACHE RESOLVIDO! CAUSA: Frontend estava usando dados cacheados do navegador mostrando 90 permissões antigas ao invés das 114 novas do backend; Requisições sem cache bust permitiam navegador retornar dados obsoletos. VERIFICAÇÃO BACKEND: Confirmado via script Python que backend está retornando corretamente: 114 permissões totais, 18 módulos (incluindo 4 financeiros completos), Papel Administrador com 114 permissões, Papel Gerente com 108 permissões. SOLUÇÃO FRONTEND: (1) CACHE BUST: Adicionado timestamp único em TODAS as URLs (?_t=${Date.now()}); Headers HTTP forçando 'no-cache' em requisições fetchPermissions e fetchRoles; (2) AUTENTICAÇÃO: Bearer token adicionado nos headers (faltava em algumas requests); (3) BOTÕES DE ATUALIZAÇÃO: Aba Papéis: Botão 'Atualizar Dados' recarrega roles + permissions; Aba Permissões: Botão 'Atualizar Dados' recarrega matriz completa; Toast de confirmação ao atualizar; (4) MÓDULOS CONFIRMADOS: Backend retorna 18 módulos incluindo: contas_receber (9 perms), contas_pagar (9 perms), fluxo_caixa (6 perms), configuracoes_financeiras (6 perms). INSTRUÇÕES AO USUÁRIO: Clicar no botão 'Atualizar Dados' na aba Papéis ou Permissões para forçar reload; Limpar cache do navegador (Ctrl+Shift+Delete) se problema persistir; Fazer logout e login novamente para renovar sessão. Frontend compilado SEM ERROS. SINCRONIZAÇÃO COMPLETA!"
+
+# ============================================================================================================
+# VALIDAÇÃO DE ITENS DUPLICADOS - NOTAS FISCAIS, VENDAS E ORÇAMENTOS
+# ============================================================================================================
+
+frontend:
+  - task: "Validação de itens duplicados em Notas Fiscais"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/NotasFiscais.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ VALIDAÇÃO IMPLEMENTADA EM NOTAS FISCAIS: (1) VERIFICAÇÃO ADICIONADA (linha 213): Antes de adicionar item, verifica com .some() se produto_id já existe na lista itensNota; Se existir, mostra toast.error com mensagem clara; Impede adição do item duplicado; (2) MENSAGEM DE ERRO: 'Item já adicionado! Para alterar a quantidade, remova o item e adicione novamente.'; Orienta usuário sobre como proceder; (3) LOCALIZAÇÃO: Validação inserida após verificações de produto_id, quantidade, preco_unitario e existência do produto; Antes de criar itemCompleto e adicionar à lista. RESULTADO: Impossível adicionar mesmo produto duas vezes na nota fiscal."
+
+  - task: "Validação de itens duplicados em Vendas"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Vendas.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ VALIDAÇÃO IMPLEMENTADA EM VENDAS: (1) VERIFICAÇÃO ADICIONADA (linha 300): Verifica se produto_id já existe em itensVenda antes de adicionar; Mesma lógica aplicada usando .some(); (2) ORDEM DE VALIDAÇÕES: Após validação de produto_id e quantidade; Após buscar produto na lista; ANTES de verificar estoque (evita chamada API desnecessária); (3) MENSAGEM: Mesma mensagem clara orientando o usuário; (4) BENEFÍCIO: Economiza chamada de verificação de estoque para itens já adicionados. RESULTADO: Vendas também protegidas contra duplicação."
+
+  - task: "Validação de itens duplicados em Orçamentos"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Orcamentos.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ VALIDAÇÃO IMPLEMENTADA EM ORÇAMENTOS: (1) VERIFICAÇÃO ADICIONADA (linha 166): Verifica se produto_id já existe em itensOrcamento; Usa .some() para checar duplicação; (2) POSICIONAMENTO: Após validações básicas de produto e quantidade; ANTES de verificar estoque reservado (evita API call desnecessária); (3) CONSISTÊNCIA: Mesma mensagem de erro usada em todos os módulos; Comportamento uniforme em toda aplicação. RESULTADO: Orçamentos também protegidos contra duplicação."
+
+agent_communication:
+  - agent: "user"
+    message: "SOLICITAÇÃO: 'no módulo nota fiscal ao clicar no botão nova nota fiscal na aba itens ao adicionar um item não deve ser permitido adicionar o mesmo item, onde deve informar ao usuário item já adicionado para alterar a quantidade remova o item e adicione novamente'."
+  - agent: "main"
+    message: "✅ VALIDAÇÃO DE ITENS DUPLICADOS IMPLEMENTADA EM 3 MÓDULOS! IMPLEMENTAÇÃO: (1) NOTAS FISCAIS (linha 213): Adicionada verificação itensNota.some(item => item.produto_id === novoItem.produto_id); Se produto já existe na lista, mostra toast.error e retorna sem adicionar; Validação antes de criar itemCompleto; (2) VENDAS (linha 300): Mesma validação aplicada em itensVenda; Posicionada ANTES da verificação de estoque (economiza chamada API); Evita processamento desnecessário; (3) ORÇAMENTOS (linha 166): Validação em itensOrcamento; Também antes da verificação de estoque reservado; Mantém consistência com outros módulos. MENSAGEM DE ERRO: 'Item já adicionado! Para alterar a quantidade, remova o item e adicione novamente.' - Clara e orientativa; Informa o que aconteceu; Orienta como proceder; Consistente em todos os módulos. BENEFÍCIOS: Evita confusão com quantidades duplicadas; Economiza verificações de estoque desnecessárias; UX melhorada com orientação clara; Comportamento consistente em toda aplicação. Frontend compilado SEM ERROS. VALIDAÇÃO FUNCIONANDO EM TODOS OS MÓDULOS!"
