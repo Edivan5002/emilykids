@@ -308,17 +308,35 @@ const PapeisPermissoes = () => {
         {/* ROLES TAB */}
         <TabsContent value="roles">
           <div className="mb-4 flex justify-between items-center">
-            <Button 
-              variant="outline"
-              onClick={() => {
-                fetchRoles();
-                fetchPermissions();
-                toast.success('Dados atualizados');
-              }}
-            >
-              <Clock size={16} className="mr-2" />
-              Atualizar Dados
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  fetchRoles();
+                  fetchPermissions();
+                  toast.success('Dados atualizados');
+                }}
+              >
+                <Clock size={16} className="mr-2" />
+                Atualizar Dados
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={() => {
+                  // Limpar TODOS os caches
+                  localStorage.clear();
+                  sessionStorage.clear();
+                  // Salvar token antes de limpar
+                  const token = localStorage.getItem('token');
+                  localStorage.clear();
+                  if (token) localStorage.setItem('token', token);
+                  // Force reload da página
+                  window.location.reload(true);
+                }}
+              >
+                🔄 Forçar Atualização Completa
+              </Button>
+            </div>
             <Button onClick={openNewRole}>
               <Plus size={16} className="mr-2" />
               Novo Papel
