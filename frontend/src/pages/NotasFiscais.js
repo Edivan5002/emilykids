@@ -11,6 +11,7 @@ import { Plus, FileText, Check, Upload, AlertCircle, Package, Trash2, X, DollarS
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import ContaPagarVinculada from '../components/ContaPagarVinculada';
+import { formatDateBR } from '../utils/dateFormatter';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
