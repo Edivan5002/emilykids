@@ -297,7 +297,7 @@ class VendasContasReceberTester:
                     
                     if all_valid:
                         self.log_test("Test 1 - Fetch Parcelada Contas", True, 
-                                    f"✅ Status 200, returned list with 3 contas, each has referencia_tipo='venda' and referencia_id={sale_id}")
+                                    f"✅ Status 200, returned list with 3 contas, each has origem='venda' and origem_id={sale_id}")
                     else:
                         self.log_test("Test 1 - Fetch Parcelada Contas", False, 
                                     "Contas structure validation failed", {"contas": contas})
