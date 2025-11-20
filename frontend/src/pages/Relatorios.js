@@ -221,12 +221,33 @@ const Relatorios = () => {
   const fetchAuditoria = async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      // Buscar relatório de auditoria
       const response = await axios.get(`${API}/relatorios/operacional/auditoria`, {
-        params: { data_inicio: dataInicio, data_fim: dataFim }
+        params: { data_inicio: dataInicio, data_fim: dataFim },
+        headers
       });
-      setAuditoria(response.data);
+      
+      // Buscar usuários ativos do sistema
+      const usuariosRes = await axios.get(`${API}/usuarios`, { headers });
+      const usuariosAtivos = usuariosRes.data.filter(u => u.ativo === true);
+      
+      // Buscar clientes cadastrados
+      const clientesRes = await axios.get(`${API}/clientes`, { headers });
+      const clientesAtivos = clientesRes.data.filter(c => c.ativo === true);
+      
+      // Adicionar contadores ao relatório
+      setAuditoria({
+        ...response.data,
+        total_usuarios_ativos: usuariosAtivos.length,
+        total_clientes_cadastrados: clientesAtivos.length
+      });
+      
       toast.success('Relatório de auditoria carregado!');
     } catch (error) {
+      console.error('Erro ao carregar auditoria:', error);
       toast.error('Erro ao carregar auditoria');
     } finally {
       setLoading(false);
