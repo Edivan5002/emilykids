@@ -1185,7 +1185,7 @@ const Relatorios = () => {
                       <div key={index} className="p-3 border rounded-lg text-sm hover:bg-gray-50">
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-medium">{log.user_nome}</span>
-                          <span className="text-xs text-gray-500">{new Date(log.timestamp).toLocaleString('pt-BR')}</span>
+                          <span className="text-xs text-gray-500">{formatDateTimeBR(log.timestamp)}</span>
                         </div>
                         <div className="flex items-center gap-2 text-gray-600">
                           <span className="px-2 py-0.5 rounded bg-gray-100 text-xs">{log.tela}</span>
