@@ -509,7 +509,7 @@ class VendasContasReceberTester:
     def print_summary(self):
         """Print test results summary"""
         print("\n" + "=" * 80)
-        print("📊 PROPAGAÇÃO DE CANCELAMENTO - TEST RESULTS")
+        print("📊 FASE 10: INTEGRAÇÃO VENDAS COM CONTAS A RECEBER - TEST RESULTS")
         print("=" * 80)
         
         passed = sum(1 for result in self.test_results if result["success"])
@@ -520,12 +520,11 @@ class VendasContasReceberTester:
         print(f"📈 SUCCESS RATE: {(passed/len(self.test_results)*100):.1f}%")
         
         print(f"\n🎯 VALIDAÇÕES TESTADAS:")
-        print(f"   ✅ Venda com orcamento_id → Orçamento atualizado para 'cancelado'")
-        print(f"   ✅ Orçamento possui motivo_cancelamento correto")
-        print(f"   ✅ Orçamento possui cancelado_por e data_cancelamento")
-        print(f"   ✅ Histórico do orçamento registra cancelamento")
-        print(f"   ✅ Venda sem orcamento_id → Não causa erros")
-        print(f"   ✅ Estoque é revertido corretamente")
+        print(f"   ✅ Venda parcelada (cartão, 3 parcelas) → Retorna 3 contas a receber")
+        print(f"   ✅ Venda à vista → Retorna lista vazia")
+        print(f"   ✅ Venda inexistente → Retorna 404 'Venda não encontrada'")
+        print(f"   ✅ Estrutura das contas → Campos obrigatórios presentes")
+        print(f"   ✅ Permissão contas_receber:ler → Requerida para acesso")
         
         if failed > 0:
             print(f"\n🔍 FAILED TESTS:")
@@ -533,7 +532,7 @@ class VendasContasReceberTester:
                 if not result["success"]:
                     print(f"   ❌ {result['test']}: {result['message']}")
         else:
-            print(f"\n🎉 ALL TESTS PASSED! Sales cancellation propagation is working correctly.")
+            print(f"\n🎉 ALL TESTS PASSED! Endpoint GET /api/vendas/{{venda_id}}/contas-receber is working correctly.")
         
         print("\n" + "=" * 80)
 
