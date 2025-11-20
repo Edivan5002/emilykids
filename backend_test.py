@@ -30,7 +30,6 @@ class VendasContasReceberTester:
         self.test_results = []
         self.created_clients = []
         self.created_products = []
-        self.created_budgets = []
         self.created_sales = []
         
     def log_test(self, test_name, success, message, details=None):
