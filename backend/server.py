@@ -7063,6 +7063,46 @@ async def create_venda(venda_data: VendaCreate, current_user: dict = Depends(req
                 )
                 await db.movimentacoes_estoque.insert_one(movimentacao.model_dump())
     
+    # FASE 10: Gerar Conta a Receber automaticamente
+    # Somente se não precisa autorização (venda confirmada) e não for pagamento à vista
+    if not requer_autorizacao and venda_data.forma_pagamento != 'avista':
+        try:
+            # Gerar conta a receber para cada parcela
+            for idx, parcela in enumerate(venda.parcelas, start=1):
+                numero_conta = await gerar_numero_conta_receber()
+                
+                # Calcular data de vencimento baseada no número da parcela
+                data_base = datetime.fromisoformat(venda.data_venda.replace('Z', '+00:00'))
+                dias_para_vencimento = 30 * idx  # 30 dias para cada parcela
+                data_vencimento = (data_base + timedelta(days=dias_para_vencimento)).isoformat()
+                
+                conta_receber = ContaReceber(
+                    numero_conta=numero_conta,
+                    cliente_id=venda.cliente_id,
+                    descricao=f"Venda #{numero_venda} - Parcela {idx}/{venda.numero_parcelas}",
+                    valor=parcela["valor"],
+                    data_vencimento=data_vencimento,
+                    categoria_receita_id=None,  # Pode ser configurado depois
+                    forma_pagamento=venda.forma_pagamento,
+                    numero_parcelas=1,  # Cada conta representa 1 parcela
+                    parcelas=[{
+                        "numero": 1,
+                        "valor": parcela["valor"],
+                        "data_vencimento": data_vencimento,
+                        "status": "pendente"
+                    }],
+                    referencia_tipo="venda",
+                    referencia_id=venda.id,
+                    observacoes=f"Gerada automaticamente da venda {numero_venda}",
+                    user_id=current_user["id"]
+                )
+                
+                await db.contas_receber.insert_one(conta_receber.model_dump())
+                
+        except Exception as e:
+            # Não falhar a venda se houver erro ao criar conta a receber
+            print(f"Aviso: Erro ao criar conta a receber para venda {venda.id}: {str(e)}")
+    
     # Log
     await log_action(
         ip="0.0.0.0",
@@ -7075,7 +7115,8 @@ async def create_venda(venda_data: VendaCreate, current_user: dict = Depends(req
             "numero_venda": numero_venda,
             "cliente": cliente["nome"],
             "total": total,
-            "requer_autorizacao": requer_autorizacao
+            "requer_autorizacao": requer_autorizacao,
+            "contas_receber_geradas": not requer_autorizacao and venda_data.forma_pagamento != 'avista'
         }
     )
     
