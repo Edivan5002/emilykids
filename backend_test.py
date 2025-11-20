@@ -108,16 +108,59 @@ class VendasContasReceberTester:
     
     def create_test_product(self, name_suffix=""):
         """Create a test product for the tests"""
-        product_data = {
-            "sku": f"TEST-CANCEL-{uuid.uuid4().hex[:8]}{name_suffix}",
-            "nome": f"Produto Teste Cancelamento{name_suffix}",
-            "preco_custo": 50.0,
-            "preco_venda": 100.0,
-            "estoque_minimo": 5,
-            "estoque_maximo": 200
-        }
-        
+        # Get existing brands, categories, subcategories
         try:
+            # Get first available brand
+            brands_response = requests.get(f"{self.base_url}/marcas", headers=self.get_headers())
+            brands = brands_response.json() if brands_response.status_code == 200 else []
+            if not brands:
+                print("   ⚠ No brands available, creating one...")
+                brand_data = {"nome": "Marca Teste"}
+                brand_response = requests.post(f"{self.base_url}/marcas", json=brand_data, headers=self.get_headers())
+                if brand_response.status_code == 200:
+                    brands = [brand_response.json()]
+                else:
+                    print(f"   ⚠ Failed to create brand: {brand_response.status_code}")
+                    return None
+            
+            # Get first available category
+            categories_response = requests.get(f"{self.base_url}/categorias", headers=self.get_headers())
+            categories = categories_response.json() if categories_response.status_code == 200 else []
+            if not categories:
+                print("   ⚠ No categories available, creating one...")
+                category_data = {"nome": "Categoria Teste", "marca_id": brands[0]["id"]}
+                category_response = requests.post(f"{self.base_url}/categorias", json=category_data, headers=self.get_headers())
+                if category_response.status_code == 200:
+                    categories = [category_response.json()]
+                else:
+                    print(f"   ⚠ Failed to create category: {category_response.status_code}")
+                    return None
+            
+            # Get first available subcategory
+            subcategories_response = requests.get(f"{self.base_url}/subcategorias", headers=self.get_headers())
+            subcategories = subcategories_response.json() if subcategories_response.status_code == 200 else []
+            if not subcategories:
+                print("   ⚠ No subcategories available, creating one...")
+                subcategory_data = {"nome": "Subcategoria Teste", "categoria_id": categories[0]["id"]}
+                subcategory_response = requests.post(f"{self.base_url}/subcategorias", json=subcategory_data, headers=self.get_headers())
+                if subcategory_response.status_code == 200:
+                    subcategories = [subcategory_response.json()]
+                else:
+                    print(f"   ⚠ Failed to create subcategory: {subcategory_response.status_code}")
+                    return None
+            
+            product_data = {
+                "sku": f"TEST-CR-{uuid.uuid4().hex[:8]}{name_suffix}",
+                "nome": f"Produto Teste Contas Receber{name_suffix}",
+                "marca_id": brands[0]["id"],
+                "categoria_id": categories[0]["id"],
+                "subcategoria_id": subcategories[0]["id"],
+                "preco_inicial": 50.0,
+                "preco_venda": 100.0,
+                "estoque_minimo": 5,
+                "estoque_maximo": 200
+            }
+            
             response = requests.post(f"{self.base_url}/produtos", json=product_data, headers=self.get_headers())
             if response.status_code == 200:
                 product = response.json()
