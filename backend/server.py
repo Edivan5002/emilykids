@@ -9567,7 +9567,11 @@ async def dashboard_contas_receber(
     contas = await db.contas_receber.find(query, {"_id": 0}).to_list(10000)
     
     # Calcular KPIs (excluindo contas canceladas)
-    total_receber = sum(c["valor_total"] for c in contas if c.get("status") != "cancelada")
+    # Total a Receber = apenas valor_pendente de contas pendentes, recebido_parcial e vencidas
+    total_receber = sum(
+        c["valor_pendente"] for c in contas 
+        if c.get("status") in ["pendente", "recebido_parcial", "vencido"]
+    )
     total_recebido = sum(c["valor_recebido"] for c in contas if c.get("status") != "cancelada")
     total_pendente = sum(c["valor_pendente"] for c in contas if c.get("status") != "cancelada")
     total_vencido = sum(c["valor_pendente"] for c in contas if c["status"] == "vencido")
