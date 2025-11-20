@@ -353,45 +353,28 @@ class VendasContasReceberTester:
         except Exception as e:
             self.log_test("Test 2 - Fetch À Vista Contas", False, f"Error calling endpoint: {str(e)}")
     
-    def test_validate_canceled_budget_fields(self):
-        """Test 3: Validate all fields in canceled budget"""
-        print("\n=== TEST 3: VALIDAR CAMPOS NO ORÇAMENTO CANCELADO ===")
+    def test_fetch_contas_receber_invalid_sale(self):
+        """Test 3: Fetch contas a receber from non-existent sale"""
+        print("\n=== TEST 3: BUSCAR CONTAS A RECEBER DE VENDA INEXISTENTE ===")
         
-        # Use the first created budget from previous tests
-        if not self.created_budgets:
-            self.log_test("Test 3 - Validate Fields", False, "No canceled budget available from previous tests")
-            return
+        invalid_sale_id = "venda-id-invalido"
         
-        budget_id = self.created_budgets[0]
-        budget = self.get_budget_by_id(budget_id)
-        
-        if not budget:
-            self.log_test("Test 3 - Validate Fields", False, "Could not retrieve budget for validation")
-            return
-        
-        # Detailed field validation
-        validations = {
-            "status_is_cancelado": budget.get("status") == "cancelado",
-            "motivo_cancelamento_exists": budget.get("motivo_cancelamento") is not None,
-            "cancelado_por_exists": budget.get("cancelado_por") is not None,
-            "data_cancelamento_exists": budget.get("data_cancelamento") is not None,
-            "data_cancelamento_is_iso": self._is_valid_iso_date(budget.get("data_cancelamento")),
-            "historico_has_cancellation": any(
-                h.get("acao") == "cancelamento_venda_vinculada" 
-                for h in budget.get("historico_alteracoes", [])
-            )
-        }
-        
-        all_valid = all(validations.values())
-        
-        if all_valid:
-            self.log_test("Test 3 - Validate Fields", True, 
-                        "✅ All budget fields validated: status, motivo_cancelamento, cancelado_por, data_cancelamento, historico_alteracoes")
-        else:
-            failed_validations = [k for k, v in validations.items() if not v]
-            self.log_test("Test 3 - Validate Fields", False, 
-                        f"Field validation failed for: {failed_validations}", 
-                        {"budget_data": budget, "validations": validations})
+        try:
+            response = requests.get(f"{self.base_url}/vendas/{invalid_sale_id}/contas-receber", headers=self.get_headers())
+            
+            if response.status_code == 404:
+                response_data = response.json()
+                if response_data.get("detail") == "Venda não encontrada":
+                    self.log_test("Test 3 - Invalid Sale ID", True, 
+                                "✅ Status 404, message 'Venda não encontrada'")
+                else:
+                    self.log_test("Test 3 - Invalid Sale ID", False, 
+                                f"Expected message 'Venda não encontrada', got: {response_data.get('detail')}")
+            else:
+                self.log_test("Test 3 - Invalid Sale ID", False, 
+                            f"Expected status 404, got {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Test 3 - Invalid Sale ID", False, f"Error calling endpoint: {str(e)}")
     
     def test_stock_reversion(self):
         """Test 4: Verify stock is correctly reverted"""
