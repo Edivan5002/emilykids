@@ -1226,7 +1226,7 @@ const Estoque = () => {
               </Button>
 
               <div className="space-y-4">
-                <h3 className="font-semibold text-gray-900">Últimos Ajustes Manuais</h3>
+                <h3 className="font-semibold text-gray-900">Últimos Ajustes Manuais ({ultimosAjustes.length})</h3>
                 {ajustesPaginados.map(mov => {
                     const produto = produtos.find(p => p.id === mov.produto_id);
                     return (
