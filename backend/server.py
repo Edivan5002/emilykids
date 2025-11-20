@@ -9901,7 +9901,9 @@ async def admin_resetar_modulo(
         "produtos": "produtos",
         "movimentacoes_estoque": "movimentacoes_estoque",
         "inventarios": "inventarios",
-        "logs": "logs"
+        "logs": "logs",
+        "contas_receber": "contas_receber",
+        "contas_pagar": "contas_pagar"
     }
     
     if request.modulo not in modulos_validos:
