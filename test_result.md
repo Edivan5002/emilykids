@@ -1108,3 +1108,20 @@ agent_communication:
     message: "✅ BACKEND FASE 10 IMPLEMENTADO! Adicionei o endpoint GET /api/vendas/{venda_id}/contas-receber no server.py. Este endpoint busca todas as contas a receber geradas automaticamente ao criar uma venda. Backend reiniciado com sucesso sem erros. PRÓXIMO PASSO: Testar backend via deep_testing_backend_v2 e depois implementar frontend em Vendas.js para exibir as contas vinculadas."
   - agent: "testing"
     message: "🎯 FASE 10 BACKEND TESTADO COM 100% SUCESSO! Executei os 4 testes obrigatórios da review_request: ✅ VALIDAÇÕES REALIZADAS: (1) Venda parcelada (cartão, 3 parcelas) retorna 3 contas a receber com origem='venda' e origem_id correto; (2) Venda à vista retorna lista vazia (não gera contas); (3) Venda inexistente retorna 404 'Venda não encontrada'; (4) Estrutura das contas validada com todos os campos obrigatórios. ✅ BUGS CRÍTICOS CORRIGIDOS: (1) Campo 'data_venda' inexistente no modelo Venda - corrigido para 'created_at'; (2) Mismatch de campos referencia_tipo/referencia_id vs origem/origem_id - corrigido; (3) Função parse_from_mongo ausente - implementada. RESULTADO: Endpoint GET /api/vendas/{venda_id}/contas-receber funcionando 100% conforme especificado. PRONTO PARA IMPLEMENTAÇÃO DO FRONTEND!"
+
+frontend:
+  - task: "Fase 10 - Integração Vendas com Contas a Receber - Frontend Completo"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Vendas.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ FASE 10 - FRONTEND IMPLEMENTADO COMPLETAMENTE: (1) COMPONENTE ContasReceberVinculadas: Novo componente funcional criado para exibir contas a receber vinculadas à venda; Busca dados via GET /api/vendas/{venda_id}/contas-receber usando useEffect; Design com gradiente verde e cards informativos; (2) INFORMAÇÕES EXIBIDAS: Cards de resumo com 3 valores (Total, Pago, Pendente); Lista de parcelas mostrando: número da conta, descrição, status (paga/pendente), valor total, valor pendente, data de vencimento; Badges coloridos para status (verde=paga, laranja=pendente); Ícones visuais (CheckCircle, Clock, FileText, DollarSign); (3) INTEGRAÇÃO: Componente adicionado em Vendas.js após lista de itens; Renderizado condicionalmente apenas para: vendas não canceladas, forma_pagamento != 'avista'; Loading state com spinner; Erro silencioso (não exibe se houver erro de permissão); (4) UX: Totalizadores calculados dinamicamente; Nota explicativa no rodapé; Design responsivo e consistente com resto da aplicação; (5) IMPORTS: Adicionados ícones Clock, CheckCircle, FileText do lucide-react. Frontend compilado COM SUCESSO, servidor RUNNING."
+
+agent_communication:
+  - agent: "main"
+    message: "✅ FRONTEND FASE 10 IMPLEMENTADO COM SUCESSO! Criei o componente ContasReceberVinculadas que busca e exibe as contas a receber vinculadas a cada venda. O componente: (1) Busca automaticamente via GET /api/vendas/{venda_id}/contas-receber; (2) Exibe cards de resumo (Total, Pago, Pendente); (3) Lista todas as parcelas com status, valores e vencimentos; (4) Só aparece em vendas não canceladas e com forma_pagamento diferente de 'avista'; (5) Tem tratamento de erros e loading states. Frontend compilou sem erros. PRONTO PARA TESTES! Usuário pode testar manualmente ou eu posso chamar agente de testes frontend."
