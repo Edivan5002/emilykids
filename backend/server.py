@@ -7619,6 +7619,29 @@ async def get_historico_venda(venda_id: str, current_user: dict = Depends(get_cu
         "historico": venda.get("historico_alteracoes", [])
     }
 
+@api_router.get("/vendas/{venda_id}/contas-receber", response_model=List[ContaReceber])
+async def get_contas_receber_por_venda(venda_id: str, current_user: dict = Depends(require_permission("contas_receber", "ler"))):
+    """
+    Busca todas as contas a receber vinculadas a uma venda específica.
+    Usado para exibir as parcelas geradas automaticamente na página de vendas.
+    """
+    # Verificar se a venda existe
+    venda = await db.vendas.find_one({"id": venda_id}, {"_id": 0})
+    if not venda:
+        raise HTTPException(status_code=404, detail="Venda não encontrada")
+    
+    # Buscar contas a receber vinculadas à venda
+    contas = await db.contas_receber.find({
+        "referencia_tipo": "venda",
+        "referencia_id": venda_id
+    }).to_list(length=None)
+    
+    if not contas:
+        return []
+    
+    return [ContaReceber(**parse_from_mongo(c)) for c in contas]
+
+
 @api_router.delete("/vendas/{venda_id}")
 async def delete_venda(venda_id: str, current_user: dict = Depends(get_current_user)):
     venda = await db.vendas.find_one({"id": venda_id}, {"_id": 0})
