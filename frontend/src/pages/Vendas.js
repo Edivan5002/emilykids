@@ -1295,53 +1295,38 @@ const Vendas = () => {
                         <X size={16} className="text-red-500" />
                       </Button>
                     </div>
-                  ))}
+                    ))}
+                  </div>
+                )}
+              </div>
+              </TabsContent>
+
+              {/* Total e Botões - Fora das abas */}
+              <div className="space-y-4 mt-4">
+                {/* Total */}
+                <div className="p-4 rounded-lg" style={{backgroundColor: '#2C9AA1', color: 'white'}}>
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-semibold">Total da Venda:</span>
+                    <span className="text-3xl font-bold">R$ {calcularTotal().toFixed(2)}</span>
+                  </div>
                 </div>
-              )}
-            </div>
 
-            {/* Desconto e Frete */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Desconto (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formVenda.desconto}
-                  onChange={(e) => setFormVenda({...formVenda, desconto: parseFloat(e.target.value) || 0})}
-                />
+                {/* Botões */}
+                <div className="flex gap-2 justify-end">
+                  <Button type="button" variant="outline" onClick={handleCloseCreate}>
+                    Cancelar
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={loading || itensVenda.length === 0}
+                    style={{backgroundColor: '#2C9AA1'}}
+                  >
+                    {loading ? 'Criando...' : 'Finalizar Venda'}
+                  </Button>
+                </div>
               </div>
-              <div>
-                <Label>Frete (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formVenda.frete}
-                  onChange={(e) => setFormVenda({...formVenda, frete: parseFloat(e.target.value) || 0})}
-                />
-              </div>
-            </div>
-
-            {/* Total */}
-            <div className="p-4 rounded-lg" style={{backgroundColor: '#2C9AA1', color: 'white'}}>
-              <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold">Total da Venda:</span>
-                <span className="text-3xl font-bold">R$ {calcularTotal().toFixed(2)}</span>
-              </div>
-            </div>
-
-            {/* Botões */}
-            <div className="flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={handleCloseCreate}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={loading || itensVenda.length === 0}>
-                {loading ? 'Criando...' : 'Finalizar Venda'}
-              </Button>
-            </div>
-          </form>
+            </form>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
