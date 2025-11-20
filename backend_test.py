@@ -537,7 +537,7 @@ class VendasContasReceberTester:
         print("\n" + "=" * 80)
 
 if __name__ == "__main__":
-    tester = SalesCancellationTester()
+    tester = VendasContasReceberTester()
     success = tester.run_all_tests()
     tester.print_summary()
     
