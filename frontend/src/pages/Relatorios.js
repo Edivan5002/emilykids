@@ -796,7 +796,7 @@ const Relatorios = () => {
                     </Button>
                   </div>
                   <p className="text-sm text-gray-600">
-                    Período: {dre.periodo.data_inicio} a {dre.periodo.data_fim}
+                    Período: {formatDateStringBR(dre.periodo.data_inicio)} a {formatDateStringBR(dre.periodo.data_fim)}
                   </p>
                 </CardHeader>
                 <CardContent>
