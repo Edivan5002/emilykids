@@ -27,6 +27,7 @@ import Administracao from './pages/Administracao';
 import ConfiguracoesFinanceiras from './pages/ConfiguracoesFinanceiras';
 import ContasReceber from './pages/ContasReceber';
 import ContasPagar from './pages/ContasPagar';
+import FluxoCaixa from './pages/FluxoCaixa';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // Layout
