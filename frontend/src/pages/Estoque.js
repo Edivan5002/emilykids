@@ -910,7 +910,7 @@ const Estoque = () => {
         <TabsContent value="movimentacoes">
           <Card>
             <CardHeader>
-              <CardTitle>Histórico de Movimentações</CardTitle>
+              <CardTitle>Histórico de Movimentações ({movimentacoes.length})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
