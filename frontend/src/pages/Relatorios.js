@@ -12,6 +12,7 @@ import {
   Activity, ShoppingCart, AlertCircle, CheckCircle, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatDateBR, formatMonthYearBR, formatDateTimeBR } from '@/utils/dateFormatter';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
