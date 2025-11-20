@@ -11511,7 +11511,11 @@ async def dashboard_contas_pagar(
     contas = await db.contas_pagar.find(query, {"_id": 0}).to_list(10000)
     
     # Calcular KPIs (excluindo contas canceladas)
-    total_pagar = sum(c["valor_total"] for c in contas if c.get("status") != "cancelada")
+    # Total a Pagar = apenas valor_pendente de contas pendentes, pago_parcial e vencidas
+    total_pagar = sum(
+        c["valor_pendente"] for c in contas 
+        if c.get("status") in ["pendente", "pago_parcial", "vencido"]
+    )
     total_pago = sum(c["valor_pago"] for c in contas if c.get("status") != "cancelada")
     total_pendente = sum(c["valor_pendente"] for c in contas if c.get("status") != "cancelada")
     total_vencido = sum(c["valor_pendente"] for c in contas if c["status"] == "vencido")
