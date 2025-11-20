@@ -7644,8 +7644,8 @@ async def get_contas_receber_por_venda(venda_id: str, current_user: dict = Depen
     
     # Buscar contas a receber vinculadas à venda
     contas = await db.contas_receber.find({
-        "referencia_tipo": "venda",
-        "referencia_id": venda_id
+        "origem": "venda",
+        "origem_id": venda_id
     }).to_list(length=None)
     
     if not contas:
