@@ -4878,24 +4878,21 @@ async def busca_avancada_produtos(
 
 @api_router.get("/estoque/alertas")
 async def get_alertas_estoque(
-    page: int = 1,
-    limit: int = 20,
     current_user: dict = Depends(get_current_user)
 ):
-    """Lista alertas de estoque com paginação opcional"""
-    # Se limit=0, retorna todos (mantém compatibilidade)
-    if limit == 0:
-        produtos = await db.produtos.find({}, {"_id": 0}).to_list(10000)
-    else:
-        skip = (page - 1) * limit
-        produtos = await db.produtos.find({}, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    """Lista todos os alertas de estoque sem limitação"""
+    # Buscar todos os produtos
+    produtos = await db.produtos.find({}, {"_id": 0}).to_list(10000)
     
+    # Filtrar alertas
     alertas_minimo = [p for p in produtos if p["estoque_atual"] <= p["estoque_minimo"]]
     alertas_maximo = [p for p in produtos if p["estoque_atual"] >= p["estoque_maximo"]]
     
     return {
         "alertas_minimo": alertas_minimo,
-        "alertas_maximo": alertas_maximo
+        "alertas_maximo": alertas_maximo,
+        "total_alertas_minimo": len(alertas_minimo),
+        "total_alertas_maximo": len(alertas_maximo)
     }
 
 @api_router.get("/estoque/movimentacoes")
