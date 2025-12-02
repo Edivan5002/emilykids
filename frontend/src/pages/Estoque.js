@@ -88,7 +88,7 @@ const Estoque = () => {
       
       // Tentar carregar alertas
       try {
-        const alertRes = await axios.get(`${API}/estoque/alertas`);
+        const alertRes = await axios.get(`${API}/estoque/alertas?t=${Date.now()}`);
         setAlertas(alertRes.data);
       } catch (err) {
         console.log('Sem permissão para alertas');
