@@ -14,6 +14,12 @@ const Dashboard = () => {
   const [vendasPorPeriodo, setVendasPorPeriodo] = useState([]);
   const [alertas, setAlertas] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [marcas, setMarcas] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [subcategorias, setSubcategorias] = useState([]);
+  const [paginaAlertasMinimo, setPaginaAlertasMinimo] = useState(1);
+  const [paginaAlertasMaximo, setPaginaAlertasMaximo] = useState(1);
+  const ITENS_POR_PAGINA = 20;
 
   // Verificar se tem permissão em um módulo
   const hasPermission = (module) => {
