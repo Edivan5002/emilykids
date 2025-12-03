@@ -207,28 +207,92 @@ const Dashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {alertas.alertas_minimo.length > 0 && (
+            {alertasMinimo.length > 0 && (
               <div className="mb-4">
-                <h3 className="font-semibold text-red-600 mb-2">Estoque Mínimo Atingido ({alertas.alertas_minimo.length})</h3>
-                <div className="space-y-1">
-                  {alertas.alertas_minimo.slice(0, 5).map(produto => (
+                <h3 className="font-semibold text-red-600 mb-2">Estoque Mínimo Atingido ({alertasMinimo.length} produtos)</h3>
+                <div className="space-y-1 mb-3">
+                  {alertasMinimoPaginados.map(produto => (
                     <p key={produto.id} className="text-sm text-gray-600">
-                      {produto.nome} - Estoque: {produto.estoque_atual}
+                      {getProdutoDescricaoCompleta(produto)} - Estoque: {produto.estoque_atual}
                     </p>
                   ))}
                 </div>
+                {totalPaginasMinimo > 1 && (
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t">
+                    <p className="text-sm text-gray-600">
+                      Página {paginaAlertasMinimo} de {totalPaginasMinimo} | Mostrando {indiceInicialMinimo + 1} a {Math.min(indiceFinalMinimo, alertasMinimo.length)} de {alertasMinimo.length}
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setPaginaAlertasMinimo(p => Math.max(1, p - 1))}
+                        disabled={paginaAlertasMinimo === 1}
+                        className="p-2 border rounded disabled:opacity-50"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      {[...Array(totalPaginasMinimo)].map((_, i) => (
+                        <button
+                          key={i + 1}
+                          onClick={() => setPaginaAlertasMinimo(i + 1)}
+                          className={`px-3 py-1 border rounded ${paginaAlertasMinimo === i + 1 ? 'bg-blue-600 text-white' : ''}`}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setPaginaAlertasMinimo(p => Math.min(totalPaginasMinimo, p + 1))}
+                        disabled={paginaAlertasMinimo === totalPaginasMinimo}
+                        className="p-2 border rounded disabled:opacity-50"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-            {alertas.alertas_maximo.length > 0 && (
+            {alertasMaximo.length > 0 && (
               <div>
-                <h3 className="font-semibold text-yellow-600 mb-2">Estoque Máximo Atingido ({alertas.alertas_maximo.length})</h3>
-                <div className="space-y-1">
-                  {alertas.alertas_maximo.slice(0, 5).map(produto => (
+                <h3 className="font-semibold text-yellow-600 mb-2">Estoque Máximo Atingido ({alertasMaximo.length} produtos)</h3>
+                <div className="space-y-1 mb-3">
+                  {alertasMaximoPaginados.map(produto => (
                     <p key={produto.id} className="text-sm text-gray-600">
-                      {produto.nome} - Estoque: {produto.estoque_atual}
+                      {getProdutoDescricaoCompleta(produto)} - Estoque: {produto.estoque_atual}
                     </p>
                   ))}
                 </div>
+                {totalPaginasMaximo > 1 && (
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t">
+                    <p className="text-sm text-gray-600">
+                      Página {paginaAlertasMaximo} de {totalPaginasMaximo} | Mostrando {indiceInicialMaximo + 1} a {Math.min(indiceFinalMaximo, alertasMaximo.length)} de {alertasMaximo.length}
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setPaginaAlertasMaximo(p => Math.max(1, p - 1))}
+                        disabled={paginaAlertasMaximo === 1}
+                        className="p-2 border rounded disabled:opacity-50"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      {[...Array(totalPaginasMaximo)].map((_, i) => (
+                        <button
+                          key={i + 1}
+                          onClick={() => setPaginaAlertasMaximo(i + 1)}
+                          className={`px-3 py-1 border rounded ${paginaAlertasMaximo === i + 1 ? 'bg-blue-600 text-white' : ''}`}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setPaginaAlertasMaximo(p => Math.min(totalPaginasMaximo, p + 1))}
+                        disabled={paginaAlertasMaximo === totalPaginasMaximo}
+                        className="p-2 border rounded disabled:opacity-50"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
