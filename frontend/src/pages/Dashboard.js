@@ -89,6 +89,29 @@ const Dashboard = () => {
     }
   };
 
+  // Função para obter nome completo do produto
+  const getProdutoDescricaoCompleta = (produto) => {
+    const marca = marcas.find(m => m.id === produto.marca_id);
+    const categoria = categorias.find(c => c.id === produto.categoria_id);
+    const subcategoria = subcategorias.find(s => s.id === produto.subcategoria_id);
+    
+    return `${marca?.nome || ''} ${categoria?.nome || ''} ${subcategoria?.nome || ''} ${produto.nome}`.trim();
+  };
+
+  // Paginação para alertas de estoque mínimo
+  const alertasMinimo = alertas?.alertas_minimo || [];
+  const totalPaginasMinimo = Math.ceil(alertasMinimo.length / ITENS_POR_PAGINA);
+  const indiceInicialMinimo = (paginaAlertasMinimo - 1) * ITENS_POR_PAGINA;
+  const indiceFinalMinimo = indiceInicialMinimo + ITENS_POR_PAGINA;
+  const alertasMinimoPaginados = alertasMinimo.slice(indiceInicialMinimo, indiceFinalMinimo);
+
+  // Paginação para alertas de estoque máximo
+  const alertasMaximo = alertas?.alertas_maximo || [];
+  const totalPaginasMaximo = Math.ceil(alertasMaximo.length / ITENS_POR_PAGINA);
+  const indiceInicialMaximo = (paginaAlertasMaximo - 1) * ITENS_POR_PAGINA;
+  const indiceFinalMaximo = indiceInicialMaximo + ITENS_POR_PAGINA;
+  const alertasMaximoPaginados = alertasMaximo.slice(indiceInicialMaximo, indiceFinalMaximo);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
