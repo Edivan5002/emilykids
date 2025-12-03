@@ -50,9 +50,19 @@ const Dashboard = () => {
       }
       
       if (hasPermission('estoque')) {
-        requests.push(axios.get(`${API}/estoque/alertas`).catch(err => ({ data: null })));
+        requests.push(
+          axios.get(`${API}/estoque/alertas?t=${Date.now()}`).catch(err => ({ data: null })),
+          axios.get(`${API}/marcas?limit=0`).catch(err => ({ data: [] })),
+          axios.get(`${API}/categorias?limit=0`).catch(err => ({ data: [] })),
+          axios.get(`${API}/subcategorias?limit=0`).catch(err => ({ data: [] }))
+        );
       } else {
-        requests.push(Promise.resolve({ data: null }));
+        requests.push(
+          Promise.resolve({ data: null }),
+          Promise.resolve({ data: [] }),
+          Promise.resolve({ data: [] }),
+          Promise.resolve({ data: [] })
+        );
       }
 
       const [statsRes, vendasRes, alertasRes] = await Promise.all(requests);
