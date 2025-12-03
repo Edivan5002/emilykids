@@ -65,7 +65,7 @@ const Dashboard = () => {
         );
       }
 
-      const [statsRes, vendasRes, alertasRes] = await Promise.all(requests);
+      const [statsRes, vendasRes, alertasRes, marcasRes, categoriasRes, subcategoriasRes] = await Promise.all(requests);
 
       setStats(statsRes.data);
       
@@ -79,6 +79,9 @@ const Dashboard = () => {
       }
       
       setAlertas(alertasRes.data);
+      setMarcas(marcasRes?.data || []);
+      setCategorias(categoriasRes?.data || []);
+      setSubcategorias(subcategoriasRes?.data || []);
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error);
     } finally {
