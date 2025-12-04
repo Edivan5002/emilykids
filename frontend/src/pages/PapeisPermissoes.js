@@ -704,6 +704,13 @@ const PapeisPermissoes = () => {
               </p>
 
               <div className="space-y-4 max-h-96 overflow-y-auto border rounded-lg p-4">
+                {(() => {
+                  const modules = Object.entries(permissionsByModule);
+                  const totalPerms = modules.reduce((sum, [_, perms]) => sum + perms.length, 0);
+                  console.log(`RENDERIZANDO SELEÇÃO: ${modules.length} módulos, ${totalPerms} permissões totais`);
+                  console.log('Módulos:', modules.map(([m, p]) => `${m}(${p.length})`).join(', '));
+                  return null;
+                })()}
                 {Object.entries(permissionsByModule).map(([modulo, perms]) => {
                   const allSelected = perms.every(p => roleForm.permissoes.includes(p.id));
                   const someSelected = perms.some(p => roleForm.permissoes.includes(p.id));
