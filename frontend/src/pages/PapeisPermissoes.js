@@ -105,21 +105,27 @@ const PapeisPermissoes = () => {
       const token = localStorage.getItem('token');
       const headers = {
         'Authorization': `Bearer ${token}`,
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
+        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       };
       
-      const allPerms = await axios.get(`${API}/permissions?_t=${Date.now()}`, { headers });
+      // Forçar nova requisição com timestamp único
+      const timestamp = Date.now();
+      const allPerms = await axios.get(`${API}/permissions?v=${timestamp}&bustcache=${Math.random()}`, { headers });
+      console.log('Permissões carregadas:', allPerms.data.length);
       setPermissions(allPerms.data);
       
       try {
-        const byModule = await axios.get(`${API}/permissions/by-module?_t=${Date.now()}`, { headers });
+        const byModule = await axios.get(`${API}/permissions/by-module?v=${timestamp}&bustcache=${Math.random()}`, { headers });
+        console.log('Módulos carregados:', Object.keys(byModule.data).length);
         setPermissionsByModule(byModule.data);
       } catch (err) {
-        console.log('Erro ao carregar permissões por módulo');
+        console.error('Erro ao carregar permissões por módulo:', err);
         setPermissionsByModule({});
       }
     } catch (error) {
+      console.error('Erro ao carregar permissões:', error);
       toast.error('Erro ao carregar permissões');
     }
   };
