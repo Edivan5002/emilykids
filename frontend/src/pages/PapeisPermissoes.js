@@ -101,12 +101,15 @@ const PapeisPermissoes = () => {
       const token = localStorage.getItem('token');
       const headers = {
         'Authorization': `Bearer ${token}`,
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
+        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       };
-      const response = await axios.get(`${API}/roles?_t=${Date.now()}`, { headers });
+      const response = await axios.get(`${API}/roles?limit=0&v=${Date.now()}&cache=${Math.random()}`, { headers });
+      console.log('Papéis carregados:', response.data.length, response.data.map(r => `${r.nome}: ${r.permissoes.length} perms`));
       setRoles(response.data);
     } catch (error) {
+      console.error('Erro ao carregar papéis:', error);
       toast.error('Erro ao carregar papéis');
     }
   };
