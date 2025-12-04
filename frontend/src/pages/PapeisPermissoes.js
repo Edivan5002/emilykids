@@ -67,9 +67,20 @@ const PapeisPermissoes = () => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
     
-    // Limpar cache de permissões ao carregar
-    localStorage.removeItem('permissions_cache');
-    localStorage.removeItem('roles_cache');
+    // Limpar TODOS os caches relacionados
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('permission') || key.includes('role') || key.includes('cache'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
+    // Forçar limpeza do cache do axios
+    if (window.axios && window.axios.defaults) {
+      window.axios.defaults.headers.common['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+    }
     
     initializeRBAC();
     fetchRoles();
