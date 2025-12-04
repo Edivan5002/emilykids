@@ -3195,7 +3195,13 @@ async def duplicate_role(role_id: str, novo_nome: str, current_user: dict = Depe
 @api_router.get("/permissions", response_model=List[Permission])
 async def get_permissions(current_user: dict = Depends(require_permission("usuarios", "ler"))):
     """Lista todas as permissões do sistema"""
-    if current_user.get("papel") != "admin":
+    # Verificar se é administrador pelo papel
+    role_id = current_user.get("papel_id") or current_user.get("role_id")
+    if role_id:
+        role = await db.roles.find_one({"id": role_id}, {"_id": 0})
+        if not role or role.get("nome") != "Administrador":
+            raise HTTPException(status_code=403, detail="Apenas administradores")
+    else:
         raise HTTPException(status_code=403, detail="Apenas administradores")
     
     permissions = await db.permissions.find({}, {"_id": 0}).sort([("modulo", 1), ("acao", 1)]).to_list(10000)
