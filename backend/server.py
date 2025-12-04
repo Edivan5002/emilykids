@@ -3210,7 +3210,13 @@ async def get_permissions(current_user: dict = Depends(require_permission("usuar
 @api_router.get("/permissions/by-module")
 async def get_permissions_by_module(current_user: dict = Depends(get_current_user)):
     """Lista permissões agrupadas por módulo"""
-    if current_user.get("papel") != "admin":
+    # Verificar se é administrador pelo papel
+    role_id = current_user.get("papel_id") or current_user.get("role_id")
+    if role_id:
+        role = await db.roles.find_one({"id": role_id}, {"_id": 0})
+        if not role or role.get("nome") != "Administrador":
+            raise HTTPException(status_code=403, detail="Apenas administradores")
+    else:
         raise HTTPException(status_code=403, detail="Apenas administradores")
     
     permissions = await db.permissions.find({}, {"_id": 0}).to_list(10000)
