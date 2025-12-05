@@ -1238,11 +1238,13 @@ const Orcamentos = () => {
 
                 {/* ABA PAGAMENTO */}
                 <TabsContent value="pagamento" className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Dados do Pagamento</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                  <Card className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                      <DollarSign size={18} />
+                      Informações de Pagamento
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-3">
                       <div>
                         <Label>Forma de Pagamento *</Label>
                         <Select 
@@ -1250,60 +1252,111 @@ const Orcamentos = () => {
                           onValueChange={(v) => setModalConversao({ ...modalConversao, formaPagamento: v })}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione a forma de pagamento" />
+                            <SelectValue placeholder="Selecione" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                            <SelectItem value="pix">PIX</SelectItem>
                             <SelectItem value="cartao">Cartão</SelectItem>
+                            <SelectItem value="pix">PIX</SelectItem>
                             <SelectItem value="boleto">Boleto</SelectItem>
+                            <SelectItem value="dinheiro">Dinheiro</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label>Desconto (R$)</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={modalConversao.desconto}
-                            onChange={(e) => setModalConversao({ 
-                              ...modalConversao, 
-                              desconto: parseFloat(e.target.value) || 0 
-                            })}
-                          />
-                        </div>
-                        <div>
-                          <Label>Frete (R$)</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={modalConversao.frete}
-                            onChange={(e) => setModalConversao({ 
-                              ...modalConversao, 
-                              frete: parseFloat(e.target.value) || 0 
-                            })}
-                          />
-                        </div>
-                      </div>
-
                       <div>
-                        <Label>Observações</Label>
-                        <textarea
-                          className="w-full p-2 border rounded-md"
-                          rows="3"
-                          value={modalConversao.observacoes}
+                        <Label>Tipo de Pagamento *</Label>
+                        <Select 
+                          value={modalConversao.tipo_pagamento} 
+                          onValueChange={(v) => setModalConversao({ 
+                            ...modalConversao, 
+                            tipo_pagamento: v,
+                            numero_parcelas: v === 'avista' ? 1 : modalConversao.numero_parcelas 
+                          })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="avista">À Vista</SelectItem>
+                            <SelectItem value="parcelado">Parcelado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-3">
+                      {modalConversao.tipo_pagamento === 'parcelado' && (
+                        <div>
+                          <Label>Número de Parcelas</Label>
+                          <Input
+                            type="number"
+                            min="2"
+                            max="12"
+                            value={modalConversao.numero_parcelas}
+                            onChange={(e) => setModalConversao({ 
+                              ...modalConversao, 
+                              numero_parcelas: parseInt(e.target.value) || 2 
+                            })}
+                          />
+                        </div>
+                      )}
+                      <div>
+                        <Label>Data de Vencimento {modalConversao.tipo_pagamento === 'parcelado' ? '(1ª Parcela)' : ''}</Label>
+                        <Input
+                          type="date"
+                          value={modalConversao.data_vencimento}
                           onChange={(e) => setModalConversao({ 
                             ...modalConversao, 
-                            observacoes: e.target.value 
+                            data_vencimento: e.target.value 
                           })}
-                          placeholder="Observações sobre a venda..."
+                          placeholder="Deixe vazio para 30 dias"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Deixe vazio para usar 30 dias após emissão</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-3">
+                      <div>
+                        <Label>Desconto (R$)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={modalConversao.desconto}
+                          onChange={(e) => setModalConversao({ 
+                            ...modalConversao, 
+                            desconto: parseFloat(e.target.value) || 0 
+                          })}
                         />
                       </div>
-                    </CardContent>
+                      <div>
+                        <Label>Frete (R$)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={modalConversao.frete}
+                          onChange={(e) => setModalConversao({ 
+                            ...modalConversao, 
+                            frete: parseFloat(e.target.value) || 0 
+                          })}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Observações</Label>
+                      <textarea
+                        className="w-full p-2 border rounded-md"
+                        rows="3"
+                        value={modalConversao.observacoes}
+                        onChange={(e) => setModalConversao({ 
+                          ...modalConversao, 
+                          observacoes: e.target.value 
+                        })}
+                        placeholder="Observações sobre a venda..."
+                      />
+                    </div>
                   </Card>
                 </TabsContent>
               </Tabs>
