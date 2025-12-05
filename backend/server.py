@@ -3353,21 +3353,23 @@ async def delete_user_group(group_id: str, current_user: dict = Depends(get_curr
 
 @api_router.get("/permission-history")
 async def get_permission_history(
-    limit: int = 20,
-    offset: int = 0,
     current_user: dict = Depends(require_permission("logs", "ler"))
 ):
-    """Lista histórico de mudanças de permissões"""
-    if current_user.get("papel") != "admin":
+    """Lista histórico de mudanças de permissões - sem limitação"""
+    # Verificar se é administrador pelo papel
+    role_id = current_user.get("papel_id") or current_user.get("role_id")
+    if role_id:
+        role = await db.roles.find_one({"id": role_id}, {"_id": 0})
+        if not role or role.get("nome") != "Administrador":
+            raise HTTPException(status_code=403, detail="Apenas administradores")
+    else:
         raise HTTPException(status_code=403, detail="Apenas administradores")
     
-    total = await db.permission_history.count_documents({})
-    history = await db.permission_history.find({}, {"_id": 0}).sort("timestamp", -1).skip(offset).limit(limit).to_list(limit)
+    # Retornar todos os registros sem limitação
+    history = await db.permission_history.find({}, {"_id": 0}).sort("timestamp", -1).to_list(10000)
     
     return {
-        "total": total,
-        "limit": limit,
-        "offset": offset,
+        "total": len(history),
         "history": history
     }
 
