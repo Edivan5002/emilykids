@@ -146,7 +146,7 @@ const PapeisPermissoes = () => {
 
   const fetchPermissionHistory = async () => {
     try {
-      const response = await axios.get(`${API}/permission-history?limit=20`);
+      const response = await axios.get(`${API}/permission-history`);
       setPermissionHistory(response.data.history);
     } catch (error) {
       toast.error('Erro ao carregar histórico');
