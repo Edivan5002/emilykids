@@ -215,6 +215,7 @@ const Orcamentos = () => {
 
   // Estados para controle de expansão/colapso dos itens
   const [itensExpandidos, setItensExpandidos] = useState({});
+  const [contasExpandidas, setContasExpandidas] = useState({});
 
   // Removed unused state variables
 
