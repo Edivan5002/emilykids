@@ -48,6 +48,9 @@ const Orcamentos = () => {
     orcamento: null,
     itens: [],
     formaPagamento: '',
+    tipo_pagamento: 'avista',
+    numero_parcelas: 1,
+    data_vencimento: '',
     desconto: 0,
     frete: 0,
     observacoes: ''
