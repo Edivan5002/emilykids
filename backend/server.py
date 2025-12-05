@@ -558,6 +558,8 @@ class OrcamentoUpdate(BaseModel):
 
 class ConversaoVendaRequest(BaseModel):
     forma_pagamento: str
+    numero_parcelas: Optional[int] = 1
+    data_vencimento: Optional[str] = None
     desconto: Optional[float] = None  # Novo desconto (se diferente do orçamento)
     frete: Optional[float] = None  # Novo frete (se diferente do orçamento)
     observacoes: Optional[str] = None
