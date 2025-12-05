@@ -6509,6 +6509,19 @@ async def converter_orcamento_venda(
     # Gerar número sequencial para a venda
     numero_venda = await gerar_proximo_numero_venda()
     
+    # Preparar parcelas
+    numero_parcelas = conversao.numero_parcelas or 1
+    parcelas = []
+    valor_parcela = total_final / numero_parcelas
+    
+    for i in range(numero_parcelas):
+        parcelas.append({
+            "numero": i + 1,
+            "valor": valor_parcela,
+            "data_vencimento": conversao.data_vencimento or (datetime.now(timezone.utc) + timedelta(days=30 * (i + 1))).isoformat(),
+            "status": "pendente"
+        })
+    
     # Criar venda
     venda = Venda(
         numero_venda=numero_venda,
@@ -6519,6 +6532,8 @@ async def converter_orcamento_venda(
         subtotal=subtotal,
         total=total_final,
         forma_pagamento=conversao.forma_pagamento,
+        numero_parcelas=numero_parcelas,
+        parcelas=parcelas,
         status_venda="aguardando_pagamento",
         orcamento_id=orcamento_id,
         user_id=current_user["id"],
@@ -6533,6 +6548,57 @@ async def converter_orcamento_venda(
     )
     
     await db.vendas.insert_one(venda.model_dump())
+    
+    # CRIAR CONTAS A RECEBER (igual à criação de venda normal)
+    if numero_parcelas > 1:
+        # Buscar nome do cliente
+        cliente = await db.clientes.find_one({"id": orcamento["cliente_id"]}, {"_id": 0})
+        cliente_nome = cliente.get("nome", "Cliente") if cliente else "Cliente"
+        
+        try:
+            # Gerar conta a receber para cada parcela
+            for idx, parcela in enumerate(venda.parcelas, start=1):
+                numero_conta = await gerar_numero_conta_receber()
+                
+                # Calcular data de vencimento baseada no número da parcela
+                data_base = datetime.fromisoformat(venda.created_at.replace('Z', '+00:00'))
+                dias_para_vencimento = 30 * idx  # 30 dias para cada parcela
+                data_vencimento = (data_base + timedelta(days=dias_para_vencimento)).isoformat()
+                
+                # Create ParcelaReceber for this conta
+                parcela_receber = ParcelaReceber(
+                    numero_parcela=1,
+                    valor=parcela["valor"],
+                    data_vencimento=data_vencimento,
+                    status="pendente"
+                )
+                
+                conta_receber = ContaReceber(
+                    numero=numero_conta,
+                    origem="venda",
+                    origem_id=venda.id,
+                    origem_numero=numero_venda,
+                    cliente_id=venda.cliente_id,
+                    cliente_nome=cliente_nome,
+                    descricao=f"Venda #{numero_venda} - Parcela {idx}/{venda.numero_parcelas} (Convertida de Orçamento)",
+                    valor_total=parcela["valor"],
+                    valor_pendente=parcela["valor"],
+                    valor_liquido=parcela["valor"],
+                    forma_pagamento=venda.forma_pagamento,
+                    tipo_pagamento="parcelado" if venda.numero_parcelas > 1 else "avista",
+                    numero_parcelas=1,  # Cada conta representa 1 parcela
+                    parcelas=[parcela_receber],
+                    observacao=f"Gerada automaticamente da venda {numero_venda} (convertida de orçamento {orcamento_id})",
+                    created_by=current_user["id"],
+                    created_by_name=current_user["nome"],
+                    venda_itens=venda.itens
+                )
+                
+                await db.contas_receber.insert_one(conta_receber.model_dump())
+                
+        except Exception as e:
+            # Não falhar a venda se houver erro ao criar conta a receber
+            print(f"Aviso: Erro ao criar conta a receber para venda {venda.id}: {str(e)}")
     
     # Registrar movimentações (já está reservado, então não precisa descontar novamente do estoque)
     for item in venda.itens:
