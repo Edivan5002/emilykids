@@ -1091,9 +1091,27 @@ const Orcamentos = () => {
                 )}
               </div>
 
-              {/* Contas a Receber Vinculadas - se orçamento foi convertido */}
+              {/* Contas a Receber Vinculadas - Colapsável (se orçamento foi convertido) */}
               {orcamento.status === 'vendido' && orcamento.venda_id && (
-                <ContasReceberVinculadas vendaId={orcamento.venda_id} />
+                <div className="mb-4">
+                  <div 
+                    className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded mb-2"
+                    onClick={() => setContasExpandidas({...contasExpandidas, [orcamento.id]: !contasExpandidas[orcamento.id]})}
+                  >
+                    <p className="text-sm font-semibold flex items-center gap-2">
+                      <DollarSign size={16} className="text-green-600" />
+                      Contas a Receber Vinculadas
+                    </p>
+                    {contasExpandidas[orcamento.id] ? (
+                      <ChevronUp size={20} className="text-gray-600" />
+                    ) : (
+                      <ChevronDown size={20} className="text-gray-600" />
+                    )}
+                  </div>
+                  {contasExpandidas[orcamento.id] && (
+                    <ContasReceberVinculadas vendaId={orcamento.venda_id} />
+                  )}
+                </div>
               )}
 
               {/* Motivo do Cancelamento - se orçamento foi cancelado */}
