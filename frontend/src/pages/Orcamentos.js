@@ -376,6 +376,8 @@ const Orcamentos = () => {
       // Enviar conversão com os itens editados
       await axios.post(`${API}/orcamentos/${modalConversao.orcamento.id}/converter-venda`, {
         forma_pagamento: modalConversao.formaPagamento,
+        numero_parcelas: modalConversao.tipo_pagamento === 'avista' ? 1 : modalConversao.numero_parcelas,
+        data_vencimento: modalConversao.data_vencimento,
         desconto: modalConversao.desconto,
         frete: modalConversao.frete,
         observacoes: modalConversao.observacoes,
