@@ -1090,6 +1090,11 @@ const Orcamentos = () => {
                 )}
               </div>
 
+              {/* Contas a Receber Vinculadas - se orçamento foi convertido */}
+              {orcamento.status === 'vendido' && orcamento.venda_id && (
+                <ContasReceberVinculadas vendaId={orcamento.venda_id} />
+              )}
+
               {/* Motivo do Cancelamento - se orçamento foi cancelado */}
               {orcamento.status === 'cancelado' && orcamento.motivo_cancelamento && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
