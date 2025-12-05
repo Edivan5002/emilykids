@@ -6629,6 +6629,7 @@ async def converter_orcamento_venda(
         {"id": orcamento_id},
         {"$set": {
             "status": "vendido",
+            "venda_id": venda.id,
             "itens": itens_final,
             "subtotal": subtotal,
             "total": total_final,
