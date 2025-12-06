@@ -503,6 +503,10 @@ class Orcamento(BaseModel):
     # Status expandido
     status: str = "rascunho"  # rascunho, em_analise, aprovado, aberto, vendido, devolvido, expirado, perdido, cancelado
     
+    # Venda vinculada (quando orçamento é convertido)
+    venda_id: Optional[str] = None
+    orcamento_id: Optional[str] = None  # Mantido por compatibilidade
+    
     # Cancelamento (quando venda vinculada é cancelada)
     motivo_cancelamento: Optional[str] = None
     cancelado_por: Optional[str] = None
