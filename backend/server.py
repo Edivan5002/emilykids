@@ -4918,7 +4918,7 @@ async def get_alertas_estoque(
 @api_router.get("/estoque/movimentacoes")
 async def get_movimentacoes(
     page: int = 1,
-    limit: int = 20,
+    limit: int = 0,
     current_user: dict = Depends(get_current_user)
 ):
     """Lista movimentações de estoque com paginação opcional"""
