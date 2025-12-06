@@ -79,7 +79,7 @@ const Estoque = () => {
       
       // Tentar carregar movimentações
       try {
-        const movRes = await axios.get(`${API}/estoque/movimentacoes`);
+        const movRes = await axios.get(`${API}/estoque/movimentacoes?limit=0`);
         setMovimentacoes(movRes.data);
       } catch (err) {
         console.log('Sem permissão para movimentações');
