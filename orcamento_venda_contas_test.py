@@ -250,8 +250,25 @@ class OrcamentoVendaContasTester:
             self.log_test("Step 1 - Create Orçamento", False, "Failed to get/create client")
             return None
         
-        # Get or create product
-        product_id = self.existing_product_id or self.create_test_product()
+        # Use existing product with good stock or create new one
+        product_id = self.existing_product_id
+        if not product_id:
+            # Try to find a product with good stock (>10 units)
+            try:
+                response = requests.get(f"{self.base_url}/produtos", headers=self.get_headers())
+                if response.status_code == 200:
+                    products = response.json()
+                    good_stock_products = [p for p in products if p.get("estoque_atual", 0) >= 10]
+                    if good_stock_products:
+                        product_id = good_stock_products[0]["id"]
+                        print(f"   ✓ Using existing product with stock: {good_stock_products[0]['nome']} (Stock: {good_stock_products[0]['estoque_atual']})")
+                    else:
+                        product_id = self.create_test_product()
+                else:
+                    product_id = self.create_test_product()
+            except:
+                product_id = self.create_test_product()
+        
         if not product_id:
             self.log_test("Step 1 - Create Orçamento", False, "Failed to get/create product")
             return None
