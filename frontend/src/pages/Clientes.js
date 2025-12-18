@@ -348,6 +348,15 @@ const Clientes = () => {
                     >
                       <DollarSign size={16} className="text-green-600" />
                     </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleOpenCredito(c)} 
+                      title="Crédito e Limite"
+                      className="hidden md:flex"
+                    >
+                      <CreditCard size={16} className="text-purple-600" />
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => handleEdit(c)} title="Editar">
                       <Edit size={16} />
                     </Button>
