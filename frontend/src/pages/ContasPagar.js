@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { unwrapList, generateIdempotencyKey, parseError, ERROR_CODES } from '../lib/api';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
