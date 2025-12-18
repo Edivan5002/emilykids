@@ -9988,32 +9988,36 @@ async def editar_conta_receber(
 async def receber_parcela(
     id: str,
     dados: RecebimentoParcela,
+    request: Request,
     current_user: dict = Depends(require_permission("contas_receber", "receber"))
 ):
     """
-    Registra recebimento de uma parcela
+    Registra recebimento de uma parcela.
+    ETAPA 11: Update condicional atômico + Idempotência
     """
+    # 3) Verificar idempotência
+    idempotency_key = request.headers.get("Idempotency-Key")
+    if idempotency_key:
+        existing = await check_idempotency_key(idempotency_key, "receber-parcela", current_user["id"])
+        if existing:
+            return existing.get("response", {"message": "Operação já processada", "idempotent": True})
+    
     conta = await db.contas_receber.find_one({"id": id}, {"_id": 0})
     if not conta:
         raise HTTPException(status_code=404, detail="Conta não encontrada")
     
-    if conta["cancelada"]:
+    if conta.get("cancelada"):
         raise HTTPException(status_code=400, detail="Conta cancelada")
     
-    # Encontrar parcela
+    # Encontrar índice da parcela
     parcela_idx = None
-    parcela = None
     for i, p in enumerate(conta["parcelas"]):
         if p["numero_parcela"] == dados.numero_parcela:
             parcela_idx = i
-            parcela = p
             break
     
-    if parcela is None:
+    if parcela_idx is None:
         raise HTTPException(status_code=404, detail="Parcela não encontrada")
-    
-    if parcela["status"] == "recebido":
-        raise HTTPException(status_code=400, detail="Parcela já foi recebida")
     
     # Calcular valor final usando helper padronizado
     valor_final = calc_valor_final_parcela_receber(
@@ -10022,26 +10026,36 @@ async def receber_parcela(
         desconto=dados.desconto
     )
     
-    # Atualizar parcela com status padronizado
-    update_parcela = {
-        f"parcelas.{parcela_idx}.status": "recebido",  # STATUS_PARCELA_RECEBER
-        f"parcelas.{parcela_idx}.data_recebimento": dados.data_recebimento,
-        f"parcelas.{parcela_idx}.valor_recebido": dados.valor_recebido,
-        f"parcelas.{parcela_idx}.valor_juros": dados.juros,
-        f"parcelas.{parcela_idx}.valor_desconto": dados.desconto,
-        f"parcelas.{parcela_idx}.valor_final": valor_final,
-        f"parcelas.{parcela_idx}.forma_recebimento": dados.forma_recebimento or conta["forma_pagamento"],
-        f"parcelas.{parcela_idx}.comprovante": dados.comprovante,
-        f"parcelas.{parcela_idx}.recebida_por": current_user["id"],
-        f"parcelas.{parcela_idx}.recebida_por_name": current_user["nome"],
-        f"parcelas.{parcela_idx}.observacao": dados.observacao,
-        f"parcelas.{parcela_idx}.dias_atraso": 0
-    }
-    
-    await db.contas_receber.update_one(
-        {"id": id},
-        {"$set": update_parcela}
+    # 2) UPDATE CONDICIONAL ATÔMICO - só atualiza se parcela ainda pendente/vencido
+    update_result = await db.contas_receber.update_one(
+        {
+            "id": id,
+            f"parcelas.{parcela_idx}.numero_parcela": dados.numero_parcela,
+            f"parcelas.{parcela_idx}.status": {"$in": ["pendente", "vencido"]}  # Só se não recebido
+        },
+        {"$set": {
+            f"parcelas.{parcela_idx}.status": "recebido",
+            f"parcelas.{parcela_idx}.data_recebimento": dados.data_recebimento,
+            f"parcelas.{parcela_idx}.valor_recebido": dados.valor_recebido,
+            f"parcelas.{parcela_idx}.valor_juros": dados.juros,
+            f"parcelas.{parcela_idx}.valor_desconto": dados.desconto,
+            f"parcelas.{parcela_idx}.valor_final": valor_final,
+            f"parcelas.{parcela_idx}.forma_recebimento": dados.forma_recebimento or conta["forma_pagamento"],
+            f"parcelas.{parcela_idx}.comprovante": dados.comprovante,
+            f"parcelas.{parcela_idx}.recebida_por": current_user["id"],
+            f"parcelas.{parcela_idx}.recebida_por_name": current_user["nome"],
+            f"parcelas.{parcela_idx}.observacao": dados.observacao,
+            f"parcelas.{parcela_idx}.dias_atraso": 0,
+            "updated_at": iso_utc_now()
+        }}
     )
+    
+    # 2) Se modified_count == 0, parcela já foi recebida (409 Conflict)
+    if update_result.modified_count == 0:
+        raise HTTPException(
+            status_code=409,
+            detail="Parcela já foi recebida ou sofreu alteração concorrente. Atualize a página."
+        )
     
     # Atualizar status da conta
     await atualizar_status_conta_receber(id)
@@ -10052,7 +10066,7 @@ async def receber_parcela(
         {"id": conta["cliente_id"]},
         {
             "$inc": {"total_pago": valor_final},
-            "$set": {"data_ultimo_pagamento": datetime.now(timezone.utc).isoformat()}
+            "$set": {"data_ultimo_pagamento": iso_utc_now()}
         }
     )
     
@@ -10065,7 +10079,13 @@ async def receber_parcela(
         usuario_nome=current_user["nome"]
     )
     
-    return {"message": "Parcela recebida com sucesso", "conta": conta_atualizada}
+    response = {"message": "Parcela recebida com sucesso", "conta": conta_atualizada}
+    
+    # 3) Salvar idempotência
+    if idempotency_key:
+        await save_idempotency_key(idempotency_key, "receber-parcela", current_user["id"], response)
+    
+    return response
 
 # Cancelar conta a receber
 @api_router.delete("/contas-receber/{id}")
