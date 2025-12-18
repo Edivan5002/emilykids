@@ -11963,7 +11963,7 @@ async def get_fluxo_caixa(
             
             for parcela in parcelas:
                 if regime == "caixa":
-                    # Regime CAIXA: só parcelas efetivamente pagas
+                    # Regime CAIXA: só parcelas efetivamente pagas (status padronizado)
                     if parcela.get("status") != "pago":
                         continue
                     
@@ -11971,8 +11971,9 @@ async def get_fluxo_caixa(
                     if not data_ref_str:
                         continue
                     
-                    data_ref = data_ref_str.split("T")[0]
-                    if not (data_inicio <= data_ref <= data_fim):
+                    # Usar helper parse_date_only para extração consistente
+                    data_ref = parse_date_only(data_ref_str)
+                    if not data_ref or not (data_inicio <= data_ref <= data_fim):
                         continue
                     
                     valor = parcela.get("valor_pago", 0)
@@ -11983,8 +11984,9 @@ async def get_fluxo_caixa(
                     if not data_ref_str:
                         continue
                     
-                    data_ref = data_ref_str.split("T")[0]
-                    if not (data_inicio <= data_ref <= data_fim):
+                    # Usar helper parse_date_only para extração consistente
+                    data_ref = parse_date_only(data_ref_str)
+                    if not data_ref or not (data_inicio <= data_ref <= data_fim):
                         continue
                     
                     valor = parcela.get("valor", 0)
