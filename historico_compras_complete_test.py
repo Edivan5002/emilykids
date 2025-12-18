@@ -14,7 +14,7 @@ import sys
 import os
 
 # Backend URL from environment
-BACKEND_URL = "https://finance-hub-341.preview.emergentagent.com/api"
+BACKEND_URL = "https://fintech-erp-3.preview.emergentagent.com/api"
 
 class HistoricoComprasCompleteTester:
     def __init__(self):

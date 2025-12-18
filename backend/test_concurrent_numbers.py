@@ -13,7 +13,7 @@ import aiohttp
 import json
 from datetime import datetime, timedelta
 
-API_URL = "https://finance-hub-341.preview.emergentagent.com/api"
+API_URL = "https://fintech-erp-3.preview.emergentagent.com/api"
 
 async def login():
     """Faz login e retorna token"""

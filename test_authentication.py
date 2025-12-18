@@ -8,7 +8,7 @@ import requests
 import json
 from datetime import datetime
 
-API_URL = "https://finance-hub-341.preview.emergentagent.com/api"
+API_URL = "https://fintech-erp-3.preview.emergentagent.com/api"
 
 class AuthenticationTester:
     def __init__(self):

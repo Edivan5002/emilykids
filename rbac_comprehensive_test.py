@@ -6,7 +6,7 @@ Comprehensive RBAC Test - Test all 74+ endpoints with RBAC
 import requests
 import json
 
-BACKEND_URL = "https://finance-hub-341.preview.emergentagent.com/api"
+BACKEND_URL = "https://fintech-erp-3.preview.emergentagent.com/api"
 
 def authenticate_users():
     """Authenticate all user types"""
