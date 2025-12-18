@@ -11247,8 +11247,8 @@ async def adicionar_lote(
     lotes = produto.get("lotes") or []
     
     # Verificar se lote já existe
-    for l in lotes:
-        if l["lote"] == lote:
+    for lote_existente in lotes:
+        if lote_existente["lote"] == lote:
             raise HTTPException(status_code=400, detail=f"Lote {lote} já existe para este produto")
     
     novo_lote = {
