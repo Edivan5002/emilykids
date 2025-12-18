@@ -2805,6 +2805,9 @@ async def login(login_data: UserLogin, request: Request):
     
     # Verificar senha
     if not verify_password(login_data.senha, user["senha_hash"]):
+        # 6) Registrar tentativa no rate limiter
+        login_rate_limiter.record_attempt(rate_limit_key)
+        
         # Incrementar tentativas falhadas
         login_attempts = user.get("login_attempts", 0) + 1
         update_data = {"login_attempts": login_attempts}
@@ -2818,10 +2821,9 @@ async def login(login_data: UserLogin, request: Request):
             
             # Log de segurança
             await log_action(
-                ip=request.client.host if request.client else "0.0.0.0",
+                ip=client_ip,
                 user_id=user["id"],
                 user_nome=user["nome"],
-                
                 tela="login",
                 acao="conta_bloqueada",
                 severidade="SECURITY",
@@ -2837,10 +2839,9 @@ async def login(login_data: UserLogin, request: Request):
         
         # Log tentativa falhada
         await log_action(
-            ip=request.client.host if request.client else "0.0.0.0",
+            ip=client_ip,
             user_id=user["id"],
             user_nome=user["nome"],
-            
             tela="login",
             acao="login_falha",
             severidade="WARNING",
