@@ -54,12 +54,31 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.get(`${API}/auth/me`);
       setUser(response.data);
+      // Buscar permissões do usuário (Correção 4 - RBAC)
+      await fetchPermissions();
     } catch (error) {
       console.error('Erro ao buscar usuário:', error);
       logout();
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchPermissions = async () => {
+    try {
+      const response = await axios.get(`${API}/me/permissoes`);
+      setPermissions(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar permissões:', error);
+      // Não fazer logout se apenas permissões falharem
+    }
+  };
+
+  // Helper para verificar se usuário tem permissão
+  const hasPermission = (modulo, acao) => {
+    if (!permissions?.permissoes_por_modulo) return false;
+    const acoes = permissions.permissoes_por_modulo[modulo];
+    return acoes?.includes(acao) || false;
   };
 
   const login = async (email, senha) => {
