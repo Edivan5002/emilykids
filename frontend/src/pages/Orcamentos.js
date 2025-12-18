@@ -292,7 +292,7 @@ const Orcamentos = () => {
       // Tentar carregar subcategorias
       try {
         const subRes = await axios.get(`${API}/subcategorias?limit=0`);
-        setSubcategorias(subRes.data);
+        setSubcategorias(extractData(subRes));
       } catch (err) {
         console.log('Sem permissão para subcategorias');
         setSubcategorias([]);
