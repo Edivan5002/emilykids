@@ -109,11 +109,11 @@ const FluxoCaixa = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Vendas do Mês</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">Recebido no Mês</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                R$ {dashboard.mes_atual.vendas.toFixed(2)}
+                R$ {(dashboard.mes_atual?.recebido || 0).toFixed(2)}
               </div>
               <p className="text-xs text-gray-500 mt-1">
                 <TrendingUp size={12} className="inline mr-1" />
@@ -128,7 +128,7 @@ const FluxoCaixa = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                R$ {dashboard.mes_atual.a_receber.toFixed(2)}
+                R$ {(dashboard.mes_atual?.a_receber || 0).toFixed(2)}
               </div>
               <p className="text-xs text-gray-500 mt-1">
                 Pendente este mês
@@ -142,7 +142,7 @@ const FluxoCaixa = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
-                R$ {dashboard.mes_atual.a_pagar.toFixed(2)}
+                R$ {(dashboard.mes_atual?.a_pagar || 0).toFixed(2)}
               </div>
               <p className="text-xs text-gray-500 mt-1">
                 Pendente este mês
@@ -155,8 +155,8 @@ const FluxoCaixa = () => {
               <CardTitle className="text-sm font-medium text-gray-600">Saldo do Mês</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${dashboard.mes_atual.saldo_mes >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                R$ {dashboard.mes_atual.saldo_mes.toFixed(2)}
+              <div className={`text-2xl font-bold ${(dashboard.mes_atual?.saldo_mes || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                R$ {(dashboard.mes_atual?.saldo_mes || 0).toFixed(2)}
               </div>
               <p className="text-xs text-gray-500 mt-1">
                 Entradas - Saídas
