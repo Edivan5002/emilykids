@@ -11921,81 +11921,118 @@ async def dashboard_contas_pagar(
     current_user: dict = Depends(require_permission("contas_pagar", "ler"))
 ):
     """
-    KPIs e estatísticas de contas a pagar
+    KPIs e estatísticas de contas a pagar.
+    Correção 9: Usa aggregate() do MongoDB para melhor performance.
     """
-    query = {"cancelada": False, "status": {"$ne": "cancelada"}}
-    
+    # Construir match base
+    match_base = {"cancelada": {"$ne": True}}
     if data_inicio and data_fim:
-        query["created_at"] = {"$gte": data_inicio, "$lte": data_fim}
+        inicio_iso, fim_iso = date_range_to_iso(data_inicio, data_fim)
+        match_base["created_at"] = {"$gte": inicio_iso, "$lte": fim_iso}
     
-    contas = await db.contas_pagar.find(query, {"_id": 0}).to_list(10000)
+    # Pipeline para KPIs principais por status
+    pipeline_kpis = [
+        {"$match": match_base},
+        {"$group": {
+            "_id": "$status",
+            "total_valor_total": {"$sum": "$valor_total"},
+            "total_valor_pago": {"$sum": "$valor_pago"},
+            "total_valor_pendente": {"$sum": "$valor_pendente"},
+            "count": {"$sum": 1}
+        }}
+    ]
     
-    # Calcular KPIs (excluindo contas canceladas)
-    # Total a Pagar = apenas valor_pendente de contas pendentes, pago_parcial e vencidas
-    total_pagar = sum(
-        c["valor_pendente"] for c in contas 
-        if c.get("status") in ["pendente", "pago_parcial", "vencido"]
-    )
-    total_pago = sum(c["valor_pago"] for c in contas if c.get("status") != "cancelada")
-    total_pendente = sum(c["valor_pendente"] for c in contas if c.get("status") != "cancelada")
-    total_vencido = sum(c["valor_pendente"] for c in contas if c["status"] == "vencido")
+    kpis_result = await db.contas_pagar.aggregate(pipeline_kpis).to_list(None)
     
-    quantidade_contas = len(contas)
-    contas_pagas = len([c for c in contas if c["status"] == "pago_total"])
-    contas_vencidas = len([c for c in contas if c["status"] == "vencido"])
+    total_pagar = 0
+    total_pago = 0
+    total_pendente = 0
+    total_vencido = 0
+    quantidade_contas = 0
+    contas_pagas = 0
+    contas_vencidas = 0
     
-    taxa_pagamento = (total_pago / total_pagar * 100) if total_pagar > 0 else 0
+    for item in kpis_result:
+        status = item["_id"]
+        if status in ["pendente", "pago_parcial", "vencido"]:
+            total_pagar += item["total_valor_pendente"]
+        total_pago += item["total_valor_pago"]
+        total_pendente += item["total_valor_pendente"]
+        quantidade_contas += item["count"]
+        
+        if status == "vencido":
+            total_vencido += item["total_valor_pendente"]
+            contas_vencidas += item["count"]
+        elif status == "pago_total":
+            contas_pagas += item["count"]
     
-    # Pagamentos por forma de pagamento
-    por_forma_pagamento = {}
-    for conta in contas:
-        forma = conta["forma_pagamento"]
-        if forma not in por_forma_pagamento:
-            por_forma_pagamento[forma] = {"total": 0, "pago": 0, "quantidade": 0}
-        por_forma_pagamento[forma]["total"] += conta["valor_total"]
-        por_forma_pagamento[forma]["pago"] += conta["valor_pago"]
-        por_forma_pagamento[forma]["quantidade"] += 1
+    taxa_pagamento = (total_pago / (total_pago + total_pendente) * 100) if (total_pago + total_pendente) > 0 else 0
     
-    # Pagamentos por categoria
-    por_categoria = {}
-    for conta in contas:
-        cat = conta.get("categoria", "outros")
-        if cat not in por_categoria:
-            por_categoria[cat] = {"total": 0, "pago": 0, "quantidade": 0}
-        por_categoria[cat]["total"] += conta["valor_total"]
-        por_categoria[cat]["pago"] += conta["valor_pago"]
-        por_categoria[cat]["quantidade"] += 1
+    # Pipeline por forma de pagamento
+    pipeline_forma = [
+        {"$match": match_base},
+        {"$group": {
+            "_id": "$forma_pagamento",
+            "total": {"$sum": "$valor_total"},
+            "pago": {"$sum": "$valor_pago"},
+            "quantidade": {"$sum": 1}
+        }}
+    ]
+    forma_result = await db.contas_pagar.aggregate(pipeline_forma).to_list(None)
+    por_forma_pagamento = {
+        item["_id"]: {"total": item["total"], "pago": item["pago"], "quantidade": item["quantidade"]}
+        for item in forma_result if item["_id"]
+    }
     
-    # Contas por prioridade
-    por_prioridade = {}
-    for conta in contas:
-        prio = conta.get("prioridade", "normal")
-        if prio not in por_prioridade:
-            por_prioridade[prio] = {"total": 0, "quantidade": 0}
-        por_prioridade[prio]["total"] += conta["valor_pendente"]
-        por_prioridade[prio]["quantidade"] += 1
+    # Pipeline por categoria
+    pipeline_cat = [
+        {"$match": match_base},
+        {"$group": {
+            "_id": {"$ifNull": ["$categoria", "outros"]},
+            "total": {"$sum": "$valor_total"},
+            "pago": {"$sum": "$valor_pago"},
+            "quantidade": {"$sum": 1}
+        }}
+    ]
+    cat_result = await db.contas_pagar.aggregate(pipeline_cat).to_list(None)
+    por_categoria = {
+        item["_id"]: {"total": item["total"], "pago": item["pago"], "quantidade": item["quantidade"]}
+        for item in cat_result
+    }
     
-    # Top 5 fornecedores
-    fornecedores_valores = {}
-    for conta in contas:
-        if conta.get("fornecedor_id"):
-            forn_id = conta["fornecedor_id"]
-            if forn_id not in fornecedores_valores:
-                fornecedores_valores[forn_id] = {
-                    "nome": conta.get("fornecedor_nome", "N/A"),
-                    "total": 0,
-                    "pago": 0,
-                    "pendente": 0
-                }
-            fornecedores_valores[forn_id]["total"] += conta["valor_total"]
-            fornecedores_valores[forn_id]["pago"] += conta["valor_pago"]
-            fornecedores_valores[forn_id]["pendente"] += conta["valor_pendente"]
+    # Pipeline por prioridade
+    pipeline_prio = [
+        {"$match": match_base},
+        {"$group": {
+            "_id": {"$ifNull": ["$prioridade", "normal"]},
+            "total": {"$sum": "$valor_pendente"},
+            "quantidade": {"$sum": 1}
+        }}
+    ]
+    prio_result = await db.contas_pagar.aggregate(pipeline_prio).to_list(None)
+    por_prioridade = {
+        item["_id"]: {"total": item["total"], "quantidade": item["quantidade"]}
+        for item in prio_result
+    }
     
-    top_fornecedores = sorted(
-        fornecedores_valores.values(),
-        key=lambda x: x["total"],
-        reverse=True
-    )[:5]
+    # Pipeline top fornecedores
+    pipeline_forn = [
+        {"$match": {**match_base, "fornecedor_id": {"$ne": None}}},
+        {"$group": {
+            "_id": "$fornecedor_id",
+            "nome": {"$first": "$fornecedor_nome"},
+            "total": {"$sum": "$valor_total"},
+            "pago": {"$sum": "$valor_pago"},
+            "pendente": {"$sum": "$valor_pendente"}
+        }},
+        {"$sort": {"total": -1}},
+        {"$limit": 5}
+    ]
+    top_fornecedores = await db.contas_pagar.aggregate(pipeline_forn).to_list(None)
+    top_fornecedores = [
+        {"nome": item.get("nome", "N/A"), "total": item["total"], "pago": item["pago"], "pendente": item["pendente"]}
+        for item in top_fornecedores
+    ]
     
     return {
         "total_pagar": total_pagar,
@@ -12005,7 +12042,7 @@ async def dashboard_contas_pagar(
         "quantidade_contas": quantidade_contas,
         "contas_pagas": contas_pagas,
         "contas_vencidas": contas_vencidas,
-        "taxa_pagamento": taxa_pagamento,
+        "taxa_pagamento": round(taxa_pagamento, 2),
         "por_forma_pagamento": por_forma_pagamento,
         "por_categoria": por_categoria,
         "por_prioridade": por_prioridade,
