@@ -69,17 +69,27 @@ const Subcategorias = () => {
     setPaginaAtual(1); // Resetar página ao filtrar
   }, [searchTerm, categoriaFilter, marcaFilter, statusFilter, subcategorias, categorias]);
 
+  // Helper para extrair dados compatível com formato antigo e novo da API
+  const extractData = (response) => {
+    const data = response?.data;
+    if (data && data.ok !== undefined && Array.isArray(data.data)) return data.data;
+    if (data && Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data)) return data;
+    return [];
+  };
+
   const fetchData = async () => {
     try {
       // Sempre carregar subcategorias
       const subRes = await axios.get(`${API}/subcategorias?incluir_inativos=true`);
-      setSubcategorias(subRes.data);
-      setFilteredSubcategorias(subRes.data);
+      const subcatData = extractData(subRes);
+      setSubcategorias(subcatData);
+      setFilteredSubcategorias(subcatData);
       
       // Tentar carregar categorias
       try {
         const catRes = await axios.get(`${API}/categorias`);
-        setCategorias(catRes.data.filter(c => c.ativo));
+        setCategorias(extractData(catRes).filter(c => c.ativo));
       } catch (err) {
         console.log('Sem permissão para categorias');
         setCategorias([]);
@@ -88,7 +98,7 @@ const Subcategorias = () => {
       // Tentar carregar marcas
       try {
         const marcasRes = await axios.get(`${API}/marcas`);
-        setMarcas(marcasRes.data);
+        setMarcas(extractData(marcasRes));
       } catch (err) {
         console.log('Sem permissão para marcas');
         setMarcas([]);
