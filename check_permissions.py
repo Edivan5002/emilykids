@@ -6,7 +6,7 @@ Check current role permissions
 import requests
 import json
 
-BACKEND_URL = "https://mongo-fastapi-1.preview.emergentagent.com/api"
+BACKEND_URL = "https://frontend-boost-10.preview.emergentagent.com/api"
 
 def check_permissions():
     # Login as admin

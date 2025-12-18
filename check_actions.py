@@ -6,7 +6,7 @@ Check what actions are being used in endpoints vs permissions
 import requests
 import re
 
-BACKEND_URL = "https://mongo-fastapi-1.preview.emergentagent.com/api"
+BACKEND_URL = "https://frontend-boost-10.preview.emergentagent.com/api"
 
 def check_actions():
     # Login as admin

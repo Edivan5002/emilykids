@@ -5,7 +5,7 @@ Quick RBAC test after fixing action names
 
 import requests
 
-BACKEND_URL = "https://mongo-fastapi-1.preview.emergentagent.com/api"
+BACKEND_URL = "https://frontend-boost-10.preview.emergentagent.com/api"
 
 def quick_test():
     # Login users

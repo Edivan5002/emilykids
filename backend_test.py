@@ -20,7 +20,7 @@ import sys
 import os
 
 # Backend URL from environment
-BACKEND_URL = "https://mongo-fastapi-1.preview.emergentagent.com/api"
+BACKEND_URL = "https://frontend-boost-10.preview.emergentagent.com/api"
 
 class VendasContasReceberTester:
     def __init__(self):

@@ -8,7 +8,7 @@ import requests
 import json
 from datetime import datetime
 
-API_URL = "https://mongo-fastapi-1.preview.emergentagent.com/api"
+API_URL = "https://frontend-boost-10.preview.emergentagent.com/api"
 
 class AuthenticationTester:
     def __init__(self):
