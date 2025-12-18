@@ -1046,9 +1046,17 @@ const Orcamentos = () => {
                 <CardTitle className="text-lg">
                   Orçamento #{orcamento.id.slice(0, 8)}
                 </CardTitle>
-                <span className={`badge ${getStatusColor(orcamento.status)}`}>
-                  {orcamento.status.toUpperCase()}
-                </span>
+                <div className="flex items-center gap-2">
+                  {orcamento.status === 'aberto' && (
+                    <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full flex items-center gap-1" title="Estoque reservado para este orçamento">
+                      <Package size={12} />
+                      Estoque Reservado
+                    </span>
+                  )}
+                  <span className={`badge ${getStatusColor(orcamento.status)}`}>
+                    {orcamento.status.toUpperCase()}
+                  </span>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
