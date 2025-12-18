@@ -9917,74 +9917,112 @@ async def dashboard_contas_receber(
     current_user: dict = Depends(require_permission("contas_receber", "ler"))
 ):
     """
-    KPIs e estatísticas de contas a receber
+    KPIs e estatísticas de contas a receber.
+    Correção 9: Usa aggregate() do MongoDB para melhor performance.
     """
-    query = {"cancelada": False, "status": {"$ne": "cancelada"}}
-    
+    # Construir match base
+    match_base = {"cancelada": {"$ne": True}}
     if data_inicio and data_fim:
-        query["created_at"] = {"$gte": data_inicio, "$lte": data_fim}
+        inicio_iso, fim_iso = date_range_to_iso(data_inicio, data_fim)
+        match_base["created_at"] = {"$gte": inicio_iso, "$lte": fim_iso}
     
-    contas = await db.contas_receber.find(query, {"_id": 0}).to_list(10000)
+    # Pipeline de agregação para KPIs principais
+    pipeline_kpis = [
+        {"$match": match_base},
+        {"$group": {
+            "_id": "$status",
+            "total_valor_total": {"$sum": "$valor_total"},
+            "total_valor_recebido": {"$sum": "$valor_recebido"},
+            "total_valor_pendente": {"$sum": "$valor_pendente"},
+            "count": {"$sum": 1}
+        }}
+    ]
     
-    # Calcular KPIs (excluindo contas canceladas)
-    # Total a Receber = apenas valor_pendente de contas pendentes, recebido_parcial e vencidas
-    total_receber = sum(
-        c["valor_pendente"] for c in contas 
-        if c.get("status") in ["pendente", "recebido_parcial", "vencido"]
-    )
-    total_recebido = sum(c["valor_recebido"] for c in contas if c.get("status") != "cancelada")
-    total_pendente = sum(c["valor_pendente"] for c in contas if c.get("status") != "cancelada")
-    total_vencido = sum(c["valor_pendente"] for c in contas if c["status"] == "vencido")
+    kpis_result = await db.contas_receber.aggregate(pipeline_kpis).to_list(None)
     
-    quantidade_contas = len(contas)
-    contas_recebidas = len([c for c in contas if c["status"] == "recebido_total"])
-    contas_vencidas = len([c for c in contas if c["status"] == "vencido"])
+    # Processar resultados do aggregate
+    total_receber = 0
+    total_recebido = 0
+    total_pendente = 0
+    total_vencido = 0
+    quantidade_contas = 0
+    contas_recebidas = 0
+    contas_vencidas = 0
+    
+    for item in kpis_result:
+        status = item["_id"]
+        if status in ["pendente", "recebido_parcial", "vencido"]:
+            total_receber += item["total_valor_pendente"]
+        total_recebido += item["total_valor_recebido"]
+        total_pendente += item["total_valor_pendente"]
+        quantidade_contas += item["count"]
+        
+        if status == "vencido":
+            total_vencido += item["total_valor_pendente"]
+            contas_vencidas += item["count"]
+        elif status == "recebido_total":
+            contas_recebidas += item["count"]
     
     taxa_inadimplencia = (total_vencido / total_receber * 100) if total_receber > 0 else 0
-    taxa_recebimento = (total_recebido / total_receber * 100) if total_receber > 0 else 0
+    taxa_recebimento = (total_recebido / (total_recebido + total_pendente) * 100) if (total_recebido + total_pendente) > 0 else 0
     
-    # Recebimentos por forma de pagamento
-    por_forma_pagamento = {}
-    for conta in contas:
-        forma = conta["forma_pagamento"]
-        if forma not in por_forma_pagamento:
-            por_forma_pagamento[forma] = {"total": 0, "recebido": 0, "quantidade": 0}
-        por_forma_pagamento[forma]["total"] += conta["valor_total"]
-        por_forma_pagamento[forma]["recebido"] += conta["valor_recebido"]
-        por_forma_pagamento[forma]["quantidade"] += 1
+    # Pipeline para agrupamento por forma de pagamento
+    pipeline_forma = [
+        {"$match": match_base},
+        {"$group": {
+            "_id": "$forma_pagamento",
+            "total": {"$sum": "$valor_total"},
+            "recebido": {"$sum": "$valor_recebido"},
+            "quantidade": {"$sum": 1}
+        }}
+    ]
     
-    # Top 5 clientes inadimplentes
-    clientes_inadimplentes = {}
-    for conta in contas:
-        if conta["status"] == "vencido":
-            cliente_id = conta["cliente_id"]
-            if cliente_id not in clientes_inadimplentes:
-                clientes_inadimplentes[cliente_id] = {
-                    "cliente_nome": conta["cliente_nome"],
-                    "valor_vencido": 0,
-                    "quantidade_contas": 0
-                }
-            clientes_inadimplentes[cliente_id]["valor_vencido"] += conta["valor_pendente"]
-            clientes_inadimplentes[cliente_id]["quantidade_contas"] += 1
+    forma_result = await db.contas_receber.aggregate(pipeline_forma).to_list(None)
+    por_forma_pagamento = {
+        item["_id"]: {
+            "total": item["total"],
+            "recebido": item["recebido"],
+            "quantidade": item["quantidade"]
+        }
+        for item in forma_result if item["_id"]
+    }
     
-    top_inadimplentes = sorted(
-        clientes_inadimplentes.values(),
-        key=lambda x: x["valor_vencido"],
-        reverse=True
-    )[:5]
+    # Pipeline para top inadimplentes
+    pipeline_inadimplentes = [
+        {"$match": {**match_base, "status": "vencido"}},
+        {"$group": {
+            "_id": "$cliente_id",
+            "cliente_nome": {"$first": "$cliente_nome"},
+            "valor_vencido": {"$sum": "$valor_pendente"},
+            "quantidade_contas": {"$sum": 1}
+        }},
+        {"$sort": {"valor_vencido": -1}},
+        {"$limit": 5}
+    ]
     
-    # Previsão próximos 30 dias
+    top_inadimplentes = await db.contas_receber.aggregate(pipeline_inadimplentes).to_list(None)
+    top_inadimplentes = [
+        {"cliente_nome": item["cliente_nome"], "valor_vencido": item["valor_vencido"], "quantidade_contas": item["quantidade_contas"]}
+        for item in top_inadimplentes
+    ]
+    
+    # Previsão 30 dias (precisa iterar parcelas - mantém fetch limitado)
     hoje = datetime.now(timezone.utc).date()
-    data_limite = hoje + timedelta(days=30)
+    hoje_str = hoje.isoformat()
+    data_limite_str = (hoje + timedelta(days=30)).isoformat()
+    
+    contas_pendentes = await db.contas_receber.find(
+        {"cancelada": {"$ne": True}, "status": {"$in": ["pendente", "recebido_parcial"]}},
+        {"_id": 0, "parcelas": 1}
+    ).to_list(5000)  # Limitado para performance
     
     previsao_30_dias = 0
-    for conta in contas:
-        if conta["status"] in ["pendente", "recebido_parcial"]:
-            for parcela in conta["parcelas"]:
-                if parcela["status"] == "pendente":
-                    data_venc = datetime.fromisoformat(parcela["data_vencimento"]).date()
-                    if hoje <= data_venc <= data_limite:
-                        previsao_30_dias += parcela["valor"]
+    for conta in contas_pendentes:
+        for parcela in conta.get("parcelas", []):
+            if parcela.get("status") == "pendente":
+                data_venc = parse_date_only(parcela.get("data_vencimento", ""))
+                if data_venc and hoje_str <= data_venc <= data_limite_str:
+                    previsao_30_dias += parcela.get("valor", 0)
     
     return {
         "periodo": {"data_inicio": data_inicio, "data_fim": data_fim},
