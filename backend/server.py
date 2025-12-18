@@ -3305,6 +3305,80 @@ async def login(login_data: UserLogin, request: Request):
                 detail="Senha expirada. Entre em contato com o administrador para redefinir."
             )
     
+    # ==================== ETAPA 14 - VERIFICAÇÃO 2FA ====================
+    two_factor = user.get("two_factor", {})
+    if two_factor.get("enabled"):
+        code_provided = login_data.totp_code or login_data.backup_code
+        
+        if not code_provided:
+            # 2FA requerido mas não fornecido
+            await log_action(
+                ip=client_ip,
+                user_id=user["id"],
+                user_nome=user["nome"],
+                tela="login",
+                acao="login_2fa_requerido",
+                severidade="INFO",
+                detalhes={"motivo": "2FA habilitado, código não fornecido"}
+            )
+            raise HTTPException(
+                status_code=401,
+                detail="TWO_FACTOR_REQUIRED"
+            )
+        
+        # Tentar validar TOTP
+        totp_valid = verify_totp(two_factor.get("secret", ""), code_provided)
+        backup_valid = False
+        backup_idx = -1
+        
+        # Se não for TOTP, tentar backup code
+        if not totp_valid:
+            salt = f"{user['id']}:{two_factor.get('secret', '')}"
+            backup_idx = verify_backup_code(code_provided, two_factor.get("backup_codes_hash", []), salt)
+            backup_valid = backup_idx >= 0
+        
+        if not totp_valid and not backup_valid:
+            login_rate_limiter.record_attempt(rate_limit_key)
+            await log_action(
+                ip=client_ip,
+                user_id=user["id"],
+                user_nome=user["nome"],
+                tela="login",
+                acao="login_2fa_falha",
+                severidade="SECURITY",
+                detalhes={"motivo": "Código 2FA inválido"}
+            )
+            raise HTTPException(status_code=401, detail="TWO_FACTOR_INVALID")
+        
+        # Se usou backup code, remover da lista
+        if backup_valid and backup_idx >= 0:
+            new_hashes = two_factor.get("backup_codes_hash", [])[:]
+            new_hashes.pop(backup_idx)
+            await db.users.update_one(
+                {"id": user["id"]},
+                {"$set": {"two_factor.backup_codes_hash": new_hashes}}
+            )
+            await log_action(
+                ip=client_ip,
+                user_id=user["id"],
+                user_nome=user["nome"],
+                tela="login",
+                acao="login_2fa_backup_usado",
+                severidade="WARNING",
+                detalhes={"restantes": len(new_hashes)}
+            )
+        else:
+            await log_action(
+                ip=client_ip,
+                user_id=user["id"],
+                user_nome=user["nome"],
+                tela="login",
+                acao="login_2fa_sucesso",
+                severidade="INFO",
+                detalhes={}
+            )
+    # ==================== FIM VERIFICAÇÃO 2FA ====================
+    
     # Resetar tentativas falhadas
     await db.users.update_one(
         {"id": user["id"]},
