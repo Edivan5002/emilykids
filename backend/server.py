@@ -10933,6 +10933,188 @@ async def admin_atualizar_permissoes_financeiras(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# ==================== ETAPA 12 - SANITY CHECK FINANCEIRO ====================
+
+@api_router.post("/admin/financeiro/sanity-check")
+async def admin_financeiro_sanity_check(
+    tipo: str = "ambos",
+    limit: int = 200,
+    fix: bool = False,
+    dry_run: bool = True,
+    current_user: dict = Depends(require_permission("admin", "editar"))
+):
+    """
+    4) Sanity check de dados financeiros.
+    Detecta e opcionalmente corrige inconsistências em contas a pagar/receber.
+    
+    - tipo: contas_pagar, contas_receber, ou ambos
+    - limit: máximo de documentos a analisar
+    - fix: se True, aplica correções
+    - dry_run: se True, não persiste (apenas simula)
+    """
+    if tipo not in ["contas_pagar", "contas_receber", "ambos"]:
+        raise HTTPException(
+            status_code=400, 
+            detail="Tipo deve ser: contas_pagar, contas_receber ou ambos"
+        )
+    
+    resultados = {
+        "analisados": 0,
+        "com_problemas": 0,
+        "corrigidos": 0,
+        "problemas": []  # Lista limitada
+    }
+    
+    max_problemas_lista = 50  # Limitar tamanho do array de retorno
+    
+    async def analisar_collection(collection_name: str, tipo_conta: str):
+        collection = db[collection_name]
+        is_pagar = tipo_conta == "pagar"
+        
+        contas = await collection.find(
+            {"cancelada": {"$ne": True}},
+            {"_id": 0}
+        ).limit(limit).to_list(None)
+        
+        for conta in contas:
+            resultados["analisados"] += 1
+            problemas_conta = []
+            correcoes = {}
+            
+            valor_total_cents = money_to_cents(conta.get("valor_total", 0))
+            parcelas = conta.get("parcelas", [])
+            
+            # Calcular valores reais das parcelas
+            if is_pagar:
+                valor_liquidado_cents = sum(
+                    money_to_cents(p.get("valor_pago", 0)) 
+                    for p in parcelas if p.get("status") == "pago"
+                )
+                campo_liquidado = "valor_pago"
+            else:
+                valor_liquidado_cents = sum(
+                    money_to_cents(p.get("valor_recebido", 0)) 
+                    for p in parcelas if p.get("status") == "recebido"
+                )
+                campo_liquidado = "valor_recebido"
+            
+            valor_pendente_calculado = cents_to_money(valor_total_cents - valor_liquidado_cents)
+            valor_liquidado_calculado = cents_to_money(valor_liquidado_cents)
+            
+            # Verificar 1: valor_pago/valor_recebido + valor_pendente != valor_total
+            valor_pendente_atual = money_round(conta.get("valor_pendente", 0))
+            valor_liquidado_atual = money_round(conta.get(campo_liquidado, 0))
+            
+            soma_atual_cents = money_to_cents(valor_liquidado_atual) + money_to_cents(valor_pendente_atual)
+            if soma_atual_cents != valor_total_cents:
+                problemas_conta.append({
+                    "tipo": "invariante_valores",
+                    "detalhe": f"{campo_liquidado}({valor_liquidado_atual}) + "
+                              f"pendente({valor_pendente_atual}) != "
+                              f"total({cents_to_money(valor_total_cents)})"
+                })
+                correcoes[campo_liquidado] = valor_liquidado_calculado
+                correcoes["valor_pendente"] = valor_pendente_calculado
+            
+            # Verificar 2: status incompatível com parcelas
+            parcelas_liquidadas = len([
+                p for p in parcelas 
+                if p.get("status") == ("pago" if is_pagar else "recebido")
+            ])
+            parcelas_vencidas = len([p for p in parcelas if p.get("status") == "vencido"])
+            total_parcelas = len(parcelas)
+            
+            status_atual = conta.get("status", "pendente")
+            
+            if is_pagar:
+                if parcelas_liquidadas == total_parcelas and total_parcelas > 0:
+                    status_esperado = "pago_total"
+                elif parcelas_liquidadas > 0:
+                    status_esperado = "pago_parcial"
+                elif parcelas_vencidas > 0:
+                    status_esperado = "vencido"
+                else:
+                    status_esperado = "pendente"
+            else:
+                if parcelas_liquidadas == total_parcelas and total_parcelas > 0:
+                    status_esperado = "recebido_total"
+                elif parcelas_liquidadas > 0:
+                    status_esperado = "recebido_parcial"
+                elif parcelas_vencidas > 0:
+                    status_esperado = "vencido"
+                else:
+                    status_esperado = "pendente"
+            
+            if status_atual != status_esperado:
+                problemas_conta.append({
+                    "tipo": "status_incompativel",
+                    "detalhe": f"Status atual: {status_atual}, esperado: {status_esperado}"
+                })
+                correcoes["status"] = status_esperado
+            
+            # Verificar 3: parcelas com valor_pago/recebido > valor
+            for i, p in enumerate(parcelas):
+                valor_parcela = money_to_cents(p.get("valor", 0))
+                if is_pagar:
+                    valor_liq_parcela = money_to_cents(p.get("valor_pago", 0))
+                else:
+                    valor_liq_parcela = money_to_cents(p.get("valor_recebido", 0))
+                
+                # Permitir pequena margem para juros/multas
+                if valor_liq_parcela > valor_parcela * 1.5 and valor_parcela > 0:
+                    problemas_conta.append({
+                        "tipo": "parcela_valor_excedido",
+                        "detalhe": f"Parcela {p.get('numero_parcela')}: "
+                                  f"liquidado({cents_to_money(valor_liq_parcela)}) > "
+                                  f"150% do valor({cents_to_money(valor_parcela)})"
+                    })
+            
+            # Se há problemas, registrar
+            if problemas_conta:
+                resultados["com_problemas"] += 1
+                
+                if len(resultados["problemas"]) < max_problemas_lista:
+                    resultados["problemas"].append({
+                        "id": conta.get("id"),
+                        "numero": conta.get("numero"),
+                        "collection": collection_name,
+                        "problemas": problemas_conta[:3],  # Limitar
+                        "correcoes_propostas": correcoes if correcoes else None
+                    })
+                
+                # Aplicar correções se solicitado
+                if fix and correcoes and not dry_run:
+                    correcoes["updated_at"] = utc_now_iso()
+                    correcoes["updated_by_sanity_check"] = current_user["id"]
+                    
+                    await collection.update_one(
+                        {"id": conta["id"]},
+                        {"$set": correcoes}
+                    )
+                    resultados["corrigidos"] += 1
+    
+    # Executar análise
+    if tipo in ["contas_pagar", "ambos"]:
+        await analisar_collection("contas_pagar", "pagar")
+    
+    if tipo in ["contas_receber", "ambos"]:
+        await analisar_collection("contas_receber", "receber")
+    
+    return {
+        "success": True,
+        "tipo": tipo,
+        "dry_run": dry_run,
+        "fix_solicitado": fix,
+        "estatisticas": {
+            "analisados": resultados["analisados"],
+            "com_problemas": resultados["com_problemas"],
+            "corrigidos": resultados["corrigidos"]
+        },
+        "problemas": resultados["problemas"][:max_problemas_lista]
+    }
+
+
 # ========== ADMINISTRAÇÃO E CONFIGURAÇÕES - ENDPOINTS ==========
 
 # ===== CONFIGURAÇÕES FINANCEIRAS =====
