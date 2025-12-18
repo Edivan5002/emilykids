@@ -249,6 +249,10 @@ const Layout = ({ children }) => {
                           setCadastrosOpen(!cadastrosOpen);
                         } else if (item.label === 'Financeiro') {
                           setFinanceiroOpen(!financeiroOpen);
+                        } else if (item.label === 'Estoque') {
+                          setEstoqueOpen(!estoqueOpen);
+                        } else if (item.label === 'Compras') {
+                          setComprasOpen(!comprasOpen);
                         }
                       }}
                       className={`sidebar-item mx-2 mb-1 flex items-center gap-3`}
