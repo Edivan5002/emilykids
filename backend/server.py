@@ -7819,17 +7819,28 @@ async def get_proximo_numero_venda(current_user: dict = Depends(get_current_user
     proximo = await gerar_proximo_numero_venda()
     return {"proximo_numero": proximo}
 
-@api_router.get("/vendas", response_model=List[Venda])
+@api_router.get("/vendas", tags=["Vendas"], summary="Lista vendas")
 async def get_vendas(
     status_venda: str = None,
     status_entrega: str = None,
     cliente_id: str = None,
     page: int = 1,
     limit: int = 20,
+    sort: str = "-created_at",
+    q: str = None,
+    data_inicio: str = None,
+    data_fim: str = None,
     current_user: dict = Depends(require_permission("vendas", "ler"))
 ):
-    """Lista vendas com filtros e paginação opcional"""
+    """
+    Lista vendas com filtros e paginação.
+    ETAPA 13: Resposta padronizada com api_list, projeção enxuta (sem itens completos).
+    """
+    # Validar paginação
+    page, limit, skip = validate_pagination(page, limit)
+    
     filtro = {}
+    
     if status_venda:
         filtro["status_venda"] = status_venda
     if status_entrega:
@@ -7837,14 +7848,47 @@ async def get_vendas(
     if cliente_id:
         filtro["cliente_id"] = cliente_id
     
-    # Se limit=0, retorna todos (mantém compatibilidade)
-    if limit == 0:
-        vendas = await db.vendas.find(filtro, {"_id": 0}).sort("created_at", -1).to_list(10000)
-    else:
-        skip = (page - 1) * limit
-        vendas = await db.vendas.find(filtro, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    # Busca textual
+    if q:
+        q_norm = normalize_search_query(q)
+        if q_norm:
+            filtro["$or"] = [
+                {"numero_venda": {"$regex": q_norm, "$options": "i"}},
+                {"cliente_nome": {"$regex": q_norm, "$options": "i"}}
+            ]
     
-    return vendas
+    # Filtro por período
+    if data_inicio and data_fim:
+        inicio_iso, fim_iso = range_to_utc_iso(data_inicio, data_fim)
+        filtro["created_at"] = {"$gte": inicio_iso, "$lte": fim_iso}
+    
+    # Projeção enxuta (sem itens completos na listagem)
+    projection = {
+        "_id": 0,
+        "id": 1, "numero_venda": 1, "status_venda": 1, "status_entrega": 1,
+        "cliente_id": 1, "cliente_nome": 1,
+        "total": 1, "desconto": 1, "valor_final": 1,
+        "forma_pagamento": 1, "status_financeiro": 1,
+        "created_at": 1, "updated_at": 1
+    }
+    
+    # Ordenação
+    sort_field = sort.lstrip("-")
+    sort_dir = -1 if sort.startswith("-") else 1
+    
+    # Buscar dados
+    cursor = db.vendas.find(filtro, projection)
+    cursor = cursor.sort(sort_field, sort_dir).skip(skip).limit(limit)
+    vendas = await cursor.to_list(limit)
+    
+    # Adicionar contagem de itens
+    for venda in vendas:
+        venda_full = await db.vendas.find_one({"id": venda["id"]}, {"itens": 1})
+        venda["itens_count"] = len(venda_full.get("itens", [])) if venda_full else 0
+    
+    total = await db.vendas.count_documents(filtro)
+    
+    return api_list(vendas, page=page, limit=limit, total=total)
 
 @api_router.post("/vendas", response_model=Venda)
 async def create_venda(venda_data: VendaCreate, current_user: dict = Depends(require_permission("vendas", "criar"))):
