@@ -199,7 +199,7 @@ const Comissoes = () => {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   {vendedores.map(v => (
                     <SelectItem key={v.id} value={v.id}>{v.nome}</SelectItem>
                   ))}
