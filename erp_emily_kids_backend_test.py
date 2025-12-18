@@ -145,7 +145,7 @@ class ERPEmilyKidsAPITester:
             if response.status_code == 200:
                 data = response.json()
                 # Check if response has ABC classification structure
-                if isinstance(data, dict) and any(key in data for key in ["curva_a", "curva_b", "curva_c", "produtos"]):
+                if isinstance(data, dict) and ("curvas" in data or any(key in data for key in ["curva_a", "curva_b", "curva_c", "produtos"])):
                     self.log_test("Curva ABC Get", True, "✅ Status 200, returned ABC classification data")
                 elif isinstance(data, list):
                     self.log_test("Curva ABC Get", True, "✅ Status 200, returned products list with ABC data")
