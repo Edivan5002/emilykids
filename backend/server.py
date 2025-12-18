@@ -178,6 +178,115 @@ def date_range_to_iso(data_inicio: str, data_fim: str) -> tuple:
     
     return (inicio, fim)
 
+# ==================== ETAPA 11 - INVARIANTES E CONSISTÊNCIA FINANCEIRA ====================
+
+def validate_financial_invariants(valor_total: float, valor_pago: float, valor_pendente: float) -> bool:
+    """
+    1) Invariante: valor_pago + valor_pendente == valor_total (com tolerância para floats)
+    """
+    expected_total = round(valor_pago + valor_pendente, 2)
+    actual_total = round(valor_total, 2)
+    return abs(expected_total - actual_total) < 0.01
+
+def recalculate_conta_values(conta: dict, tipo: str = "pagar") -> dict:
+    """
+    1) Recalcula valores e status de uma conta baseado nas parcelas.
+    Retorna dict com campos a serem atualizados.
+    """
+    parcelas = conta.get("parcelas", [])
+    if not parcelas:
+        return {}
+    
+    valor_total = conta.get("valor_total", 0)
+    
+    if tipo == "pagar":
+        valor_liquidado = sum(p.get("valor_pago", 0) for p in parcelas if p.get("status") == "pago")
+        parcelas_liquidadas = len([p for p in parcelas if p.get("status") == "pago"])
+        parcelas_vencidas = len([p for p in parcelas if p.get("status") == "vencido"])
+        
+        # Determinar status
+        if conta.get("cancelada"):
+            novo_status = "cancelado"
+        elif parcelas_liquidadas == len(parcelas):
+            novo_status = "pago_total"
+        elif parcelas_liquidadas > 0:
+            novo_status = "pago_parcial"
+        elif parcelas_vencidas > 0:
+            novo_status = "vencido"
+        else:
+            novo_status = "pendente"
+        
+        valor_pago = valor_liquidado
+        valor_pendente = max(0, round(valor_total - valor_pago, 2))
+        
+    else:  # receber
+        valor_liquidado = sum(p.get("valor_recebido", 0) for p in parcelas if p.get("status") == "recebido")
+        parcelas_liquidadas = len([p for p in parcelas if p.get("status") == "recebido"])
+        parcelas_vencidas = len([p for p in parcelas if p.get("status") == "vencido"])
+        
+        if conta.get("cancelada"):
+            novo_status = "cancelado"
+        elif parcelas_liquidadas == len(parcelas):
+            novo_status = "recebido_total"
+        elif parcelas_liquidadas > 0:
+            novo_status = "recebido_parcial"
+        elif parcelas_vencidas > 0:
+            novo_status = "vencido"
+        else:
+            novo_status = "pendente"
+        
+        valor_pago = valor_liquidado
+        valor_pendente = max(0, round(valor_total - valor_pago, 2))
+    
+    # Garantir invariantes
+    assert valor_pendente >= 0, "valor_pendente não pode ser negativo"
+    assert valor_pago >= 0, "valor_pago não pode ser negativo"
+    
+    return {
+        "status": novo_status,
+        "valor_pago" if tipo == "pagar" else "valor_recebido": valor_pago,
+        "valor_pendente": valor_pendente,
+        "updated_at": iso_utc_now()
+    }
+
+
+async def check_idempotency_key(key: str, endpoint: str, user_id: str) -> dict:
+    """
+    3) Verifica se uma chave de idempotência já foi usada.
+    Retorna None se não existe, ou o registro anterior se existe.
+    """
+    if not key:
+        return None
+    
+    existing = await db.idempotency_keys.find_one({
+        "key": key,
+        "endpoint": endpoint,
+        "user_id": user_id
+    }, {"_id": 0})
+    
+    return existing
+
+
+async def save_idempotency_key(key: str, endpoint: str, user_id: str, response_data: dict):
+    """
+    3) Salva uma chave de idempotência após operação bem-sucedida.
+    """
+    if not key:
+        return
+    
+    await db.idempotency_keys.update_one(
+        {"key": key, "endpoint": endpoint, "user_id": user_id},
+        {"$set": {
+            "key": key,
+            "endpoint": endpoint,
+            "user_id": user_id,
+            "response": response_data,
+            "created_at": iso_utc_now()
+        }},
+        upsert=True
+    )
+
+
 # Chaves sensíveis para sanitização (Correção 10)
 SENSITIVE_KEYS = {'senha', 'password', 'token', 'authorization', 'secret', 'api_key', 'senha_hash'}
 
