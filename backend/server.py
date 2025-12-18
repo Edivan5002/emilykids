@@ -11572,12 +11572,17 @@ async def liquidar_parcela(
     if parcela["status"] == "pago":
         raise HTTPException(status_code=400, detail="Parcela já foi paga")
     
-    # Calcular valor final
-    valor_final = dados.valor_pago + dados.juros + dados.multa - dados.desconto
+    # Calcular valor final usando helper padronizado
+    valor_final = calc_valor_final_parcela_pagar(
+        valor_base=dados.valor_pago,
+        juros=dados.juros,
+        multa=dados.multa,
+        desconto=dados.desconto
+    )
     
-    # Atualizar parcela
+    # Atualizar parcela com status padronizado
     update_parcela = {
-        f"parcelas.{parcela_idx}.status": "pago",
+        f"parcelas.{parcela_idx}.status": "pago",  # STATUS_PARCELA_PAGAR
         f"parcelas.{parcela_idx}.data_pagamento": dados.data_pagamento,
         f"parcelas.{parcela_idx}.valor_pago": dados.valor_pago,
         f"parcelas.{parcela_idx}.valor_juros": dados.juros,
