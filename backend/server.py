@@ -99,6 +99,165 @@ def parse_date_only(iso_str: str) -> str:
     # Formato ISO: 2024-01-15T10:30:00+00:00 ou 2024-01-15
     return iso_str[:10]
 
+
+# ==================== ETAPA 12 - HELPERS MONETÁRIOS E DATAS ====================
+
+# 1) Helpers monetários - evitar bugs de float/rounding
+def money_round(v) -> float:
+    """
+    Arredonda valor monetário para 2 casas decimais.
+    Aceita float, int, str, None. Retorna 0.0 se inválido.
+    """
+    if v is None:
+        return 0.0
+    try:
+        return round(float(v), 2)
+    except (ValueError, TypeError):
+        return 0.0
+
+def money_to_cents(v) -> int:
+    """Converte valor monetário para centavos (int). Evita erros de float."""
+    return int(round(money_round(v) * 100))
+
+def cents_to_money(cents: int) -> float:
+    """Converte centavos para valor monetário (float 2 casas)."""
+    return round(cents / 100, 2)
+
+def money_add(a, b) -> float:
+    """Soma dois valores monetários usando cents internamente."""
+    return cents_to_money(money_to_cents(a) + money_to_cents(b))
+
+def money_sub(a, b) -> float:
+    """Subtrai dois valores monetários usando cents internamente."""
+    return cents_to_money(money_to_cents(a) - money_to_cents(b))
+
+def money_sum(values) -> float:
+    """Soma lista de valores monetários usando cents."""
+    total_cents = sum(money_to_cents(v) for v in values if v is not None)
+    return cents_to_money(total_cents)
+
+# 2) Helpers de datas - parsing consistente
+def utc_now_iso() -> str:
+    """Retorna timestamp ISO UTC atual."""
+    return datetime.now(timezone.utc).isoformat()
+
+def parse_date_input(s: str) -> datetime:
+    """
+    Parseia string de data em múltiplos formatos.
+    Aceita: YYYY-MM-DD, ISO com/sem timezone.
+    Retorna datetime com timezone UTC.
+    """
+    if not s:
+        return None
+    
+    s = s.strip()
+    
+    # Formatos a tentar
+    formats = [
+        "%Y-%m-%dT%H:%M:%S.%f%z",  # ISO completo com microsegundos
+        "%Y-%m-%dT%H:%M:%S%z",     # ISO completo
+        "%Y-%m-%dT%H:%M:%S.%fZ",   # ISO com Z
+        "%Y-%m-%dT%H:%M:%SZ",      # ISO com Z
+        "%Y-%m-%dT%H:%M:%S.%f",    # ISO sem timezone
+        "%Y-%m-%dT%H:%M:%S",       # ISO sem timezone
+        "%Y-%m-%d",                 # Apenas data
+    ]
+    
+    for fmt in formats:
+        try:
+            dt = datetime.strptime(s, fmt)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
+        except ValueError:
+            continue
+    
+    # Tentar ISO com offset (+00:00)
+    try:
+        if '+' in s or s.endswith('Z'):
+            s_clean = s.replace('Z', '+00:00')
+            from datetime import datetime as dt_module
+            dt = datetime.fromisoformat(s_clean)
+            return dt
+    except:
+        pass
+    
+    return None
+
+def range_to_utc_iso(inicio: str, fim: str) -> tuple:
+    """
+    Converte range de datas para ISO UTC.
+    Se entrada for YYYY-MM-DD, fim será 23:59:59.999 UTC.
+    Retorna (inicio_iso, fim_iso).
+    """
+    inicio_dt = parse_date_input(inicio)
+    fim_dt = parse_date_input(fim)
+    
+    inicio_iso = ""
+    fim_iso = ""
+    
+    if inicio_dt:
+        # Se só tinha data (sem hora), usar início do dia
+        if inicio and len(inicio.strip()) == 10:
+            inicio_dt = inicio_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        inicio_iso = inicio_dt.isoformat()
+    
+    if fim_dt:
+        # Se só tinha data (sem hora), usar fim do dia
+        if fim and len(fim.strip()) == 10:
+            fim_dt = fim_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
+        fim_iso = fim_dt.isoformat()
+    
+    return (inicio_iso, fim_iso)
+
+# 3) Validações - conjuntos de status permitidos
+STATUS_CONTA_PAGAR_VALIDOS = {"pendente", "pago_parcial", "pago_total", "vencido", "cancelado"}
+STATUS_PARCELA_PAGAR_VALIDOS = {"pendente", "pago", "vencido", "cancelado"}
+STATUS_CONTA_RECEBER_VALIDOS = {"pendente", "recebido_parcial", "recebido_total", "vencido", "cancelado"}
+STATUS_PARCELA_RECEBER_VALIDOS = {"pendente", "recebido", "vencido", "cancelado"}
+
+def validate_positive_money(value, field_name: str, allow_zero: bool = True):
+    """Valida que valor monetário é positivo (ou zero se permitido)."""
+    v = money_round(value)
+    if v < 0:
+        raise ValueError(f"{field_name} não pode ser negativo: {v}")
+    if not allow_zero and v == 0:
+        raise ValueError(f"{field_name} deve ser maior que zero")
+    return v
+
+def validate_parcelas_soma(parcelas: list, valor_total: float, auto_adjust: bool = True) -> list:
+    """
+    Valida que soma das parcelas bate com valor_total.
+    Se auto_adjust=True, ajusta última parcela para compensar diferença de até 1 centavo.
+    """
+    if not parcelas:
+        return parcelas
+    
+    total_cents = money_to_cents(valor_total)
+    parcelas_cents = sum(money_to_cents(p.get("valor", 0)) for p in parcelas)
+    
+    diff_cents = abs(total_cents - parcelas_cents)
+    
+    if diff_cents == 0:
+        return parcelas
+    
+    if diff_cents > 1 and not auto_adjust:
+        raise ValueError(
+            f"Soma das parcelas ({cents_to_money(parcelas_cents)}) "
+            f"difere do valor total ({valor_total}) em mais de 1 centavo"
+        )
+    
+    # Auto-ajustar última parcela
+    if auto_adjust and parcelas:
+        ajuste = total_cents - parcelas_cents  # Pode ser positivo ou negativo
+        ultima_valor_cents = money_to_cents(parcelas[-1].get("valor", 0))
+        novo_valor = cents_to_money(ultima_valor_cents + ajuste)
+        parcelas[-1]["valor"] = novo_valor
+    
+    return parcelas
+
+# ==================== FIM HELPERS ETAPA 12 ====================
+
 def calc_valor_final_parcela_pagar(
     valor_base: float,
     juros: float = 0,
