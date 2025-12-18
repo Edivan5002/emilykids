@@ -193,6 +193,7 @@ test_plan:
   current_focus:
     - "Backend API testing completed successfully"
     - "All ERP features tested successfully"
+    - "Image upload functionality testing completed successfully"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
