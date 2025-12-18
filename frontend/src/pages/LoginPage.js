@@ -337,13 +337,23 @@ const LoginPage = () => {
                 type="submit"
                 data-testid="login-submit-btn"
                 className="w-full h-11 text-base font-semibold"
-                disabled={loading}
-                style={{backgroundColor: '#267698'}}
+                disabled={loading || rateLimited}
+                style={{backgroundColor: rateLimited ? '#9ca3af' : '#267698'}}
               >
                 {loading ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    Entrando...
+                    {requires2FA ? 'Verificando...' : 'Entrando...'}
+                  </div>
+                ) : rateLimited ? (
+                  <div className="flex items-center gap-2">
+                    <AlertCircle size={18} />
+                    Aguarde {rateLimitTimer}s
+                  </div>
+                ) : requires2FA ? (
+                  <div className="flex items-center gap-2">
+                    <Shield size={18} />
+                    Verificar Código
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
