@@ -98,6 +98,14 @@ const Dashboard = () => {
       setMarcas(extractArray(marcasRes));
       setCategorias(extractArray(categoriasRes));
       setSubcategorias(extractArray(subcategoriasRes));
+      
+      // MELHORIA: Buscar alertas financeiros
+      try {
+        const alertasFinRes = await axios.get(`${API}/alertas/financeiros?dias_vencer=7`);
+        setAlertasFinanceiros(alertasFinRes.data);
+      } catch (err) {
+        console.log('Sem permissão para alertas financeiros ou endpoint não disponível');
+      }
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error);
     } finally {
