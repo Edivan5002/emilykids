@@ -285,7 +285,7 @@ const Layout = ({ children }) => {
                     </div>
                     
                     {/* Subitens - Clientes, Fornecedores, Contas a Receber, etc */}
-                    {((item.label === 'Cadastros' && cadastrosOpen) || (item.label === 'Financeiro' && financeiroOpen)) && sidebarOpen && visibleChildren && (
+                    {((item.label === 'Cadastros' && cadastrosOpen) || (item.label === 'Financeiro' && financeiroOpen) || (item.label === 'Estoque' && estoqueOpen) || (item.label === 'Compras' && comprasOpen)) && sidebarOpen && visibleChildren && (
                       <div className="ml-4">
                         {visibleChildren.map((child) => {
                           const ChildIcon = child.icon;
