@@ -8734,10 +8734,33 @@ async def devolucao_parcial(
         }}
     )
     
+    # MELHORIA 9: Gerar crédito automático para o cliente
+    credito_gerado = None
+    if valor_devolver > 0:
+        try:
+            credito = CreditoCliente(
+                cliente_id=venda.get("cliente_id"),
+                valor=valor_devolver,
+                origem="devolucao",
+                origem_id=venda_id,
+                descricao=f"Devolução parcial da venda {venda.get('numero_venda', venda_id)}. Motivo: {devolucao.motivo}"
+            )
+            await db.creditos_clientes.insert_one(credito.model_dump())
+            
+            # Atualizar saldo de crédito do cliente
+            await db.clientes.update_one(
+                {"id": venda.get("cliente_id")},
+                {"$inc": {"saldo_credito": valor_devolver}}
+            )
+            credito_gerado = {"id": credito.id, "valor": valor_devolver}
+        except Exception as e:
+            print(f"Aviso: Erro ao gerar crédito de devolução: {str(e)}")
+    
     return {
         "message": "Devolução parcial registrada com sucesso",
         "valor_devolvido": valor_devolver,
-        "valor_devolvido_total": valor_devolvido_total
+        "valor_devolvido_total": valor_devolvido_total,
+        "credito_gerado": credito_gerado
     }
 
 @api_router.post("/vendas/{venda_id}/trocar-produto")
