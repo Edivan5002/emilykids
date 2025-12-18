@@ -163,12 +163,33 @@ const ContasPagar = () => {
     }
   };
 
+  // Ref para armazenar Idempotency-Key (evita duplicação)
+  const idempotencyKeyRef = useRef(null);
+  const [pagando, setPagando] = useState(false);
+
   const handlePagarParcela = async (e) => {
     e.preventDefault();
     
+    // Evitar duplo clique
+    if (pagando) {
+      toast.info('Processando pagamento...');
+      return;
+    }
+    
+    setPagando(true);
+    
     try {
       const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
+      
+      // Gerar ou reutilizar Idempotency-Key
+      if (!idempotencyKeyRef.current) {
+        idempotencyKeyRef.current = generateIdempotencyKey();
+      }
+      
+      const headers = { 
+        Authorization: `Bearer ${token}`,
+        'Idempotency-Key': idempotencyKeyRef.current
+      };
 
       const dados = {
         ...formPagar,
@@ -187,10 +208,24 @@ const ContasPagar = () => {
       toast.success('Parcela paga com sucesso!');
       setModalPagar({ open: false, conta: null, parcela: null });
       resetFormPagar();
+      idempotencyKeyRef.current = null; // Limpar key após sucesso
       fetchData();
     } catch (error) {
-      console.error('Erro ao pagar parcela:', error);
-      toast.error(error.response?.data?.detail || 'Erro ao pagar parcela');
+      const parsed = parseError(error);
+      
+      // Tratar erro 409 (parcela já liquidada ou conflito)
+      if (parsed.code === ERROR_CODES.ALREADY_PAID || parsed.code === ERROR_CODES.CONFLICT) {
+        toast.warning(parsed.message || 'Esta parcela já foi liquidada');
+        setModalPagar({ open: false, conta: null, parcela: null });
+        resetFormPagar();
+        idempotencyKeyRef.current = null;
+        fetchData(); // Atualizar lista
+      } else {
+        console.error('Erro ao pagar parcela:', error);
+        toast.error(parsed.message || 'Erro ao pagar parcela');
+      }
+    } finally {
+      setPagando(false);
     }
   };
 
