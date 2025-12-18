@@ -251,19 +251,19 @@ const FluxoCaixa = () => {
               <div>
                 <p className="text-sm text-gray-600">Total Entradas</p>
                 <p className="text-xl font-bold text-green-600">
-                  R$ {fluxo.resumo.total_entradas.toFixed(2)}
+                  R$ {(fluxo.resumo?.total_entradas || 0).toFixed(2)}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Total Saídas</p>
                 <p className="text-xl font-bold text-red-600">
-                  R$ {fluxo.resumo.total_saidas.toFixed(2)}
+                  R$ {(fluxo.resumo?.total_saidas || 0).toFixed(2)}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Saldo do Período</p>
-                <p className={`text-xl font-bold ${fluxo.resumo.saldo_periodo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  R$ {fluxo.resumo.saldo_periodo.toFixed(2)}
+                <p className={`text-xl font-bold ${(fluxo.resumo?.saldo_periodo || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  R$ {(fluxo.resumo?.saldo_periodo || 0).toFixed(2)}
                 </p>
               </div>
             </div>
