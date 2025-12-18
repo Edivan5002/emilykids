@@ -998,8 +998,22 @@ class Produto(BaseModel):
     
     # Estoque
     estoque_atual: int = 0
+    estoque_reservado: int = 0  # MELHORIA 1: Reserva física de estoque (orçamentos abertos)
     estoque_minimo: int = 0
     estoque_maximo: int = 0
+    
+    # Controle de Lote e Validade (MELHORIA 10)
+    controlar_lote: bool = False
+    lotes: Optional[List[dict]] = None  # [{"lote": "L001", "quantidade": 10, "data_fabricacao": "...", "data_validade": "..."}]
+    
+    # Multi-unidade (MELHORIA 11)
+    unidade_compra: Optional[str] = None  # ex: "CX" (caixa)
+    fator_conversao: float = 1.0  # ex: 1 CX = 12 UN
+    
+    # Curva ABC (MELHORIA 5)
+    curva_abc: str = "C"  # A, B ou C - calculado automaticamente
+    giro_estoque: float = 0  # vezes/mês
+    faturamento_acumulado: float = 0  # para cálculo ABC
     
     # Variações
     tem_variacoes: bool = False
