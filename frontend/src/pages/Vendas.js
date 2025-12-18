@@ -553,6 +553,9 @@ const Vendas = () => {
   const produtosMaisVendidos = () => {
     const produtosMap = {};
     vendasEfetivadas.forEach(venda => {
+      // Verificar se itens existe (pode não vir em payloads resumidos)
+      if (!venda.itens || !Array.isArray(venda.itens)) return;
+      
       venda.itens.forEach(item => {
         if (!produtosMap[item.produto_id]) {
           produtosMap[item.produto_id] = {
@@ -567,7 +570,7 @@ const Vendas = () => {
     });
 
     return Object.values(produtosMap)
-      .sort((a, b) => b.quantidade - a.quantidade)
+      .sort((a, b) => b.quantidade - a.quantity)
       .slice(0, 5);
   };
 
