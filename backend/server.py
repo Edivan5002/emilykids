@@ -12729,6 +12729,31 @@ async def get_fluxo_caixa_dashboard(
 
 app.include_router(api_router)
 
+# ==================== ETAPA 11 - MIDDLEWARE DE REQUEST ID (OBSERVABILIDADE) ====================
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class RequestIdMiddleware(BaseHTTPMiddleware):
+    """
+    8) Middleware que adiciona request_id único para cada requisição.
+    """
+    async def dispatch(self, request: Request, call_next):
+        # Gerar request_id único
+        rid = str(uuid.uuid4())[:8]
+        request_id_var.set(rid)
+        
+        # Medir tempo de execução
+        start_time = time.time()
+        
+        response = await call_next(request)
+        
+        # Adicionar headers de debug
+        response.headers["X-Request-ID"] = rid
+        response.headers["X-Response-Time"] = f"{(time.time() - start_time) * 1000:.2f}ms"
+        
+        return response
+
+app.add_middleware(RequestIdMiddleware)
+
 # ==================== CORS CONFIGURAÇÃO - CORREÇÃO 2 ====================
 # Correção 2: CORS com allow_credentials=True é incompatível com origins="*"
 # Solução: Se CORS_ORIGINS não definido ou "*", usa lista padrão segura para dev local
