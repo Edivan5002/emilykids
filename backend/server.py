@@ -1670,6 +1670,91 @@ def require_permission(modulo: str, acao: str):
         return current_user
     return permission_checker
 
+
+# ==================== ENDPOINT /api/me/permissoes - CORREÇÃO 4 ====================
+@api_router.get("/me/permissoes")
+async def get_my_permissions(current_user: dict = Depends(get_current_user)):
+    """
+    Correção 4: Endpoint para debug - lista permissões do usuário logado.
+    Útil para verificar se RBAC está configurado corretamente.
+    """
+    user_id = current_user["id"]
+    
+    # Buscar role do usuário
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
+    role_id = user.get("role_id")
+    role = await db.roles.find_one({"id": role_id}, {"_id": 0}) if role_id else None
+    
+    # Buscar permissões da role
+    permissions = []
+    if role and role.get("permissoes"):
+        perm_cursor = db.permissions.find(
+            {"id": {"$in": role["permissoes"]}},
+            {"_id": 0}
+        )
+        permissions = await perm_cursor.to_list(None)
+    
+    # Agrupar por módulo
+    por_modulo = {}
+    for perm in permissions:
+        modulo = perm.get("modulo", "desconhecido")
+        if modulo not in por_modulo:
+            por_modulo[modulo] = []
+        por_modulo[modulo].append(perm.get("acao"))
+    
+    return {
+        "user_id": user_id,
+        "user_email": user.get("email"),
+        "role_id": role_id,
+        "role_nome": role.get("nome") if role else None,
+        "total_permissoes": len(permissions),
+        "permissoes_por_modulo": por_modulo,
+        "permissoes_detalhadas": permissions
+    }
+
+
+# ==================== ENDPOINT ARQUIVAR LOGS - CORREÇÃO 10 ====================
+@api_router.post("/logs/arquivar-antigos")
+async def arquivar_logs_antigos(
+    dias: int = 90,
+    current_user: dict = Depends(require_permission("logs", "deletar"))
+):
+    """
+    Correção 10: Arquiva logs mais antigos que X dias.
+    Não deleta, apenas marca como arquivado.
+    """
+    if dias < 30:
+        raise HTTPException(
+            status_code=400,
+            detail="Período mínimo para arquivar é 30 dias"
+        )
+    
+    data_corte = (datetime.now(timezone.utc) - timedelta(days=dias)).isoformat()
+    
+    result = await db.logs.update_many(
+        {
+            "timestamp": {"$lt": data_corte},
+            "arquivado": {"$ne": True}
+        },
+        {
+            "$set": {
+                "arquivado": True,
+                "data_arquivamento": iso_utc_now()
+            }
+        }
+    )
+    
+    return {
+        "success": True,
+        "logs_arquivados": result.modified_count,
+        "data_corte": data_corte,
+        "dias": dias
+    }
+
+
 async def log_permission_change(
     user_id: str,
     user_nome: str,
