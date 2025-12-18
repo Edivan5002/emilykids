@@ -60,11 +60,21 @@ const Categorias = () => {
     setPaginaAtual(1); // Resetar página ao filtrar
   }, [searchTerm, marcaFilter, statusFilter, categorias]);
 
+  // Helper para extrair dados compatível com formato antigo e novo da API
+  const extractData = (response) => {
+    const data = response?.data;
+    if (data && data.ok !== undefined && Array.isArray(data.data)) return data.data;
+    if (data && Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data)) return data;
+    return [];
+  };
+
   const fetchCategorias = async () => {
     try {
       const response = await axios.get(`${API}/categorias?incluir_inativos=true`);
-      setCategorias(response.data);
-      setFilteredCategorias(response.data);
+      const categoriasData = extractData(response);
+      setCategorias(categoriasData);
+      setFilteredCategorias(categoriasData);
     } catch (error) {
       toast.error('Erro ao carregar categorias');
     }
@@ -73,7 +83,7 @@ const Categorias = () => {
   const fetchMarcas = async () => {
     try {
       const response = await axios.get(`${API}/marcas`);
-      setMarcas(response.data.filter(m => m.ativo));
+      setMarcas(extractData(response).filter(m => m.ativo));
     } catch (error) {
       toast.error('Erro ao carregar marcas');
     }
