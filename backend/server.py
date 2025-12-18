@@ -7956,25 +7956,18 @@ async def devolver_orcamento(orcamento_id: str, current_user: dict = Depends(get
     if not orcamento:
         raise HTTPException(status_code=404, detail="Orçamento não encontrado")
     
-    if orcamento["status"] != "aberto":
-        raise HTTPException(status_code=400, detail="Orçamento não está aberto")
+    if orcamento["status"] not in ["aberto", "aprovado"]:
+        raise HTTPException(status_code=400, detail="Orçamento não está aberto ou aprovado")
     
-    # Devolver estoque
-    for item in orcamento["itens"]:
-        produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
-        if produto:
-            novo_estoque = produto["estoque_atual"] + item["quantidade"]
-            await db.produtos.update_one(
-                {"id": item["produto_id"]},
-                {"$set": {"estoque_atual": novo_estoque}}
-            )
+    # MELHORIA 1: Liberar reserva de estoque (não estoque real, pois não foi baixado)
+    await liberar_estoque_orcamento(orcamento_id, orcamento["itens"])
     
     await db.orcamentos.update_one(
         {"id": orcamento_id},
         {"$set": {"status": "devolvido"}}
     )
     
-    return {"message": "Itens devolvidos ao estoque"}
+    return {"message": "Reserva de estoque liberada e orçamento devolvido"}
 
 @api_router.delete("/orcamentos/{orcamento_id}")
 async def delete_orcamento(orcamento_id: str, current_user: dict = Depends(get_current_user)):
