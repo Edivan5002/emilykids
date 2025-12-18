@@ -1135,7 +1135,7 @@ const Vendas = () => {
                     <p className="text-sm text-gray-600 mb-1">Itens por Venda (média)</p>
                     <p className="text-2xl font-bold" style={{color: '#2C9AA1'}}>
                       {vendasFiltradas.length > 0 ? 
-                        (vendasFiltradas.reduce((sum, v) => sum + v.itens.length, 0) / vendasFiltradas.length).toFixed(1) : 
+                        (vendasFiltradas.reduce((sum, v) => sum + (v.itens && Array.isArray(v.itens) ? v.itens.length : 0), 0) / vendasFiltradas.length).toFixed(1) : 
                         '0'}
                     </p>
                   </div>
