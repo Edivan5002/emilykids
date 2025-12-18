@@ -4436,24 +4436,47 @@ async def toggle_cliente_status(cliente_id: str, current_user: dict = Depends(re
 
 # ========== FORNECEDORES ==========
 
-@api_router.get("/fornecedores", response_model=List[Fornecedor])
+@api_router.get("/fornecedores", tags=["Fornecedores"], summary="Lista fornecedores")
 async def get_fornecedores(
     incluir_inativos: bool = False,
     page: int = 1,
     limit: int = 20,
+    sort: str = "-created_at",
+    q: str = None,
     current_user: dict = Depends(require_permission("fornecedores", "ler"))
 ):
-    """Lista fornecedores com paginação opcional"""
+    """
+    Lista fornecedores com paginação e busca.
+    ETAPA 13: Resposta padronizada com api_list.
+    """
+    # Validar paginação
+    page, limit, skip = validate_pagination(page, limit)
+    
     filtro = {} if incluir_inativos else {"ativo": True}
     
-    # Se limit=0, retorna todos (mantém compatibilidade)
-    if limit == 0:
-        fornecedores = await db.fornecedores.find(filtro, {"_id": 0}).to_list(10000)
-    else:
-        skip = (page - 1) * limit
-        fornecedores = await db.fornecedores.find(filtro, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    # Busca textual
+    if q:
+        q_norm = normalize_search_query(q)
+        if q_norm:
+            filtro["$or"] = [
+                {"razao_social": {"$regex": q_norm, "$options": "i"}},
+                {"nome_fantasia": {"$regex": q_norm, "$options": "i"}},
+                {"cnpj": {"$regex": q_norm, "$options": "i"}},
+                {"email": {"$regex": q_norm, "$options": "i"}}
+            ]
     
-    return fornecedores
+    # Ordenação
+    sort_field = sort.lstrip("-")
+    sort_dir = -1 if sort.startswith("-") else 1
+    
+    # Buscar dados
+    cursor = db.fornecedores.find(filtro, {"_id": 0})
+    cursor = cursor.sort(sort_field, sort_dir).skip(skip).limit(limit)
+    fornecedores = await cursor.to_list(limit)
+    
+    total = await db.fornecedores.count_documents(filtro)
+    
+    return api_list(fornecedores, page=page, limit=limit, total=total)
 
 @api_router.post("/fornecedores", response_model=Fornecedor)
 async def create_fornecedor(fornecedor_data: FornecedorCreate, current_user: dict = Depends(require_permission("fornecedores", "criar"))):
