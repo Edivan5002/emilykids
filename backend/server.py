@@ -1582,7 +1582,8 @@ async def initialize_default_roles_and_permissions():
         "dashboard", "produtos", "categorias", "subcategorias", "marcas",
         "clientes", "fornecedores", "estoque", "notas_fiscais",
         "orcamentos", "vendas", "relatorios", "usuarios", "logs",
-        "contas_receber", "contas_pagar", "fluxo_caixa", "configuracoes_financeiras"  # MÓDULOS FINANCEIROS
+        "contas_receber", "contas_pagar", "fluxo_caixa", "configuracoes_financeiras",  # MÓDULOS FINANCEIROS
+        "administracao"  # MÓDULO DE ADMINISTRAÇÃO (categorias despesa/receita, centros custo)
     ]
     
     acoes = ["ler", "criar", "editar", "deletar", "exportar", "aprovar"]
