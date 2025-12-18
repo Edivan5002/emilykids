@@ -1935,7 +1935,7 @@ async def log_action(
         tela=tela,
         acao=acao,
         severidade=severidade,
-        detalhes=detalhes,
+        detalhes=detalhes_sanitizados,  # Correção 10: Usar detalhes sanitizados
         metodo_http=metodo_http,
         url=url,
         status_code=status_code,
