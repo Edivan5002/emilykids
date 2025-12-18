@@ -219,7 +219,7 @@ const Produtos = () => {
       if (filtros.em_destaque) params.append('em_destaque', 'true');
 
       const response = await axios.get(`${API}/produtos/busca-avancada?${params.toString()}`);
-      setProdutosFiltrados(response.data);
+      setProdutosFiltrados(extractData(response));
       setPaginaAtual(1); // Resetar página ao filtrar
     } catch (error) {
       toast.error('Erro ao aplicar filtros');
