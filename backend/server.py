@@ -1393,14 +1393,15 @@ class RecebimentoParcela(BaseModel):
 
 # Modelos de Request para Contas a Pagar
 class ContaPagarCreate(BaseModel):
+    """Modelo de criação de conta a pagar com validações ETAPA 12."""
     fornecedor_id: Optional[str] = None
     descricao: str
     categoria: str = "despesa_operacional"
     subcategoria: Optional[str] = None
-    valor_total: float
+    valor_total: float = Field(..., gt=0, description="Valor total deve ser maior que zero")
     forma_pagamento: str = "pix"
     tipo_pagamento: str = "avista"
-    numero_parcelas: int = 1
+    numero_parcelas: int = Field(default=1, ge=1, description="Mínimo 1 parcela")
     data_vencimento: Optional[str] = None
     parcelas: List[dict] = []
     prioridade: str = "normal"
@@ -1408,6 +1409,10 @@ class ContaPagarCreate(BaseModel):
     tags: List[str] = []
     centro_custo: Optional[str] = None
     projeto: Optional[str] = None
+    
+    @property
+    def valor_total_rounded(self) -> float:
+        return money_round(self.valor_total)
 
 class ContaPagarUpdate(BaseModel):
     descricao: Optional[str] = None
