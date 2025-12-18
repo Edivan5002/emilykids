@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 const AuthContext = createContext(null);
@@ -7,10 +7,39 @@ export const useAuth = () => useContext(AuthContext);
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
+// Configurar baseURL do axios para garantir consistência
+axios.defaults.baseURL = process.env.REACT_APP_BACKEND_URL;
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const [permissions, setPermissions] = useState(null);
+
+  // Função de logout memorizada para uso no interceptor
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('token');
+    setToken(null);
+    setUser(null);
+    setPermissions(null);
+    delete axios.defaults.headers.common['Authorization'];
+  }, []);
+
+  // Interceptor global para tratar erros 401
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          console.warn('Sessão expirada - redirecionando para login');
+          handleLogout();
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
+      }
+    );
+    return () => axios.interceptors.response.eject(interceptor);
+  }, [handleLogout]);
 
   useEffect(() => {
     if (token) {
