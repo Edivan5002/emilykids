@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, Shield, Lock, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Shield, Lock, AlertCircle, Smartphone, Key } from 'lucide-react';
+import { parseError, ERROR_CODES } from '../lib/api';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -28,8 +29,29 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loginAttempts, setLoginAttempts] = useState(0);
+  
+  // Estados para 2FA
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [totpCode, setTotpCode] = useState('');
+  const [useBackupCode, setUseBackupCode] = useState(false);
+  const [backupCode, setBackupCode] = useState('');
+  
+  // Estado para rate limiting
+  const [rateLimited, setRateLimited] = useState(false);
+  const [rateLimitTimer, setRateLimitTimer] = useState(0);
+  
   const { login } = useAuth();
   const navigate = useNavigate();
+  
+  // Timer para rate limit
+  useEffect(() => {
+    if (rateLimitTimer > 0) {
+      const timer = setTimeout(() => setRateLimitTimer(t => t - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (rateLimited && rateLimitTimer === 0) {
+      setRateLimited(false);
+    }
+  }, [rateLimitTimer, rateLimited]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
