@@ -346,6 +346,97 @@ def normalize_email(email: str) -> str:
 # ==================== FIM HELPERS ETAPA 13 ====================
 
 
+# ==================== ETAPA 14 - 2FA TOTP (stdlib only) ====================
+
+import hmac
+import hashlib
+import struct
+import secrets
+import base64
+
+def generate_totp_secret() -> str:
+    """Gera secret base32 para TOTP (20 bytes = 32 chars base32)."""
+    return base64.b32encode(secrets.token_bytes(20)).decode('utf-8')
+
+def get_totp_token(secret: str, time_step: int = 30, digits: int = 6, offset: int = 0) -> str:
+    """
+    Gera token TOTP (RFC 6238 básico, SHA1).
+    offset: -1, 0, +1 para janela de tolerância.
+    """
+    try:
+        key = base64.b32decode(secret.upper())
+        counter = int(time.time()) // time_step + offset
+        counter_bytes = struct.pack('>Q', counter)
+        hmac_hash = hmac.new(key, counter_bytes, hashlib.sha1).digest()
+        offset_byte = hmac_hash[-1] & 0x0F
+        code = struct.unpack('>I', hmac_hash[offset_byte:offset_byte + 4])[0]
+        code = (code & 0x7FFFFFFF) % (10 ** digits)
+        return str(code).zfill(digits)
+    except Exception:
+        return ""
+
+def verify_totp(secret: str, code: str, window: int = 1) -> bool:
+    """Verifica TOTP com janela de tolerância (-window a +window steps)."""
+    if not code or not secret:
+        return False
+    for offset in range(-window, window + 1):
+        if get_totp_token(secret, offset=offset) == code.strip():
+            return True
+    return False
+
+def generate_backup_codes(count: int = 8) -> list:
+    """Gera códigos de backup (8 chars cada)."""
+    return [secrets.token_hex(4).upper() for _ in range(count)]
+
+def hash_backup_code(code: str, salt: str) -> str:
+    """Hash de um backup code com salt."""
+    return hashlib.sha256(f"{salt}:{code.upper()}".encode()).hexdigest()
+
+def verify_backup_code(code: str, hashed_codes: list, salt: str) -> int:
+    """
+    Verifica se backup code é válido.
+    Retorna índice do código se válido, -1 se inválido.
+    """
+    code_hash = hash_backup_code(code, salt)
+    for i, h in enumerate(hashed_codes):
+        if h == code_hash:
+            return i
+    return -1
+
+def generate_otpauth_uri(secret: str, email: str, issuer: str = "ERP") -> str:
+    """Gera URI otpauth:// para QR code."""
+    from urllib.parse import quote
+    label = quote(f"{issuer}:{email}")
+    return f"otpauth://totp/{label}?secret={secret}&issuer={quote(issuer)}"
+
+
+# ==================== ETAPA 14 - HELPERS AUDITORIA ====================
+
+def create_audit_event(
+    tipo: str,
+    user_id: str,
+    request_id: str = None,
+    detalhe: str = None,
+    before: dict = None,
+    after: dict = None,
+    origem: str = None
+) -> dict:
+    """Cria evento de auditoria para trilha estruturada."""
+    return {
+        "tipo": tipo,
+        "at": utc_now_iso(),
+        "user_id": user_id,
+        "request_id": request_id or get_request_id(),
+        "origem": origem,
+        "detalhe": detalhe,
+        "before": before,
+        "after": after
+    }
+
+
+# ==================== FIM HELPERS ETAPA 14 ====================
+
+
 def calc_valor_final_parcela_pagar(
     valor_base: float,
     juros: float = 0,
