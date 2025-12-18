@@ -106,9 +106,13 @@ const ContasReceber = () => {
         axios.get(`${API}/contas-receber/dashboard/kpis`, { headers })
       ]);
 
-      setContas(contasResp.data.data || contasResp.data);
-      setClientes(clientesResp.data);
-      setKpis(kpisResp.data);
+      // Usar unwrapList para compatibilidade com novo envelope {ok, data, meta}
+      const { items: contasData } = unwrapList(contasResp);
+      const { items: clientesData } = unwrapList(clientesResp);
+      
+      setContas(contasData);
+      setClientes(clientesData);
+      setKpis(kpisResp.data?.data || kpisResp.data);
       setPaginaAtual(1); // Resetar página ao buscar/filtrar
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
