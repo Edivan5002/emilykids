@@ -11958,7 +11958,8 @@ async def get_fluxo_caixa_dashboard(
     current_user: dict = Depends(require_permission("contas_receber", "ler"))
 ):
     """
-    Retorna dados do dashboard de fluxo de caixa
+    Retorna dados do dashboard de fluxo de caixa baseado nos modelos reais.
+    Processa parcelas de contas a receber e a pagar.
     """
     try:
         from datetime import datetime, timedelta
@@ -11968,59 +11969,76 @@ async def get_fluxo_caixa_dashboard(
         fim_mes = (hoje.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
         fim_mes_str = fim_mes.isoformat()
         
-        # Vendas do mês
-        vendas_mes_cursor = db.vendas.find({
-            "data_venda": {"$gte": inicio_mes, "$lte": fim_mes_str},
+        # Buscar todas as contas a receber
+        receber_todas = await db.contas_receber.find({
             "cancelada": {"$ne": True}
-        })
-        vendas_mes = await vendas_mes_cursor.to_list(length=None)
-        total_vendas = sum(v.get('total', 0) for v in vendas_mes)
+        }, {"_id": 0}).to_list(None)
         
-        # Contas a receber do mês
-        receber_mes_cursor = db.contas_receber.find({
-            "data_vencimento": {"$gte": inicio_mes, "$lte": fim_mes_str},
-            "cancelada": {"$ne": True}
-        })
-        receber_mes = await receber_mes_cursor.to_list(length=None)
-        total_receber = sum(c.get('valor', 0) for c in receber_mes if c.get('status') != 'recebida')
-        total_recebido = sum(c.get('valor', 0) for c in receber_mes if c.get('status') == 'recebida')
+        # Processar parcelas do mês (a receber)
+        total_recebido = 0
+        total_a_receber = 0
         
-        # Contas a pagar do mês
-        pagar_mes_cursor = db.contas_pagar.find({
-            "data_vencimento": {"$gte": inicio_mes, "$lte": fim_mes_str},
+        for conta in receber_todas:
+            for parcela in conta.get("parcelas", []):
+                data_venc = parcela.get("data_vencimento", "").split("T")[0]
+                
+                # Se vence neste mês
+                if inicio_mes <= data_venc <= fim_mes_str:
+                    if parcela.get("status") == "recebido":
+                        total_recebido += parcela.get("valor_recebido", 0)
+                    else:
+                        total_a_receber += parcela.get("valor", 0)
+        
+        # Buscar todas as contas a pagar
+        pagar_todas = await db.contas_pagar.find({
             "cancelada": {"$ne": True}
-        })
-        pagar_mes = await pagar_mes_cursor.to_list(length=None)
-        total_pagar = sum(c.get('valor', 0) for c in pagar_mes if c.get('status') != 'paga')
-        total_pago = sum(c.get('valor', 0) for c in pagar_mes if c.get('status') == 'paga')
+        }, {"_id": 0}).to_list(None)
+        
+        # Processar parcelas do mês (a pagar)
+        total_pago = 0
+        total_a_pagar = 0
+        
+        for conta in pagar_todas:
+            for parcela in conta.get("parcelas", []):
+                data_venc = parcela.get("data_vencimento", "").split("T")[0]
+                
+                # Se vence neste mês
+                if inicio_mes <= data_venc <= fim_mes_str:
+                    if parcela.get("status") == "pago":
+                        total_pago += parcela.get("valor_pago", 0)
+                    else:
+                        total_a_pagar += parcela.get("valor", 0)
         
         # Projeção próximos 30 dias
         proximo_mes = (hoje + timedelta(days=30)).isoformat()
         
-        receber_futuro_cursor = db.contas_receber.find({
-            "data_vencimento": {"$gt": fim_mes_str, "$lte": proximo_mes},
-            "status": {"$ne": "recebida"},
-            "cancelada": {"$ne": True}
-        })
-        receber_futuro = await receber_futuro_cursor.to_list(length=None)
-        projecao_entradas = sum(c.get('valor', 0) for c in receber_futuro)
+        projecao_entradas = 0
+        for conta in receber_todas:
+            for parcela in conta.get("parcelas", []):
+                data_venc = parcela.get("data_vencimento", "").split("T")[0]
+                
+                # Se vence nos próximos 30 dias (após o mês atual)
+                if fim_mes_str < data_venc <= proximo_mes:
+                    if parcela.get("status") != "recebido":
+                        projecao_entradas += parcela.get("valor", 0)
         
-        pagar_futuro_cursor = db.contas_pagar.find({
-            "data_vencimento": {"$gt": fim_mes_str, "$lte": proximo_mes},
-            "status": {"$ne": "paga"},
-            "cancelada": {"$ne": True}
-        })
-        pagar_futuro = await pagar_futuro_cursor.to_list(length=None)
-        projecao_saidas = sum(c.get('valor', 0) for c in pagar_futuro)
+        projecao_saidas = 0
+        for conta in pagar_todas:
+            for parcela in conta.get("parcelas", []):
+                data_venc = parcela.get("data_vencimento", "").split("T")[0]
+                
+                # Se vence nos próximos 30 dias (após o mês atual)
+                if fim_mes_str < data_venc <= proximo_mes:
+                    if parcela.get("status") != "pago":
+                        projecao_saidas += parcela.get("valor", 0)
         
         return {
             "mes_atual": {
-                "vendas": total_vendas,
                 "recebido": total_recebido,
-                "a_receber": total_receber,
+                "a_receber": total_a_receber,
                 "pago": total_pago,
-                "a_pagar": total_pagar,
-                "saldo_mes": (total_vendas + total_recebido) - total_pago
+                "a_pagar": total_a_pagar,
+                "saldo_mes": total_recebido - total_pago
             },
             "projecao_30_dias": {
                 "entradas_previstas": projecao_entradas,
