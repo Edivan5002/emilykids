@@ -258,6 +258,92 @@ def validate_parcelas_soma(parcelas: list, valor_total: float, auto_adjust: bool
 
 # ==================== FIM HELPERS ETAPA 12 ====================
 
+
+# ==================== ETAPA 13 - HELPERS DE RESPOSTA PADRONIZADA ====================
+
+import math
+
+def api_ok(data=None, meta: dict = None, message: str = None) -> dict:
+    """
+    Resposta padronizada de sucesso.
+    Formato: {"ok": true, "data": ..., "meta": {...}, "message": "..."}
+    """
+    response = {"ok": True}
+    if data is not None:
+        response["data"] = data
+    if meta:
+        response["meta"] = meta
+    if message:
+        response["message"] = message
+    return response
+
+
+def api_list(
+    data: list, 
+    *, 
+    page: int, 
+    limit: int, 
+    total: int, 
+    extra_meta: dict = None
+) -> dict:
+    """
+    Resposta padronizada para listas paginadas.
+    Formato: {"ok": true, "data": [...], "meta": {"page", "limit", "total", "pages"}}
+    """
+    pages = math.ceil(total / limit) if limit > 0 else 0
+    meta = {
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "pages": pages
+    }
+    if extra_meta:
+        meta.update(extra_meta)
+    return {"ok": True, "data": data, "meta": meta}
+
+
+def api_error(code: str, detail: str, *, extra: dict = None) -> dict:
+    """
+    Resposta padronizada de erro.
+    Formato: {"ok": false, "error": {"code": "...", "detail": "...", "extra": {...}}}
+    """
+    error = {"code": code, "detail": detail}
+    if extra:
+        error["extra"] = extra
+    return {"ok": False, "error": error}
+
+
+# Constantes de paginação
+DEFAULT_PAGE = 1
+DEFAULT_LIMIT = 20
+MAX_LIMIT = 200
+
+
+def validate_pagination(page: int, limit: int) -> tuple:
+    """Valida e normaliza parâmetros de paginação."""
+    page = max(1, page)
+    limit = max(1, min(limit, MAX_LIMIT))
+    skip = (page - 1) * limit
+    return page, limit, skip
+
+
+def normalize_search_query(q: str) -> str:
+    """Normaliza query de busca: strip e limita tamanho."""
+    if not q:
+        return ""
+    return q.strip()[:100]
+
+
+def normalize_email(email: str) -> str:
+    """Normaliza email: strip e lowercase."""
+    if not email:
+        return ""
+    return email.strip().lower()
+
+
+# ==================== FIM HELPERS ETAPA 13 ====================
+
+
 def calc_valor_final_parcela_pagar(
     valor_base: float,
     juros: float = 0,
