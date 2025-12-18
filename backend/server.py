@@ -9346,7 +9346,10 @@ async def gerar_numero_conta_receber() -> str:
 
 # Função helper para atualizar status da conta
 async def atualizar_status_conta_receber(conta_id: str):
-    """Atualiza status da conta baseado nas parcelas"""
+    """
+    Atualiza status da conta baseado nas parcelas.
+    Status válidos: pendente, recebido_parcial, recebido_total, vencido, cancelado
+    """
     conta = await db.contas_receber.find_one({"id": conta_id})
     if not conta:
         return
@@ -9355,7 +9358,7 @@ async def atualizar_status_conta_receber(conta_id: str):
     parcelas_recebidas = len([p for p in conta["parcelas"] if p["status"] == "recebido"])
     parcelas_vencidas = len([p for p in conta["parcelas"] if p["status"] == "vencido"])
     
-    # Determinar novo status
+    # Determinar novo status usando STATUS_CONTA_RECEBER padronizado
     if parcelas_recebidas == total_parcelas:
         novo_status = "recebido_total"
     elif parcelas_recebidas > 0:
@@ -9365,16 +9368,29 @@ async def atualizar_status_conta_receber(conta_id: str):
     else:
         novo_status = "pendente"
     
-    # Atualizar valores
-    valor_recebido = sum(p["valor_recebido"] for p in conta["parcelas"])
+    # Atualizar valores monetários
+    valor_recebido = sum(p.get("valor_recebido", 0) for p in conta["parcelas"])
+    valor_juros_total = sum(p.get("valor_juros", 0) for p in conta["parcelas"])
+    valor_desconto_total = sum(p.get("valor_desconto", 0) for p in conta["parcelas"])
     valor_pendente = conta["valor_total"] - valor_recebido
+    
+    # Recalcular valor_liquido = valor_total + juros - desconto
+    valor_liquido = calc_valor_liquido_conta(
+        valor_total=conta["valor_total"],
+        juros=valor_juros_total,
+        desconto=valor_desconto_total
+    )
     
     await db.contas_receber.update_one(
         {"id": conta_id},
         {"$set": {
             "status": novo_status,
             "valor_recebido": valor_recebido,
-            "valor_pendente": valor_pendente
+            "valor_pendente": valor_pendente,
+            "valor_juros": valor_juros_total,
+            "valor_desconto": valor_desconto_total,
+            "valor_liquido": valor_liquido,
+            "updated_at": iso_utc_now()
         }}
     )
 
