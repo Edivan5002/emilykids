@@ -1,0 +1,426 @@
+{
+  "exemplo_1_diario_caixa": {
+    "descricao": "Fluxo diário no regime de caixa (apenas valores efetivamente recebidos/pagos)",
+    "request": "GET /api/fluxo-caixa?data_inicio=2025-12-01&data_fim=2025-12-05&regime=caixa&tipo_visao=diario",
+    "response": {
+      "periodo": {
+        "inicio": "2025-12-01",
+        "fim": "2025-12-05"
+      },
+      "regime": "caixa",
+      "resumo": {
+        "total_entradas": 750.00,
+        "total_saidas": 450.00,
+        "saldo_periodo": 300.00,
+        "saldo_acumulado_final": 300.00
+      },
+      "fluxo": [
+        {
+          "periodo": "2025-12-01",
+          "entradas": 250.00,
+          "saidas": 150.00,
+          "saldo_periodo": 100.00,
+          "saldo_acumulado": 100.00,
+          "detalhes_entradas": [
+            {
+              "tipo": "CR Parcela",
+              "descricao": "CR-000015 - Parcela 1",
+              "valor": 250.00,
+              "data": "2025-12-01",
+              "referencia": {
+                "conta_id": "abc123",
+                "numero": "CR-000015",
+                "parcela": 1
+              }
+            }
+          ],
+          "detalhes_saidas": [
+            {
+              "tipo": "CP Parcela",
+              "descricao": "CP-000008 - Parcela 1",
+              "valor": 150.00,
+              "data": "2025-12-01",
+              "referencia": {
+                "conta_id": "def456",
+                "numero": "CP-000008",
+                "parcela": 1
+              }
+            }
+          ]
+        },
+        {
+          "periodo": "2025-12-03",
+          "entradas": 500.00,
+          "saidas": 300.00,
+          "saldo_periodo": 200.00,
+          "saldo_acumulado": 300.00,
+          "detalhes_entradas": [
+            {
+              "tipo": "CR Parcela",
+              "descricao": "CR-000016 - Parcela 1",
+              "valor": 300.00,
+              "data": "2025-12-03",
+              "referencia": {
+                "conta_id": "ghi789",
+                "numero": "CR-000016",
+                "parcela": 1
+              }
+            },
+            {
+              "tipo": "CR Parcela",
+              "descricao": "CR-000017 - Parcela 2",
+              "valor": 200.00,
+              "data": "2025-12-03",
+              "referencia": {
+                "conta_id": "jkl012",
+                "numero": "CR-000017",
+                "parcela": 2
+              }
+            }
+          ],
+          "detalhes_saidas": [
+            {
+              "tipo": "CP Parcela",
+              "descricao": "CP-000009 - Parcela 1",
+              "valor": 300.00,
+              "data": "2025-12-03",
+              "referencia": {
+                "conta_id": "mno345",
+                "numero": "CP-000009",
+                "parcela": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "exemplo_2_diario_competencia": {
+    "descricao": "Fluxo diário no regime de competência (valores por data de vencimento)",
+    "request": "GET /api/fluxo-caixa?data_inicio=2025-12-01&data_fim=2025-12-05&regime=competencia&tipo_visao=diario",
+    "response": {
+      "periodo": {
+        "inicio": "2025-12-01",
+        "fim": "2025-12-05"
+      },
+      "regime": "competencia",
+      "resumo": {
+        "total_entradas": 1250.00,
+        "total_saidas": 850.00,
+        "saldo_periodo": 400.00,
+        "saldo_acumulado_final": 400.00
+      },
+      "fluxo": [
+        {
+          "periodo": "2025-12-01",
+          "entradas": 450.00,
+          "saidas": 250.00,
+          "saldo_periodo": 200.00,
+          "saldo_acumulado": 200.00,
+          "detalhes_entradas": [
+            {
+              "tipo": "CR Parcela",
+              "descricao": "CR-000015 - Parcela 1",
+              "valor": 250.00,
+              "data": "2025-12-01",
+              "referencia": {
+                "conta_id": "abc123",
+                "numero": "CR-000015",
+                "parcela": 1
+              }
+            },
+            {
+              "tipo": "CR Parcela",
+              "descricao": "CR-000020 - Parcela 1",
+              "valor": 200.00,
+              "data": "2025-12-01",
+              "referencia": {
+                "conta_id": "pqr678",
+                "numero": "CR-000020",
+                "parcela": 1
+              }
+            }
+          ],
+          "detalhes_saidas": [
+            {
+              "tipo": "CP Parcela",
+              "descricao": "CP-000008 - Parcela 1",
+              "valor": 150.00,
+              "data": "2025-12-01",
+              "referencia": {
+                "conta_id": "def456",
+                "numero": "CP-000008",
+                "parcela": 1
+              }
+            },
+            {
+              "tipo": "CP Parcela",
+              "descricao": "CP-000011 - Parcela 1",
+              "valor": 100.00,
+              "data": "2025-12-01",
+              "referencia": {
+                "conta_id": "stu901",
+                "numero": "CP-000011",
+                "parcela": 1
+              }
+            }
+          ]
+        },
+        {
+          "periodo": "2025-12-02",
+          "entradas": 300.00,
+          "saidas": 200.00,
+          "saldo_periodo": 100.00,
+          "saldo_acumulado": 300.00,
+          "detalhes_entradas": [
+            {
+              "tipo": "CR Parcela",
+              "descricao": "CR-000018 - Parcela 1",
+              "valor": 300.00,
+              "data": "2025-12-02",
+              "referencia": {
+                "conta_id": "vwx234",
+                "numero": "CR-000018",
+                "parcela": 1
+              }
+            }
+          ],
+          "detalhes_saidas": [
+            {
+              "tipo": "CP Parcela",
+              "descricao": "CP-000010 - Parcela 2",
+              "valor": 200.00,
+              "data": "2025-12-02",
+              "referencia": {
+                "conta_id": "yza567",
+                "numero": "CP-000010",
+                "parcela": 2
+              }
+            }
+          ]
+        },
+        {
+          "periodo": "2025-12-05",
+          "entradas": 500.00,
+          "saidas": 400.00,
+          "saldo_periodo": 100.00,
+          "saldo_acumulado": 400.00,
+          "detalhes_entradas": [
+            {
+              "tipo": "CR Parcela",
+              "descricao": "CR-000019 - Parcela 3",
+              "valor": 500.00,
+              "data": "2025-12-05",
+              "referencia": {
+                "conta_id": "bcd890",
+                "numero": "CR-000019",
+                "parcela": 3
+              }
+            }
+          ],
+          "detalhes_saidas": [
+            {
+              "tipo": "CP Parcela",
+              "descricao": "CP-000012 - Parcela 1",
+              "valor": 400.00,
+              "data": "2025-12-05",
+              "referencia": {
+                "conta_id": "efg123",
+                "numero": "CP-000012",
+                "parcela": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "exemplo_3_mensal_caixa": {
+    "descricao": "Fluxo mensal no regime de caixa (agrupamento seria implementado pelo tipo_visao)",
+    "request": "GET /api/fluxo-caixa?data_inicio=2025-12-01&data_fim=2025-12-31&regime=caixa&tipo_visao=mensal",
+    "response": {
+      "periodo": {
+        "inicio": "2025-12-01",
+        "fim": "2025-12-31"
+      },
+      "regime": "caixa",
+      "resumo": {
+        "total_entradas": 8500.00,
+        "total_saidas": 6200.00,
+        "saldo_periodo": 2300.00,
+        "saldo_acumulado_final": 2300.00
+      },
+      "fluxo": [
+        {
+          "periodo": "2025-12-01",
+          "entradas": 1200.00,
+          "saidas": 800.00,
+          "saldo_periodo": 400.00,
+          "saldo_acumulado": 400.00,
+          "detalhes_entradas": [
+            {
+              "tipo": "CR Parcela",
+              "descricao": "CR-000015 - Parcela 1",
+              "valor": 600.00,
+              "data": "2025-12-01",
+              "referencia": {
+                "conta_id": "hij456",
+                "numero": "CR-000015",
+                "parcela": 1
+              }
+            },
+            {
+              "tipo": "CR Parcela",
+              "descricao": "CR-000016 - Parcela 1",
+              "valor": 600.00,
+              "data": "2025-12-01",
+              "referencia": {
+                "conta_id": "klm789",
+                "numero": "CR-000016",
+                "parcela": 1
+              }
+            }
+          ],
+          "detalhes_saidas": [
+            {
+              "tipo": "CP Parcela",
+              "descricao": "CP-000008 - Parcela 1",
+              "valor": 400.00,
+              "data": "2025-12-01",
+              "referencia": {
+                "conta_id": "nop012",
+                "numero": "CP-000008",
+                "parcela": 1
+              }
+            },
+            {
+              "tipo": "CP Parcela",
+              "descricao": "CP-000009 - Parcela 1",
+              "valor": 400.00,
+              "data": "2025-12-01",
+              "referencia": {
+                "conta_id": "qrs345",
+                "numero": "CP-000009",
+                "parcela": 1
+              }
+            }
+          ]
+        },
+        {
+          "periodo": "2025-12-15",
+          "entradas": 3500.00,
+          "saidas": 2400.00,
+          "saldo_periodo": 1100.00,
+          "saldo_acumulado": 1500.00,
+          "detalhes_entradas": [
+            {
+              "tipo": "CR Parcela",
+              "descricao": "CR-000017 - Parcela 2",
+              "valor": 1500.00,
+              "data": "2025-12-15",
+              "referencia": {
+                "conta_id": "tuv678",
+                "numero": "CR-000017",
+                "parcela": 2
+              }
+            },
+            {
+              "tipo": "CR Parcela",
+              "descricao": "CR-000018 - Parcela 1",
+              "valor": 2000.00,
+              "data": "2025-12-15",
+              "referencia": {
+                "conta_id": "wxy901",
+                "numero": "CR-000018",
+                "parcela": 1
+              }
+            }
+          ],
+          "detalhes_saidas": [
+            {
+              "tipo": "CP Parcela",
+              "descricao": "CP-000010 - Parcela 2",
+              "valor": 1200.00,
+              "data": "2025-12-15",
+              "referencia": {
+                "conta_id": "zab234",
+                "numero": "CP-000010",
+                "parcela": 2
+              }
+            },
+            {
+              "tipo": "CP Parcela",
+              "descricao": "CP-000011 - Parcela 1",
+              "valor": 1200.00,
+              "data": "2025-12-15",
+              "referencia": {
+                "conta_id": "cde567",
+                "numero": "CP-000011",
+                "parcela": 1
+              }
+            }
+          ]
+        },
+        {
+          "periodo": "2025-12-30",
+          "entradas": 3800.00,
+          "saidas": 3000.00,
+          "saldo_periodo": 800.00,
+          "saldo_acumulado": 2300.00,
+          "detalhes_entradas": [
+            {
+              "tipo": "CR Parcela",
+              "descricao": "CR-000019 - Parcela 3",
+              "valor": 1800.00,
+              "data": "2025-12-30",
+              "referencia": {
+                "conta_id": "fgh890",
+                "numero": "CR-000019",
+                "parcela": 3
+              }
+            },
+            {
+              "tipo": "CR Parcela",
+              "descricao": "CR-000020 - Parcela 1",
+              "valor": 2000.00,
+              "data": "2025-12-30",
+              "referencia": {
+                "conta_id": "ijk123",
+                "numero": "CR-000020",
+                "parcela": 1
+              }
+            }
+          ],
+          "detalhes_saidas": [
+            {
+              "tipo": "CP Parcela",
+              "descricao": "CP-000012 - Parcela 1",
+              "valor": 1500.00,
+              "data": "2025-12-30",
+              "referencia": {
+                "conta_id": "lmn456",
+                "numero": "CP-000012",
+                "parcela": 1
+              }
+            },
+            {
+              "tipo": "CP Parcela",
+              "descricao": "CP-000013 - Parcela 2",
+              "valor": 1500.00,
+              "data": "2025-12-30",
+              "referencia": {
+                "conta_id": "opq789",
+                "numero": "CP-000013",
+                "parcela": 2
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "nota_duplicidade": {
+    "titulo": "Como Evitamos Duplicidade entre Vendas e Contas a Receber",
+    "explicacao": "No sistema Emily Kids ERP, cada venda automaticamente gera contas a receber correspondentes. Portanto, para evitar duplicidade no fluxo de caixa:\n\n1. VENDAS NÃO SÃO CONTABILIZADAS: O endpoint de fluxo de caixa ignora completamente a collection 'vendas'. Isso evita contar o mesmo valor duas vezes.\n\n2. APENAS CONTAS A RECEBER: Contabilizamos apenas as parcelas das contas a receber, que representam o desmembramento financeiro real da venda.\n\n3. REGIME DE CAIXA: Considera apenas parcelas com status='recebido' e data_recebimento dentro do período.\n\n4. REGIME DE COMPETÊNCIA: Considera todas as parcelas (pendentes ou recebidas) pela data_vencimento.\n\n5. VENDA À VISTA: Mesmo vendas à vista geram contas a receber (com 1 parcela). Portanto, são capturadas corretamente pelas contas a receber.\n\nEsta abordagem garante:\n- Nenhuma duplicidade\n- Rastreabilidade completa (cada entrada tem referência à conta e parcela)\n- Suporte a ambos os regimes contábeis\n- Dados precisos para análise financeira"
+  }
+}
