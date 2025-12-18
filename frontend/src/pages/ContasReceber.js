@@ -163,9 +163,26 @@ const ContasReceber = () => {
   const handleReceberParcela = async (e) => {
     e.preventDefault();
     
+    // Evitar duplo clique
+    if (recebendo) {
+      toast.info('Processando recebimento...');
+      return;
+    }
+    
+    setRecebendo(true);
+    
     try {
       const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
+      
+      // Gerar ou reutilizar Idempotency-Key
+      if (!idempotencyKeyRef.current) {
+        idempotencyKeyRef.current = generateIdempotencyKey();
+      }
+      
+      const headers = { 
+        Authorization: `Bearer ${token}`,
+        'Idempotency-Key': idempotencyKeyRef.current
+      };
 
       const dados = {
         ...formReceber,
@@ -183,10 +200,24 @@ const ContasReceber = () => {
       toast.success('Parcela recebida com sucesso!');
       setModalReceber({ open: false, conta: null, parcela: null });
       resetFormReceber();
+      idempotencyKeyRef.current = null; // Limpar key após sucesso
       fetchData();
     } catch (error) {
-      console.error('Erro ao receber parcela:', error);
-      toast.error(error.response?.data?.detail || 'Erro ao receber parcela');
+      const parsed = parseError(error);
+      
+      // Tratar erro 409 (parcela já recebida ou conflito)
+      if (parsed.code === ERROR_CODES.ALREADY_PAID || parsed.code === ERROR_CODES.CONFLICT) {
+        toast.warning(parsed.message || 'Esta parcela já foi recebida');
+        setModalReceber({ open: false, conta: null, parcela: null });
+        resetFormReceber();
+        idempotencyKeyRef.current = null;
+        fetchData(); // Atualizar lista
+      } else {
+        console.error('Erro ao receber parcela:', error);
+        toast.error(parsed.message || 'Erro ao receber parcela');
+      }
+    } finally {
+      setRecebendo(false);
     }
   };
 
