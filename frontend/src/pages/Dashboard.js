@@ -323,6 +323,102 @@ const Dashboard = () => {
         </Card>
       )}
 
+      {/* MELHORIA: Alertas Financeiros */}
+      {alertasFinanceiros && (
+        <Card className="mb-6" data-testid="alertas-financeiros-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Wallet className="text-blue-600" size={24} />
+              Alertas Financeiros
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* KPIs Financeiros */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock size={18} className="text-yellow-600" />
+                  <span className="text-sm text-yellow-700">A Receber (7 dias)</span>
+                </div>
+                <p className="text-xl font-bold text-yellow-800">
+                  R$ {(alertasFinanceiros.resumo?.total_a_receber_vencendo || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertTriangle size={18} className="text-red-600" />
+                  <span className="text-sm text-red-700">Receber Vencido</span>
+                </div>
+                <p className="text-xl font-bold text-red-800">
+                  R$ {(alertasFinanceiros.resumo?.total_a_receber_vencido || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock size={18} className="text-orange-600" />
+                  <span className="text-sm text-orange-700">A Pagar (7 dias)</span>
+                </div>
+                <p className="text-xl font-bold text-orange-800">
+                  R$ {(alertasFinanceiros.resumo?.total_a_pagar_vencendo || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <UserX size={18} className="text-purple-600" />
+                  <span className="text-sm text-purple-700">Inadimplentes</span>
+                </div>
+                <p className="text-xl font-bold text-purple-800">
+                  {alertasFinanceiros.resumo?.clientes_inadimplentes || 0}
+                </p>
+              </div>
+            </div>
+            
+            {/* Detalhes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Parcelas a Receber Vencidas */}
+              {alertasFinanceiros.contas_a_receber?.vencidas?.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-red-700 mb-2 flex items-center gap-2">
+                    <AlertTriangle size={16} />
+                    Parcelas Vencidas ({alertasFinanceiros.contas_a_receber.vencidas.length})
+                  </h4>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {alertasFinanceiros.contas_a_receber.vencidas.slice(0, 5).map((p, idx) => (
+                      <div key={idx} className="flex justify-between text-sm">
+                        <span className="text-gray-700 truncate">{p.cliente}</span>
+                        <span className="text-red-600 font-medium whitespace-nowrap ml-2">
+                          R$ {p.valor?.toFixed(2)} ({p.dias_atraso}d)
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Parcelas a Vencer */}
+              {alertasFinanceiros.contas_a_receber?.a_vencer?.length > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-yellow-700 mb-2 flex items-center gap-2">
+                    <Clock size={16} />
+                    A Vencer em 7 dias ({alertasFinanceiros.contas_a_receber.a_vencer.length})
+                  </h4>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {alertasFinanceiros.contas_a_receber.a_vencer.slice(0, 5).map((p, idx) => (
+                      <div key={idx} className="flex justify-between text-sm">
+                        <span className="text-gray-700 truncate">{p.cliente}</span>
+                        <span className="text-yellow-600 font-medium whitespace-nowrap ml-2">
+                          R$ {p.valor?.toFixed(2)} ({p.dias_para_vencer}d)
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Vendas por Período */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card data-testid="vendas-chart-card">
