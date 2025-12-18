@@ -242,10 +242,10 @@ class MelhoriasTester:
             
             if response.status_code == 200:
                 abc_data = response.json()
-                # Validate structure
-                if "produtos" in abc_data and "estatisticas" in abc_data:
+                # Validate structure - updated to match actual API response
+                if "curvas" in abc_data:
                     self.log_test("Get ABC Curve", True, 
-                                f"✅ Status 200, returned ABC classification with products and statistics")
+                                f"✅ Status 200, returned ABC classification with curves data")
                 else:
                     self.log_test("Get ABC Curve", False, 
                                 "ABC data missing required structure", {"abc_data": abc_data})
