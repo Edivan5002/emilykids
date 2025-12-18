@@ -63,12 +63,22 @@ const Clientes = () => {
     setPaginaAtual(1); // Resetar página ao filtrar
   }, [searchTerm, statusFilter, clientes]);
 
+  // Helper para extrair dados compatível com formato antigo e novo da API
+  const extractData = (response) => {
+    const data = response?.data;
+    if (data && data.ok !== undefined && Array.isArray(data.data)) return data.data;
+    if (data && Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data)) return data;
+    return [];
+  };
+
   const fetchClientes = async () => {
     setLoading(true);
     try {
       const response = await axios.get(`${API}/clientes?incluir_inativos=true&limit=0`);
-      setClientes(response.data);
-      setFilteredClientes(response.data);
+      const clientesData = extractData(response);
+      setClientes(clientesData);
+      setFilteredClientes(clientesData);
     } catch (error) {
       toast.error('Erro ao carregar clientes. Por favor, tente novamente.');
     } finally {
