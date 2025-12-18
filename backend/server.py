@@ -10620,7 +10620,7 @@ async def listar_comissoes(
     total_pendente = sum(c["valor_comissao"] for c in comissoes if c["status"] == "pendente")
     total_pago = sum(c["valor_comissao"] for c in comissoes if c["status"] == "pago")
     
-    return api_list(comissoes, page, limit, total, extra={
+    return api_list(comissoes, page=page, limit=limit, total=total, extra_meta={
         "total_pendente": total_pendente,
         "total_pago": total_pago
     })
