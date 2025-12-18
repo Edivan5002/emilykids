@@ -1104,6 +1104,53 @@ class HistoricoPreco(BaseModel):
     usuario_nome: str
     data_alteracao: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     motivo: Optional[str] = None
+    tipo: str = "custo"  # MELHORIA 7: "custo" ou "venda" para diferenciar
+
+# MELHORIA 3: Modelo de Comissão de Vendedor
+class ComissaoVendedor(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    vendedor_id: str
+    vendedor_nome: str
+    venda_id: str
+    venda_numero: str
+    cliente_nome: str
+    data_venda: str
+    valor_venda: float
+    percentual_comissao: float
+    valor_comissao: float
+    status: str = "pendente"  # pendente, pago, cancelado
+    data_pagamento: Optional[str] = None
+    observacao: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+# MELHORIA 9: Modelo de Crédito do Cliente
+class CreditoCliente(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    cliente_id: str
+    valor: float
+    origem: str  # devolucao, bonificacao, ajuste
+    origem_id: Optional[str] = None  # ID da venda/devolução que gerou o crédito
+    descricao: str
+    status: str = "disponivel"  # disponivel, utilizado, expirado
+    data_criacao: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    data_utilizacao: Optional[str] = None
+    venda_utilizacao_id: Optional[str] = None
+    data_expiracao: Optional[str] = None  # Créditos podem expirar
+
+# MELHORIA 8: Modelo de Pedido de Compra (Orçamento para Fornecedor)
+class PedidoCompra(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    numero: str
+    fornecedor_id: str
+    itens: List[dict]  # [{"produto_id": "", "quantidade": 0, "preco_unitario": 0}]
+    status: str = "rascunho"  # rascunho, enviado, parcial, recebido, cancelado
+    valor_total: float = 0
+    data_emissao: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    data_previsao_entrega: Optional[str] = None
+    notas_fiscais_vinculadas: List[str] = []  # IDs das NFs que atenderam este pedido
+    observacoes: Optional[str] = None
+    usuario_id: str = ""
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class NotaFiscal(BaseModel):
     model_config = ConfigDict(extra="ignore")
