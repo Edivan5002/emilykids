@@ -9628,12 +9628,16 @@ async def receber_parcela(
     if parcela["status"] == "recebido":
         raise HTTPException(status_code=400, detail="Parcela já foi recebida")
     
-    # Calcular valor final
-    valor_final = dados.valor_recebido + dados.juros - dados.desconto
+    # Calcular valor final usando helper padronizado
+    valor_final = calc_valor_final_parcela_receber(
+        valor_base=dados.valor_recebido,
+        juros=dados.juros,
+        desconto=dados.desconto
+    )
     
-    # Atualizar parcela
+    # Atualizar parcela com status padronizado
     update_parcela = {
-        f"parcelas.{parcela_idx}.status": "recebido",
+        f"parcelas.{parcela_idx}.status": "recebido",  # STATUS_PARCELA_RECEBER
         f"parcelas.{parcela_idx}.data_recebimento": dados.data_recebimento,
         f"parcelas.{parcela_idx}.valor_recebido": dados.valor_recebido,
         f"parcelas.{parcela_idx}.valor_juros": dados.juros,
