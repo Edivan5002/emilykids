@@ -11936,7 +11936,7 @@ async def admin_smoke_test(
     
     # 1) Testar geração de número sequencial
     try:
-        num = await get_next_sequence_number("smoke_test")
+        num = await get_next_sequence("smoke_test")
         checks.append({"nome": "contador_sequencial", "ok": True, "detalhe": f"Gerou: {num}"})
     except Exception as e:
         checks.append({"nome": "contador_sequencial", "ok": False, "detalhe": str(e)[:50]})
