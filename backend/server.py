@@ -6032,7 +6032,8 @@ async def get_movimentacoes(
 async def check_disponibilidade_estoque(request: CheckEstoqueRequest, current_user: dict = Depends(get_current_user)):
     """
     Verifica a disponibilidade de estoque de um produto.
-    Calcula: estoque_disponível = estoque_atual - estoque_reservado (orçamentos abertos)
+    Calcula: estoque_disponível = estoque_atual - estoque_reservado
+    MELHORIA 1: Agora usa o campo estoque_reservado direto do produto
     """
     # Buscar produto
     produto = await db.produtos.find_one({"id": request.produto_id}, {"_id": 0})
@@ -6040,14 +6041,7 @@ async def check_disponibilidade_estoque(request: CheckEstoqueRequest, current_us
         raise HTTPException(status_code=404, detail="Produto não encontrado")
     
     estoque_atual = produto.get("estoque_atual", 0)
-    
-    # Calcular estoque reservado (orçamentos com status "aberto")
-    orcamentos_abertos = await db.orcamentos.find({"status": "aberto"}, {"_id": 0}).to_list(1000)
-    estoque_reservado = 0
-    for orcamento in orcamentos_abertos:
-        for item in orcamento.get("itens", []):
-            if item.get("produto_id") == request.produto_id:
-                estoque_reservado += item.get("quantidade", 0)
+    estoque_reservado = produto.get("estoque_reservado", 0)  # MELHORIA 1: Campo direto
     
     # Calcular estoque disponível
     estoque_disponivel = estoque_atual - estoque_reservado
