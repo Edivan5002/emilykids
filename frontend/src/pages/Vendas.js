@@ -487,7 +487,9 @@ const Vendas = () => {
   };
 
   // FILTROS E CÁLCULOS
-  const vendasFiltradas = vendas.filter(v => {
+  // Garantir que vendas seja sempre um array
+  const vendasArray = Array.isArray(vendas) ? vendas : [];
+  const vendasFiltradas = vendasArray.filter(v => {
     // Busca
     if (filtros.busca) {
       const busca = filtros.busca.toLowerCase();
