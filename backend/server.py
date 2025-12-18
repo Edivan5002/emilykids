@@ -2733,6 +2733,26 @@ async def root():
 async def login(login_data: UserLogin, request: Request):
     """Login com proteção contra brute force e logging detalhado"""
     
+    # 6) Rate limit por IP + email
+    client_ip = request.client.host if request.client else "0.0.0.0"
+    rate_limit_key = f"{client_ip}:{login_data.email}"
+    
+    if login_rate_limiter.is_rate_limited(rate_limit_key):
+        remaining = login_rate_limiter.get_remaining_time(rate_limit_key)
+        await log_action(
+            ip=client_ip,
+            user_id="",
+            user_nome="Desconhecido",
+            tela="login",
+            acao="tentativa_suspeita",
+            severidade="SECURITY",
+            detalhes={"motivo": "Rate limit excedido", "tempo_restante": remaining}
+        )
+        raise HTTPException(
+            status_code=429,
+            detail=f"Muitas tentativas de login. Aguarde {remaining // 60} minutos e {remaining % 60} segundos."
+        )
+    
     # Buscar usuário
     user = await db.users.find_one({"email": login_data.email}, {"_id": 0})
     
