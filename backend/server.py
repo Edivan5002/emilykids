@@ -7683,8 +7683,18 @@ async def converter_orcamento_venda(
             # Não falhar a venda se houver erro ao criar conta a receber
             print(f"Aviso: Erro ao criar conta a receber para venda {venda.id}: {str(e)}")
     
-    # Registrar movimentações (já está reservado, então não precisa descontar novamente do estoque)
+    # MELHORIA 1: Liberar reserva e baixar estoque real ao converter
+    # O estoque estava reservado, agora baixamos do estoque_atual e liberamos a reserva
+    await liberar_estoque_orcamento(orcamento_id, orcamento["itens"])
+    
+    # Registrar movimentações e baixar estoque real
     for item in venda.itens:
+        # Baixar estoque real
+        await db.produtos.update_one(
+            {"id": item["produto_id"]},
+            {"$inc": {"estoque_atual": -item["quantidade"]}}
+        )
+        
         movimentacao = MovimentacaoEstoque(
             produto_id=item["produto_id"],
             tipo="saida",
