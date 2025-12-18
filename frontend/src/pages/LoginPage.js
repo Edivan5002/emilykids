@@ -185,54 +185,153 @@ const LoginPage = () => {
                 </AlertDescription>
               </Alert>
             )}
+            
+            {/* Alerta de rate limit */}
+            {rateLimited && (
+              <Alert className="mb-4 border-red-500 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">
+                  Muitas tentativas. Aguarde {rateLimitTimer} segundos.
+                </AlertDescription>
+              </Alert>
+            )}
 
             <form onSubmit={handleLogin} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="login-email" className="text-sm font-semibold">
-                  Email
-                </Label>
-                <Input
-                  id="login-email"
-                  data-testid="login-email-input"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={loginData.email}
-                  onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                  required
-                  disabled={loading}
-                  className="h-11"
-                  autoComplete="email"
-                />
-              </div>
+              {/* Campos de email e senha (ocultos se 2FA ativo) */}
+              {!requires2FA ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email" className="text-sm font-semibold">
+                      Email
+                    </Label>
+                    <Input
+                      id="login-email"
+                      data-testid="login-email-input"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={loginData.email}
+                      onChange={(e) => handleCredentialChange('email', e.target.value)}
+                      required
+                      disabled={loading || rateLimited}
+                      className="h-11"
+                      autoComplete="email"
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="login-senha" className="text-sm font-semibold">
-                  Senha
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="login-senha"
-                    data-testid="login-senha-input"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={loginData.senha}
-                    onChange={(e) => setLoginData({ ...loginData, senha: e.target.value })}
-                    required
-                    disabled={loading}
-                    className="h-11 pr-10"
-                    autoComplete="current-password"
-                    minLength={6}
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="login-senha" className="text-sm font-semibold">
+                      Senha
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="login-senha"
+                        data-testid="login-senha-input"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={loginData.senha}
+                        onChange={(e) => handleCredentialChange('senha', e.target.value)}
+                        required
+                        disabled={loading || rateLimited}
+                        className="h-11 pr-10"
+                        autoComplete="current-password"
+                        minLength={6}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        tabIndex={-1}
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Campos de 2FA */
+                <div className="space-y-4">
+                  <Alert className="border-blue-500 bg-blue-50">
+                    <Smartphone className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-800">
+                      Autenticação de dois fatores habilitada para <strong>{loginData.email}</strong>
+                    </AlertDescription>
+                  </Alert>
+                  
+                  {!useBackupCode ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="totp-code" className="text-sm font-semibold flex items-center gap-2">
+                        <Smartphone size={16} />
+                        Código do Autenticador
+                      </Label>
+                      <Input
+                        id="totp-code"
+                        data-testid="totp-code-input"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={6}
+                        placeholder="000000"
+                        value={totpCode}
+                        onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        required
+                        disabled={loading || rateLimited}
+                        className="h-11 text-center text-2xl tracking-widest font-mono"
+                        autoComplete="one-time-code"
+                        autoFocus
+                      />
+                      <p className="text-xs text-gray-500">
+                        Digite o código de 6 dígitos do seu app autenticador
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label htmlFor="backup-code" className="text-sm font-semibold flex items-center gap-2">
+                        <Key size={16} />
+                        Código de Backup
+                      </Label>
+                      <Input
+                        id="backup-code"
+                        data-testid="backup-code-input"
+                        type="text"
+                        placeholder="XXXXXXXX"
+                        value={backupCode}
+                        onChange={(e) => setBackupCode(e.target.value.toUpperCase())}
+                        required
+                        disabled={loading || rateLimited}
+                        className="h-11 text-center text-lg tracking-wider font-mono"
+                        autoFocus
+                      />
+                      <p className="text-xs text-gray-500">
+                        Digite um dos códigos de backup que você salvou
+                      </p>
+                    </div>
+                  )}
+                  
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    tabIndex={-1}
+                    onClick={() => {
+                      setUseBackupCode(!useBackupCode);
+                      setTotpCode('');
+                      setBackupCode('');
+                    }}
+                    className="text-sm text-blue-600 hover:underline"
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {useBackupCode ? 'Usar código do autenticador' : 'Usar código de backup'}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRequires2FA(false);
+                      setTotpCode('');
+                      setBackupCode('');
+                    }}
+                    className="block text-sm text-gray-500 hover:underline"
+                  >
+                    ← Voltar para login
                   </button>
                 </div>
-              </div>
+              )}
 
               <Button
                 type="submit"
