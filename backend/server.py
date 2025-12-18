@@ -875,6 +875,10 @@ class Cliente(BaseModel):
     data_ultima_compra: Optional[str] = None
     data_ultimo_pagamento: Optional[str] = None
     
+    # MELHORIA 9: Créditos de devolução
+    saldo_credito: float = 0  # Crédito disponível de devoluções
+    historico_creditos: Optional[List[dict]] = None  # [{"data": "...", "valor": 100, "origem": "devolucao", "utilizado": False}]
+    
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class ClienteCreate(BaseModel):
