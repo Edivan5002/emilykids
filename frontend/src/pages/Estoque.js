@@ -71,16 +71,25 @@ const Estoque = () => {
     setPaginaVisaoGeral(1);
   }, [filtros]);
 
+  // Helper para extrair dados compatível com formato antigo e novo da API
+  const extractData = (response) => {
+    const data = response?.data;
+    if (data && data.ok !== undefined && Array.isArray(data.data)) return data.data;
+    if (data && Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data)) return data;
+    return [];
+  };
+
   const fetchData = async () => {
     try {
       // Sempre carregar produtos - IMPORTANTE: limit=0 para pegar todos os produtos
       const prodRes = await axios.get(`${API}/produtos?limit=0`);
-      setProdutos(prodRes.data);
+      setProdutos(extractData(prodRes));
       
       // Tentar carregar movimentações
       try {
         const movRes = await axios.get(`${API}/estoque/movimentacoes?limit=0`);
-        setMovimentacoes(movRes.data);
+        setMovimentacoes(extractData(movRes));
       } catch (err) {
         console.log('Sem permissão para movimentações');
         setMovimentacoes([]);
@@ -89,7 +98,9 @@ const Estoque = () => {
       // Tentar carregar alertas
       try {
         const alertRes = await axios.get(`${API}/estoque/alertas?t=${Date.now()}`);
-        setAlertas(alertRes.data);
+        // Alertas retornam objeto, não array
+        const alertData = alertRes.data?.data || alertRes.data || {};
+        setAlertas(alertData);
       } catch (err) {
         console.log('Sem permissão para alertas');
         setAlertas({});
@@ -98,7 +109,7 @@ const Estoque = () => {
       // Tentar carregar marcas
       try {
         const marcasRes = await axios.get(`${API}/marcas`);
-        setMarcas(marcasRes.data);
+        setMarcas(extractData(marcasRes));
       } catch (err) {
         console.log('Sem permissão para marcas');
         setMarcas([]);
@@ -107,8 +118,7 @@ const Estoque = () => {
       // Tentar carregar categorias
       try {
         const catRes = await axios.get(`${API}/categorias?limit=0`);
-        const categoriasData = catRes.data?.data || catRes.data || [];
-        setCategorias(categoriasData);
+        setCategorias(extractData(catRes));
       } catch (err) {
         console.log('Sem permissão para categorias');
         setCategorias([]);
@@ -117,8 +127,7 @@ const Estoque = () => {
       // Tentar carregar subcategorias
       try {
         const subcatRes = await axios.get(`${API}/subcategorias?limit=0`);
-        const subcategoriasData = subcatRes.data?.data || subcatRes.data || [];
-        setSubcategorias(subcategoriasData);
+        setSubcategorias(extractData(subcatRes));
       } catch (err) {
         console.log('Sem permissão para subcategorias');
         setSubcategorias([]);
@@ -131,10 +140,11 @@ const Estoque = () => {
   const fetchInventarios = async () => {
     try {
       const response = await axios.get(`${API}/estoque/inventario?limit=0`);
-      setInventarios(response.data);
+      const inventariosData = extractData(response);
+      setInventarios(inventariosData);
       
       // Verificar se há inventário em andamento
-      const inventarioAberto = response.data.find(inv => inv.status === 'em_andamento');
+      const inventarioAberto = inventariosData.find(inv => inv.status === 'em_andamento');
       if (inventarioAberto) {
         setInventarioAtivo(inventarioAberto);
       } else {
