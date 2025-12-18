@@ -17,6 +17,65 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# ==================== HELPERS - ETAPA 6 ====================
+
+def iso_utc_now() -> str:
+    """Retorna timestamp ISO 8601 UTC consistente"""
+    return datetime.now(timezone.utc).isoformat()
+
+def parse_date_only(iso_str: str) -> str:
+    """
+    Extrai apenas a data (YYYY-MM-DD) de uma string ISO.
+    Útil para agrupamentos por dia no Fluxo de Caixa.
+    """
+    if not iso_str:
+        return None
+    # Formato ISO: 2024-01-15T10:30:00+00:00 ou 2024-01-15
+    return iso_str[:10]
+
+def calc_valor_final_parcela_pagar(
+    valor_base: float,
+    juros: float = 0,
+    multa: float = 0,
+    desconto: float = 0
+) -> float:
+    """
+    Calcula valor final de uma parcela a PAGAR.
+    Formula: valor_base + juros + multa - desconto
+    """
+    return round(valor_base + juros + multa - desconto, 2)
+
+def calc_valor_final_parcela_receber(
+    valor_base: float,
+    juros: float = 0,
+    desconto: float = 0
+) -> float:
+    """
+    Calcula valor final de uma parcela a RECEBER.
+    Formula: valor_base + juros - desconto
+    """
+    return round(valor_base + juros - desconto, 2)
+
+def calc_valor_liquido_conta(
+    valor_total: float,
+    juros: float = 0,
+    multa: float = 0,
+    desconto: float = 0
+) -> float:
+    """
+    Calcula valor líquido de uma conta (pagar ou receber).
+    Formula: valor_total + juros + multa - desconto
+    """
+    return round(valor_total + juros + multa - desconto, 2)
+
+# Status oficiais para validação
+STATUS_CONTA_RECEBER = ["pendente", "recebido_parcial", "recebido_total", "vencido", "cancelado"]
+STATUS_PARCELA_RECEBER = ["pendente", "recebido", "vencido", "cancelado"]
+STATUS_CONTA_PAGAR = ["pendente", "pago_parcial", "pago_total", "vencido", "cancelado"]
+STATUS_PARCELA_PAGAR = ["pendente", "pago", "vencido", "cancelado"]
+
+# ==================== FIM HELPERS ====================
+
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
