@@ -56,6 +56,12 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     
+    // Verificar rate limit
+    if (rateLimited) {
+      toast.error(`Aguarde ${rateLimitTimer} segundos antes de tentar novamente`);
+      return;
+    }
+    
     // Validação frontend
     if (!loginData.email || !loginData.senha) {
       toast.error('Preencha todos os campos');
@@ -66,17 +72,59 @@ const LoginPage = () => {
       toast.error('Senha deve ter pelo menos 6 caracteres');
       return;
     }
+    
+    // Validação 2FA se necessário
+    if (requires2FA) {
+      if (useBackupCode && !backupCode.trim()) {
+        toast.error('Digite o código de backup');
+        return;
+      }
+      if (!useBackupCode && (!totpCode || totpCode.length !== 6)) {
+        toast.error('Digite o código de 6 dígitos do autenticador');
+        return;
+      }
+    }
 
     setLoading(true);
     try {
-      await login(loginData.email, loginData.senha);
+      // Enviar login com ou sem 2FA
+      const code2FA = requires2FA ? (useBackupCode ? null : totpCode) : null;
+      const backup = requires2FA && useBackupCode ? backupCode : null;
+      
+      await login(loginData.email, loginData.senha, code2FA, backup);
       toast.success('Login realizado com sucesso!');
       setLoginAttempts(0);
+      setRequires2FA(false);
+      setTotpCode('');
+      setBackupCode('');
       navigate('/dashboard');
     } catch (error) {
-      const detail = error.response?.data?.detail || 'Erro ao fazer login';
+      const parsed = parseError(error);
       
       setLoginAttempts(prev => prev + 1);
+      
+      // Tratamento específico por código de erro
+      if (parsed.code === ERROR_CODES.TWO_FACTOR_REQUIRED) {
+        setRequires2FA(true);
+        toast.info('Digite o código de autenticação de dois fatores');
+        return;
+      }
+      
+      if (parsed.code === ERROR_CODES.TWO_FACTOR_INVALID) {
+        toast.error('Código 2FA inválido ou expirado. Tente novamente.');
+        setTotpCode('');
+        setBackupCode('');
+        return;
+      }
+      
+      if (parsed.code === ERROR_CODES.RATE_LIMITED) {
+        setRateLimited(true);
+        setRateLimitTimer(30); // 30 segundos
+        toast.error('Muitas tentativas. Aguarde 30 segundos.');
+        return;
+      }
+      
+      const detail = parsed.message;
       
       // Mensagens específicas de erro
       if (detail.includes('bloqueada')) {
@@ -85,7 +133,7 @@ const LoginPage = () => {
         toast.error('Sua conta está inativa. Entre em contato com o administrador.');
       } else if (detail.includes('expirada')) {
         toast.error('Sua senha expirou. Entre em contato com o administrador.');
-      } else if (detail.includes('Credenciais inválidas')) {
+      } else if (detail.includes('Credenciais inválidas') || detail.includes('inválidas')) {
         const tentativasRestantes = 5 - loginAttempts;
         if (tentativasRestantes > 0) {
           toast.error(`Credenciais inválidas. ${tentativasRestantes} tentativa(s) restante(s).`);
@@ -97,6 +145,16 @@ const LoginPage = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // Resetar 2FA ao mudar email/senha
+  const handleCredentialChange = (field, value) => {
+    setLoginData({ ...loginData, [field]: value });
+    if (requires2FA) {
+      setRequires2FA(false);
+      setTotpCode('');
+      setBackupCode('');
     }
   };
 
