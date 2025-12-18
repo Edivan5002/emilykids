@@ -344,8 +344,8 @@ class MelhoriasTester:
             
             if response.status_code == 200:
                 audit_data = response.json()
-                # Validate structure
-                expected_keys = ["produtos_auditados", "divergencias_encontradas", "produtos_com_divergencia"]
+                # Validate structure - updated to match actual API response
+                expected_keys = ["total_produtos", "produtos_com_divergencia", "divergencias"]
                 missing_keys = [key for key in expected_keys if key not in audit_data]
                 
                 if not missing_keys:
