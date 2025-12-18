@@ -441,7 +441,7 @@ class MelhoriasTester:
         
         # Test 10a: Dashboard loads
         try:
-            response = requests.get(f"{self.base_url}/dashboard", headers=self.get_headers())
+            response = requests.get(f"{self.base_url}/relatorios/dashboard", headers=self.get_headers())
             
             if response.status_code == 200:
                 dashboard = response.json()
