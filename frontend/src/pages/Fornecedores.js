@@ -72,12 +72,22 @@ const Fornecedores = () => {
     setPaginaAtual(1); // Resetar página ao filtrar
   }, [searchTerm, statusFilter, fornecedores]);
 
+  // Helper para extrair dados compatível com formato antigo e novo da API
+  const extractData = (response) => {
+    const data = response?.data;
+    if (data && data.ok !== undefined && Array.isArray(data.data)) return data.data;
+    if (data && Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data)) return data;
+    return [];
+  };
+
   const fetchFornecedores = async () => {
     setLoading(true);
     try {
       const response = await axios.get(`${API}/fornecedores?incluir_inativos=true&limit=0`);
-      setFornecedores(response.data);
-      setFilteredFornecedores(response.data);
+      const fornecedoresData = extractData(response);
+      setFornecedores(fornecedoresData);
+      setFilteredFornecedores(fornecedoresData);
     } catch (error) {
       toast.error('Erro ao carregar fornecedores. Por favor, tente novamente.');
     } finally {
