@@ -1423,12 +1423,13 @@ class ContaPagarUpdate(BaseModel):
     projeto: Optional[str] = None
 
 class PagamentoParcela(BaseModel):
-    numero_parcela: int
-    valor_pago: float
+    """Modelo de pagamento de parcela com validações ETAPA 12."""
+    numero_parcela: int = Field(..., ge=1)
+    valor_pago: float = Field(..., ge=0, description="Valor pago não pode ser negativo")
     data_pagamento: str
-    juros: float = 0
-    multa: float = 0
-    desconto: float = 0
+    juros: float = Field(default=0, ge=0)
+    multa: float = Field(default=0, ge=0)
+    desconto: float = Field(default=0, ge=0)
     forma_pagamento: Optional[str] = None
     comprovante: Optional[str] = None
     observacao: Optional[str] = None
