@@ -178,6 +178,13 @@ const Vendas = () => {
   // Paginação
   const [paginaAtual, setPaginaAtual] = useState(1);
   const ITENS_POR_PAGINA = 20;
+  
+  // Ref para Idempotency-Key (evita duplicação de venda)
+  const idempotencyKeyRef = useRef(null);
+  const [criandoVenda, setCriandoVenda] = useState(false);
+  
+  // Estado para exibir erro de estoque
+  const [erroEstoque, setErroEstoque] = useState(null);
 
   // Filtros
   const [filtros, setFiltros] = useState({
