@@ -1138,6 +1138,22 @@ const Vendas = () => {
             <DialogTitle>Nova Venda</DialogTitle>
           </DialogHeader>
           
+          {/* Alerta de erro de estoque */}
+          {erroEstoque && (
+            <div className="bg-red-50 border border-red-300 rounded-lg p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="text-red-600 mt-0.5 flex-shrink-0" size={20} />
+                <div>
+                  <p className="font-semibold text-red-800">Estoque Insuficiente</p>
+                  <p className="text-sm text-red-700 mt-1">{erroEstoque}</p>
+                  <p className="text-xs text-red-600 mt-2">
+                    Ajuste as quantidades ou remova itens com estoque insuficiente.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <Tabs defaultValue="dados" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="dados">Dados da Venda</TabsTrigger>
