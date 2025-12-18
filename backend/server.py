@@ -1700,9 +1700,21 @@ async def send_password_reset_email(email: str, token: str, user_name: str):
     return True
 
 def create_access_token(data: dict):
+    """
+    5) JWT Security: Inclui iat e sub sempre.
+    """
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    # Garantir que sub existe e é string
+    if "sub" not in to_encode or not isinstance(to_encode.get("sub"), str):
+        raise ValueError("Token deve conter 'sub' como string")
+    
+    to_encode.update({
+        "exp": expire,
+        "iat": now  # Issued at timestamp
+    })
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return encoded_jwt
 
