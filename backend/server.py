@@ -10088,10 +10088,12 @@ async def atualizar_status_conta_receber(conta_id: str):
     )
 
 # Listar contas a receber
-@api_router.get("/contas-receber")
+@api_router.get("/contas-receber", tags=["Financeiro"], summary="Lista contas a receber")
 async def listar_contas_receber(
     page: int = 1,
     limit: int = 20,
+    sort: str = "-created_at",
+    q: str = None,
     data_inicio: str = None,
     data_fim: str = None,
     cliente_id: str = None,
@@ -10102,9 +10104,23 @@ async def listar_contas_receber(
     current_user: dict = Depends(require_permission("contas_receber", "ler"))
 ):
     """
-    Lista contas a receber com filtros avançados
+    Lista contas a receber com filtros avançados e paginação.
+    ETAPA 13: Resposta padronizada com api_list, projeção enxuta (sem parcelas).
     """
+    # Validar paginação
+    page, limit, skip = validate_pagination(page, limit)
+    
     query = {"cancelada": False}
+    
+    # Busca textual
+    if q:
+        q_norm = normalize_search_query(q)
+        if q_norm:
+            query["$or"] = [
+                {"numero": {"$regex": q_norm, "$options": "i"}},
+                {"descricao": {"$regex": q_norm, "$options": "i"}},
+                {"cliente_nome": {"$regex": q_norm, "$options": "i"}}
+            ]
     
     if cliente_id:
         query["cliente_id"] = cliente_id
@@ -10122,29 +10138,42 @@ async def listar_contas_receber(
         query["status"] = "vencido"
     
     if data_inicio and data_fim:
-        query["created_at"] = {
-            "$gte": data_inicio,
-            "$lte": data_fim
-        }
+        inicio_iso, fim_iso = range_to_utc_iso(data_inicio, data_fim)
+        query["created_at"] = {"$gte": inicio_iso, "$lte": fim_iso}
     
-    # Paginação
-    skip = (page - 1) * limit
+    # Projeção enxuta (sem parcelas completas na listagem)
+    projection = {
+        "_id": 0,
+        "id": 1, "numero": 1, "descricao": 1, "status": 1,
+        "valor_total": 1, "valor_recebido": 1, "valor_pendente": 1,
+        "cliente_id": 1, "cliente_nome": 1,
+        "forma_pagamento": 1, "categoria": 1,
+        "origem": 1, "origem_numero": 1,
+        "created_at": 1, "updated_at": 1, "cancelada": 1
+    }
     
-    contas = await db.contas_receber.find(query, {"_id": 0})\
-        .sort("created_at", -1)\
-        .skip(skip)\
-        .limit(limit)\
-        .to_list(limit)
+    # Ordenação
+    sort_field = sort.lstrip("-")
+    sort_dir = -1 if sort.startswith("-") else 1
+    
+    # Buscar dados
+    cursor = db.contas_receber.find(query, projection)
+    cursor = cursor.sort(sort_field, sort_dir).skip(skip).limit(limit)
+    contas = await cursor.to_list(limit)
+    
+    # Adicionar contagem de parcelas (resumo)
+    for conta in contas:
+        conta_full = await db.contas_receber.find_one(
+            {"id": conta["id"]}, 
+            {"parcelas": 1}
+        )
+        parcelas = conta_full.get("parcelas", []) if conta_full else []
+        conta["parcelas_count"] = len(parcelas)
+        conta["parcelas_recebidas_count"] = len([p for p in parcelas if p.get("status") == "recebido"])
     
     total = await db.contas_receber.count_documents(query)
     
-    return {
-        "data": contas,
-        "total": total,
-        "page": page,
-        "limit": limit,
-        "pages": (total + limit - 1) // limit
-    }
+    return api_list(contas, page=page, limit=limit, total=total)
 
 # Criar conta a receber manual
 @api_router.post("/contas-receber")
