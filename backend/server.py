@@ -1381,11 +1381,12 @@ class ContaReceberUpdate(BaseModel):
     projeto: Optional[str] = None
 
 class RecebimentoParcela(BaseModel):
-    numero_parcela: int
-    valor_recebido: float
+    """Modelo de recebimento de parcela com validações ETAPA 12."""
+    numero_parcela: int = Field(..., ge=1)
+    valor_recebido: float = Field(..., ge=0, description="Valor recebido não pode ser negativo")
     data_recebimento: str
-    juros: float = 0
-    desconto: float = 0
+    juros: float = Field(default=0, ge=0)
+    desconto: float = Field(default=0, ge=0)
     forma_recebimento: Optional[str] = None
     comprovante: Optional[str] = None
     observacao: Optional[str] = None
