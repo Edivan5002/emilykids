@@ -570,7 +570,7 @@ const Vendas = () => {
     });
 
     return Object.values(produtosMap)
-      .sort((a, b) => b.quantidade - a.quantity)
+      .sort((a, b) => b.quantidade - a.quantidade)
       .slice(0, 5);
   };
 
