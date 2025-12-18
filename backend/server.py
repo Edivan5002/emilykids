@@ -8012,8 +8012,21 @@ async def delete_orcamento(orcamento_id: str, current_user: dict = Depends(get_c
 VALOR_MINIMO_AUTORIZACAO_VENDA = 5000.00
 LIMITE_DESCONTO_VENDEDOR = 5.0  # 5%
 LIMITE_DESCONTO_GERENTE = 15.0  # 15%
+LIMITE_DESCONTO_ADMIN = 100.0  # 100% (admin pode dar qualquer desconto)
 TAXA_CARTAO_PADRAO = 3.5  # 3.5%
 COMISSAO_VENDEDOR_PADRAO = 2.0  # 2%
+
+# MELHORIA 4: Função para obter limite de desconto por papel
+def get_limite_desconto_por_papel(papel: str) -> float:
+    """Retorna o limite de desconto permitido para cada papel"""
+    limites = {
+        "vendedor": LIMITE_DESCONTO_VENDEDOR,
+        "gerente": LIMITE_DESCONTO_GERENTE,
+        "admin": LIMITE_DESCONTO_ADMIN,
+        "estoquista": 0.0,  # Estoquista não pode dar desconto
+        "financeiro": 0.0,  # Financeiro não pode dar desconto
+    }
+    return limites.get(papel, 0.0)
 
 async def gerar_proximo_numero_venda() -> str:
     """
