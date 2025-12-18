@@ -57,7 +57,9 @@ const Administracao = () => {
   const fetchStats = async () => {
     try {
       const response = await axios.post(`${API}/admin/estatisticas`);
-      setStats(response.data);
+      // Compatibilidade com novo formato de resposta
+      const statsData = response.data?.data || response.data;
+      setStats(statsData);
     } catch (error) {
       toast.error('Erro ao carregar estatísticas');
     }
@@ -66,7 +68,9 @@ const Administracao = () => {
   const fetchLogsAuditoria = async () => {
     try {
       const response = await axios.get(`${API}/admin/logs-auditoria?limit=20`);
-      setLogsAuditoria(response.data.logs);
+      // Compatibilidade com novo formato de resposta
+      const logsData = response.data?.data?.logs || response.data?.logs || [];
+      setLogsAuditoria(logsData);
     } catch (error) {
       console.error('Erro ao carregar logs de auditoria');
     }
