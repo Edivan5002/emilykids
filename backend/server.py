@@ -36,6 +36,53 @@ _MONGO_URL = _validate_required_env('MONGO_URL', 'URL de conexão com MongoDB')
 _DB_NAME = _validate_required_env('DB_NAME', 'Nome do banco de dados')
 _JWT_SECRET = _validate_required_env('JWT_SECRET', 'Chave secreta para assinatura de tokens JWT')
 
+# ==================== ETAPA 11 - HARDENING FINAL ====================
+
+# 6) Rate Limit em memória para login (sem dependências externas)
+from collections import defaultdict
+import time
+
+class RateLimiter:
+    """Rate limiter simples em memória para ambiente de teste."""
+    def __init__(self, max_attempts: int = 10, window_seconds: int = 300):
+        self.max_attempts = max_attempts
+        self.window_seconds = window_seconds
+        self.attempts = defaultdict(list)  # {key: [timestamps]}
+    
+    def _clean_old_attempts(self, key: str):
+        """Remove tentativas antigas fora da janela."""
+        now = time.time()
+        self.attempts[key] = [t for t in self.attempts[key] if now - t < self.window_seconds]
+    
+    def is_rate_limited(self, key: str) -> bool:
+        """Verifica se a chave está rate limited."""
+        self._clean_old_attempts(key)
+        return len(self.attempts[key]) >= self.max_attempts
+    
+    def record_attempt(self, key: str):
+        """Registra uma tentativa."""
+        self._clean_old_attempts(key)
+        self.attempts[key].append(time.time())
+    
+    def get_remaining_time(self, key: str) -> int:
+        """Retorna segundos restantes até reset."""
+        if not self.attempts[key]:
+            return 0
+        oldest = min(self.attempts[key])
+        remaining = self.window_seconds - (time.time() - oldest)
+        return max(0, int(remaining))
+
+# Instância global do rate limiter para login
+login_rate_limiter = RateLimiter(max_attempts=10, window_seconds=300)
+
+# 8) Request ID para observabilidade
+import contextvars
+request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar('request_id', default='')
+
+def get_request_id() -> str:
+    """Retorna o request_id atual do contexto."""
+    return request_id_var.get()
+
 # ==================== HELPERS - ETAPA 6 ====================
 
 def iso_utc_now() -> str:
