@@ -576,8 +576,71 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get('ACCESS_TOKEN_EXPIRE_MINUTES', 
 
 security = HTTPBearer()
 
-app = FastAPI()
+app = FastAPI(
+    title="ERP Financeiro API",
+    description="API do sistema ERP com módulos financeiros",
+    version="1.0.0"
+)
 api_router = APIRouter(prefix="/api")
+
+
+# ==================== ETAPA 13 - EXCEPTION HANDLERS ====================
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """
+    Handler global para HTTPException.
+    Retorna formato padronizado: {"ok": false, "error": {...}}
+    """
+    # Mapear status_code para código de erro
+    code_map = {
+        400: "BAD_REQUEST",
+        401: "UNAUTHORIZED",
+        403: "FORBIDDEN",
+        404: "NOT_FOUND",
+        409: "CONFLICT",
+        422: "VALIDATION_ERROR",
+        429: "RATE_LIMITED",
+        500: "INTERNAL_ERROR"
+    }
+    code = code_map.get(exc.status_code, f"HTTP_{exc.status_code}")
+    
+    # Manter compatibilidade: detail pode ser string ou dict
+    detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+    
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=api_error(code, detail)
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """
+    Handler para erros de validação Pydantic/FastAPI.
+    Retorna formato padronizado com detalhes essenciais.
+    """
+    # Extrair erros de forma segura (sem vazar dados sensíveis)
+    errors = []
+    for error in exc.errors()[:10]:  # Limitar a 10 erros
+        errors.append({
+            "field": ".".join(str(x) for x in error.get("loc", [])),
+            "message": error.get("msg", "Valor inválido"),
+            "type": error.get("type", "unknown")
+        })
+    
+    return JSONResponse(
+        status_code=422,
+        content=api_error(
+            "VALIDATION_ERROR", 
+            "Erro de validação nos dados enviados",
+            extra={"errors": errors}
+        )
+    )
+
+
+# ==================== FIM EXCEPTION HANDLERS ====================
+
 
 # ========== MODELS ==========
 
