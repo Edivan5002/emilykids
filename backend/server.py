@@ -1887,8 +1887,11 @@ async def log_action(
     stack_trace: str = None
 ):
     """
-    Função melhorada de logging com contexto completo
+    Função melhorada de logging com contexto completo.
+    Correção 10: Sanitiza dados sensíveis antes de salvar.
     """
+    # Correção 10: Sanitizar detalhes antes de salvar
+    detalhes_sanitizados = sanitize_log_details(detalhes) if detalhes else None
     # Parsear User-Agent se fornecido
     navegador = None
     so = None
