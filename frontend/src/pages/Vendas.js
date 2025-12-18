@@ -222,19 +222,35 @@ const Vendas = () => {
     setPaginaAtual(1);
   }, [filtros]);
 
+  // Helper para extrair dados compatível com formato antigo e novo
+  const extractData = (response) => {
+    const data = response?.data;
+    // Novo formato: { ok: true, data: [...] }
+    if (data && data.ok !== undefined && Array.isArray(data.data)) {
+      return data.data;
+    }
+    // Formato com .data como array
+    if (data && Array.isArray(data.data)) {
+      return data.data;
+    }
+    // Formato antigo: array direto
+    if (Array.isArray(data)) {
+      return data;
+    }
+    return [];
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Sempre carregar vendas - usar unwrapList para compatibilidade com novo envelope
+      // Sempre carregar vendas
       const vendasRes = await axios.get(`${API}/vendas?limit=0`);
-      const { items: vendasData } = unwrapList(vendasRes);
-      setVendas(vendasData);
+      setVendas(extractData(vendasRes));
       
       // Tentar carregar clientes separadamente
       try {
         const cliRes = await axios.get(`${API}/clientes?limit=0`);
-        const { items: cliData } = unwrapList(cliRes);
-        setClientes(cliData);
+        setClientes(extractData(cliRes));
       } catch (err) {
         console.log('Sem permissão para clientes');
         setClientes([]);
@@ -243,8 +259,7 @@ const Vendas = () => {
       // Tentar carregar produtos separadamente
       try {
         const prodRes = await axios.get(`${API}/produtos?limit=0`);
-        const { items: prodData } = unwrapList(prodRes);
-        setProdutos(prodData);
+        setProdutos(extractData(prodRes));
       } catch (err) {
         console.log('Sem permissão para produtos');
         setProdutos([]);
@@ -253,8 +268,7 @@ const Vendas = () => {
       // Tentar carregar marcas
       try {
         const marcasRes = await axios.get(`${API}/marcas?limit=0`);
-        const { items: marcasData } = unwrapList(marcasRes);
-        setMarcas(marcasData);
+        setMarcas(extractData(marcasRes));
       } catch (err) {
         console.log('Sem permissão para marcas');
         setMarcas([]);
@@ -263,8 +277,7 @@ const Vendas = () => {
       // Tentar carregar categorias
       try {
         const catRes = await axios.get(`${API}/categorias?limit=0`);
-        const { items: catData } = unwrapList(catRes);
-        setCategorias(catData);
+        setCategorias(extractData(catRes));
       } catch (err) {
         console.log('Sem permissão para categorias');
         setCategorias([]);
@@ -273,8 +286,7 @@ const Vendas = () => {
       // Tentar carregar subcategorias
       try {
         const subRes = await axios.get(`${API}/subcategorias?limit=0`);
-        const { items: subData } = unwrapList(subRes);
-        setSubcategorias(subData);
+        setSubcategorias(extractData(subRes));
       } catch (err) {
         console.log('Sem permissão para subcategorias');
         setSubcategorias([]);
