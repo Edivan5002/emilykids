@@ -172,8 +172,10 @@ Testing new P0 and P1 features implemented in the frontend:
 
 metadata:
   created_by: "testing_agent"
-  version: "1.0"
-  test_sequence: 1
+  version: "1.1"
+  test_sequence: 2
+  backend_testing_complete: true
+  backend_success_rate: "100%"
 
 test_plan:
   current_focus:
