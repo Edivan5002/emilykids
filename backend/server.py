@@ -93,15 +93,81 @@ STATUS_PARCELA_RECEBER = ["pendente", "recebido", "vencido", "cancelado"]
 STATUS_CONTA_PAGAR = ["pendente", "pago_parcial", "pago_total", "vencido", "cancelado"]
 STATUS_PARCELA_PAGAR = ["pendente", "pago", "vencido", "cancelado"]
 
+# ==================== HELPERS ADICIONAIS - CORREÇÃO 7 ====================
+
+def parse_date_like(date_str: str) -> str:
+    """
+    Correção 7: Normaliza string de data para formato ISO UTC.
+    Aceita YYYY-MM-DD ou ISO completo, retorna ISO completo.
+    """
+    if not date_str:
+        return None
+    # Se já é ISO completo, retorna
+    if 'T' in date_str:
+        return date_str
+    # Se é apenas YYYY-MM-DD, converte para início do dia UTC
+    try:
+        dt = datetime.strptime(date_str, "%Y-%m-%d")
+        return dt.replace(tzinfo=timezone.utc).isoformat()
+    except ValueError:
+        return date_str  # Retorna como está se não conseguir parsear
+
+def date_range_to_iso(data_inicio: str, data_fim: str) -> tuple:
+    """
+    Correção 7: Converte range de datas para intervalo ISO UTC consistente.
+    Retorna (inicio_iso, fim_iso) onde fim é 23:59:59 do dia.
+    """
+    # Início do dia
+    if data_inicio and 'T' not in data_inicio:
+        inicio = f"{data_inicio}T00:00:00+00:00"
+    else:
+        inicio = data_inicio or ""
+    
+    # Fim do dia
+    if data_fim and 'T' not in data_fim:
+        fim = f"{data_fim}T23:59:59+00:00"
+    else:
+        fim = data_fim or ""
+    
+    return (inicio, fim)
+
+# Chaves sensíveis para sanitização (Correção 10)
+SENSITIVE_KEYS = {'senha', 'password', 'token', 'authorization', 'secret', 'api_key', 'senha_hash'}
+
+def sanitize_log_details(details: dict) -> dict:
+    """
+    Correção 10: Remove/mascara dados sensíveis antes de salvar no log.
+    """
+    if not details:
+        return details
+    
+    sanitized = {}
+    for key, value in details.items():
+        key_lower = key.lower()
+        
+        # Mascarar chaves sensíveis
+        if any(sensitive in key_lower for sensitive in SENSITIVE_KEYS):
+            sanitized[key] = "***REDACTED***"
+        # Mascarar CPF/CNPJ (mostrar apenas últimos 4 dígitos)
+        elif key_lower in ('cpf', 'cnpj', 'cpf_cnpj') and isinstance(value, str) and len(value) >= 4:
+            sanitized[key] = f"***{value[-4:]}"
+        # Recursivamente sanitizar dicts aninhados
+        elif isinstance(value, dict):
+            sanitized[key] = sanitize_log_details(value)
+        else:
+            sanitized[key] = value
+    
+    return sanitized
+
 # ==================== FIM HELPERS ====================
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
+# MongoDB connection (usando variáveis validadas)
+mongo_url = _MONGO_URL
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db = client[_DB_NAME]
 
-# JWT settings
-JWT_SECRET = os.environ.get('JWT_SECRET', 'sua-chave-secreta-super-segura-2024')
+# JWT settings (usando variável validada - Correção 3)
+JWT_SECRET = _JWT_SECRET  # Agora é obrigatório, sem fallback inseguro
 JWT_ALGORITHM = os.environ.get('JWT_ALGORITHM', 'HS256')
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get('ACCESS_TOKEN_EXPIRE_MINUTES', 1440))
 
