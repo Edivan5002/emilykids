@@ -114,8 +114,16 @@ const Layout = ({ children }) => {
       ]
     },
     { path: '/produtos', label: 'Produtos', icon: Package, module: 'produtos' },
-    { path: '/estoque', label: 'Estoque', icon: Package, module: 'estoque' },
-    { path: '/notas-fiscais', label: 'Notas Fiscais', icon: Receipt, module: 'notas_fiscais' },
+    { 
+      label: 'Estoque', 
+      icon: Package, 
+      isSubmenu: true,
+      children: [
+        { path: '/estoque', label: 'Movimentações', icon: Package, module: 'estoque' },
+        { path: '/curva-abc', label: 'Curva ABC', icon: BarChart3, module: 'produtos' },
+        { path: '/auditoria-estoque', label: 'Auditoria', icon: ClipboardList, module: 'estoque' }
+      ]
+    },
     { path: '/orcamentos', label: 'Orçamentos', icon: ClipboardList, module: 'orcamentos' },
     { path: '/vendas', label: 'Vendas', icon: ShoppingCart, module: 'vendas' },
     { 
