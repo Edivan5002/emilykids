@@ -67,10 +67,23 @@ const Dashboard = () => {
 
       const [statsRes, vendasRes, alertasRes, marcasRes, categoriasRes, subcategoriasRes] = await Promise.all(requests);
 
-      setStats(statsRes.data);
+      // Helper para extrair dados compatível com formato antigo e novo da API
+      const extractArray = (response) => {
+        const data = response?.data;
+        if (data && data.ok !== undefined && Array.isArray(data.data)) return data.data;
+        if (data && Array.isArray(data.data)) return data.data;
+        if (Array.isArray(data)) return data;
+        return [];
+      };
+
+      // Stats pode ser objeto, não array
+      const statsData = statsRes.data?.data || statsRes.data;
+      setStats(statsData);
       
-      if (vendasRes.data && Object.keys(vendasRes.data).length > 0) {
-        const vendasArray = Object.entries(vendasRes.data).map(([data, info]) => ({
+      // Vendas por período é objeto com datas como chaves
+      const vendasData = vendasRes.data?.data || vendasRes.data || {};
+      if (vendasData && typeof vendasData === 'object' && Object.keys(vendasData).length > 0) {
+        const vendasArray = Object.entries(vendasData).map(([data, info]) => ({
           data: new Date(data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
           quantidade: info.quantidade,
           total: info.total
@@ -78,10 +91,12 @@ const Dashboard = () => {
         setVendasPorPeriodo(vendasArray);
       }
       
-      setAlertas(alertasRes.data);
-      setMarcas(marcasRes?.data || []);
-      setCategorias(categoriasRes?.data || []);
-      setSubcategorias(subcategoriasRes?.data || []);
+      // Alertas pode ser objeto, não array
+      const alertasData = alertasRes.data?.data || alertasRes.data;
+      setAlertas(alertasData);
+      setMarcas(extractArray(marcasRes));
+      setCategorias(extractArray(categoriasRes));
+      setSubcategorias(extractArray(subcategoriasRes));
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error);
     } finally {
