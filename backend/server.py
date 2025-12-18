@@ -1354,19 +1354,24 @@ class ContaPagar(BaseModel):
 
 # Modelos de Request para Contas a Receber
 class ContaReceberCreate(BaseModel):
+    """Modelo de criação de conta a receber com validações ETAPA 12."""
     cliente_id: str
     descricao: str
     categoria: str = "venda_produto"
-    valor_total: float
+    valor_total: float = Field(..., gt=0, description="Valor total deve ser maior que zero")
     forma_pagamento: str
     tipo_pagamento: str = "avista"
-    numero_parcelas: int = 1
+    numero_parcelas: int = Field(default=1, ge=1, description="Mínimo 1 parcela")
     data_vencimento: Optional[str] = None
     parcelas: List[dict] = []
     observacao: Optional[str] = None
     tags: List[str] = []
     centro_custo: Optional[str] = None
     projeto: Optional[str] = None
+    
+    @property
+    def valor_total_rounded(self) -> float:
+        return money_round(self.valor_total)
 
 class ContaReceberUpdate(BaseModel):
     descricao: Optional[str] = None
