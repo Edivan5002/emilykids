@@ -1719,12 +1719,17 @@ def create_access_token(data: dict):
     return encoded_jwt
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    5) JWT Security: Valida que sub existe e é string.
+    """
     try:
         token = credentials.credentials
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(status_code=401, detail="Token inválido")
+        user_id = payload.get("sub")
+        
+        # 5) Validar que sub existe e é string
+        if user_id is None or not isinstance(user_id, str):
+            raise HTTPException(status_code=401, detail="Token inválido: sub ausente ou inválido")
         
         user = await db.users.find_one({"id": user_id}, {"_id": 0})
         if user is None:
@@ -1732,6 +1737,8 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         return user
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expirado")
+    except HTTPException:
+        raise
     except Exception:
         raise HTTPException(status_code=401, detail="Token inválido")
 
