@@ -5466,8 +5466,9 @@ async def update_produto(produto_id: str, produto_data: ProdutoCreate, current_u
     preco_venda_alterado = existing.get("preco_venda") != updated_data["preco_venda"]
     
     if preco_inicial_alterado or preco_venda_alterado:
-        # Registrar no histórico
+        # MELHORIA 7: Registrar no histórico com tipo específico
         margem_anterior = existing.get("margem_lucro", 0)
+        tipo_alteracao = "custo_e_venda" if preco_inicial_alterado and preco_venda_alterado else ("custo" if preco_inicial_alterado else "venda")
         historico = HistoricoPreco(
             produto_id=produto_id,
             preco_custo_anterior=existing.get("preco_medio", 0),
@@ -5478,7 +5479,8 @@ async def update_produto(produto_id: str, produto_data: ProdutoCreate, current_u
             margem_nova=updated_data.get("margem_lucro", 0),
             usuario_id=current_user["id"],
             usuario_nome=current_user["nome"],
-            motivo="Atualização de preços"
+            motivo="Atualização de preços",
+            tipo=tipo_alteracao
         )
         await db.historico_precos.insert_one(historico.model_dump())
     
