@@ -12086,9 +12086,11 @@ async def get_fluxo_caixa_dashboard(
         
         for conta in receber_todas:
             for parcela in conta.get("parcelas", []):
-                data_venc = parcela.get("data_vencimento", "").split("T")[0]
+                data_venc = parse_date_only(parcela.get("data_vencimento", ""))
+                if not data_venc:
+                    continue
                 
-                # Se vence neste mês
+                # Se vence neste mês (status padronizado)
                 if inicio_mes <= data_venc <= fim_mes_str:
                     if parcela.get("status") == "recebido":
                         total_recebido += parcela.get("valor_recebido", 0)
@@ -12106,9 +12108,11 @@ async def get_fluxo_caixa_dashboard(
         
         for conta in pagar_todas:
             for parcela in conta.get("parcelas", []):
-                data_venc = parcela.get("data_vencimento", "").split("T")[0]
+                data_venc = parse_date_only(parcela.get("data_vencimento", ""))
+                if not data_venc:
+                    continue
                 
-                # Se vence neste mês
+                # Se vence neste mês (status padronizado)
                 if inicio_mes <= data_venc <= fim_mes_str:
                     if parcela.get("status") == "pago":
                         total_pago += parcela.get("valor_pago", 0)
@@ -12116,14 +12120,16 @@ async def get_fluxo_caixa_dashboard(
                         total_a_pagar += parcela.get("valor", 0)
         
         # Projeção próximos 30 dias
-        proximo_mes = (hoje + timedelta(days=30)).isoformat()
+        proximo_mes = parse_date_only((hoje + timedelta(days=30)).isoformat())
         
         projecao_entradas = 0
         for conta in receber_todas:
             for parcela in conta.get("parcelas", []):
-                data_venc = parcela.get("data_vencimento", "").split("T")[0]
+                data_venc = parse_date_only(parcela.get("data_vencimento", ""))
+                if not data_venc:
+                    continue
                 
-                # Se vence nos próximos 30 dias (após o mês atual)
+                # Se vence nos próximos 30 dias (após o mês atual) - status padronizado
                 if fim_mes_str < data_venc <= proximo_mes:
                     if parcela.get("status") != "recebido":
                         projecao_entradas += parcela.get("valor", 0)
@@ -12131,9 +12137,11 @@ async def get_fluxo_caixa_dashboard(
         projecao_saidas = 0
         for conta in pagar_todas:
             for parcela in conta.get("parcelas", []):
-                data_venc = parcela.get("data_vencimento", "").split("T")[0]
+                data_venc = parse_date_only(parcela.get("data_vencimento", ""))
+                if not data_venc:
+                    continue
                 
-                # Se vence nos próximos 30 dias (após o mês atual)
+                # Se vence nos próximos 30 dias (após o mês atual) - status padronizado
                 if fim_mes_str < data_venc <= proximo_mes:
                     if parcela.get("status") != "pago":
                         projecao_saidas += parcela.get("valor", 0)
