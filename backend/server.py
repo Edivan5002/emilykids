@@ -8339,6 +8339,20 @@ async def create_venda(venda_data: VendaCreate, current_user: dict = Depends(req
             # Não falhar a venda se houver erro ao criar conta a receber
             print(f"Aviso: Erro ao criar conta a receber para venda {venda.id}: {str(e)}")
     
+    # MELHORIA 2: Atualizar crédito utilizado do cliente (para vendas a prazo)
+    if not requer_autorizacao and venda_data.forma_pagamento not in ["pix", "dinheiro", "cartao_debito", "avista"]:
+        try:
+            await atualizar_credito_utilizado(venda_data.cliente_id, total, "adicionar")
+        except Exception as e:
+            print(f"Aviso: Erro ao atualizar crédito do cliente: {str(e)}")
+    
+    # MELHORIA 3: Registrar comissão do vendedor
+    if not requer_autorizacao:
+        try:
+            await registrar_comissao_venda(venda.model_dump(), current_user)
+        except Exception as e:
+            print(f"Aviso: Erro ao registrar comissão: {str(e)}")
+    
     # Log
     await log_action(
         ip="0.0.0.0",
