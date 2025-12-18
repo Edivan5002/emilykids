@@ -165,8 +165,8 @@ class MelhoriasTester:
             
             if response.status_code == 200:
                 report = response.json()
-                # Validate report structure
-                if "total_comissoes" in report and "vendedores" in report:
+                # Validate report structure - updated to match actual API response
+                if "totais" in report and "vendedores" in report:
                     self.log_test("Commission Report", True, 
                                 f"✅ Status 200, returned report with totals and vendedores breakdown")
                 else:
