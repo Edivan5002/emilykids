@@ -5126,24 +5126,50 @@ async def recalcular_precos_produto(produto_id: str):
 
 
 
-@api_router.get("/produtos", response_model=List[Produto])
+@api_router.get("/produtos", tags=["Produtos"], summary="Lista produtos")
 async def get_produtos(
     incluir_inativos: bool = False,
     page: int = 1,
     limit: int = 20,
+    sort: str = "-created_at",
+    q: str = None,
+    categoria_id: str = None,
     current_user: dict = Depends(require_permission("produtos", "ler"))
 ):
-    """Lista produtos com paginação opcional"""
+    """
+    Lista produtos com paginação e busca.
+    ETAPA 13: Resposta padronizada com api_list.
+    """
+    # Validar paginação
+    page, limit, skip = validate_pagination(page, limit)
+    
     filtro = {} if incluir_inativos else {"ativo": True}
     
-    # Se limit=0, retorna todos (mantém compatibilidade)
-    if limit == 0:
-        produtos = await db.produtos.find(filtro, {"_id": 0}).to_list(10000)
-    else:
-        skip = (page - 1) * limit
-        produtos = await db.produtos.find(filtro, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    # Busca textual
+    if q:
+        q_norm = normalize_search_query(q)
+        if q_norm:
+            filtro["$or"] = [
+                {"nome": {"$regex": q_norm, "$options": "i"}},
+                {"sku": {"$regex": q_norm, "$options": "i"}},
+                {"codigo_barras": {"$regex": q_norm, "$options": "i"}}
+            ]
     
-    return produtos
+    if categoria_id:
+        filtro["categoria_id"] = categoria_id
+    
+    # Ordenação
+    sort_field = sort.lstrip("-")
+    sort_dir = -1 if sort.startswith("-") else 1
+    
+    # Buscar dados
+    cursor = db.produtos.find(filtro, {"_id": 0})
+    cursor = cursor.sort(sort_field, sort_dir).skip(skip).limit(limit)
+    produtos = await cursor.to_list(limit)
+    
+    total = await db.produtos.count_documents(filtro)
+    
+    return api_list(produtos, page=page, limit=limit, total=total)
 
 @api_router.post("/produtos", response_model=Produto)
 async def create_produto(produto_data: ProdutoCreate, current_user: dict = Depends(require_permission("produtos", "criar"))):
