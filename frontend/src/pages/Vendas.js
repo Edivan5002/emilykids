@@ -954,7 +954,7 @@ const Vendas = () => {
                     >
                       <p className="text-sm font-semibold flex items-center gap-2">
                         <Package size={16} className="text-blue-600" />
-                        Itens ({venda.itens.length})
+                        Itens ({venda.itens?.length || 0})
                       </p>
                       {itensExpandidos[venda.id] ? (
                         <ChevronUp size={20} className="text-gray-600" />
@@ -962,7 +962,7 @@ const Vendas = () => {
                         <ChevronDown size={20} className="text-gray-600" />
                       )}
                     </div>
-                    {itensExpandidos[venda.id] && (
+                    {itensExpandidos[venda.id] && venda.itens && (
                       <div className="grid grid-cols-1 gap-2">
                         {venda.itens.map((item, idx) => (
                           <div key={idx} className="bg-gradient-to-r from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
