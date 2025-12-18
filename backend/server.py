@@ -12252,10 +12252,27 @@ async def get_fluxo_caixa_dashboard(
 
 app.include_router(api_router)
 
+# ==================== CORS CONFIGURAÇÃO - CORREÇÃO 2 ====================
+# Correção 2: CORS com allow_credentials=True é incompatível com origins="*"
+# Solução: Se CORS_ORIGINS não definido ou "*", usa lista padrão segura para dev local
+_cors_origins_raw = os.environ.get('CORS_ORIGINS', '')
+if not _cors_origins_raw or _cors_origins_raw.strip() == '*':
+    # Ambiente local/dev: lista explícita sem wildcard
+    _cors_origins = ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8001"]
+    _cors_credentials = True
+else:
+    _cors_origins = [o.strip() for o in _cors_origins_raw.split(',') if o.strip()]
+    # Se "*" estiver na lista, não pode usar credentials
+    if "*" in _cors_origins:
+        _cors_origins = ["*"]
+        _cors_credentials = False
+    else:
+        _cors_credentials = True
+
 app.add_middleware(
     CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_credentials=_cors_credentials,
+    allow_origins=_cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
