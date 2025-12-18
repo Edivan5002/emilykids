@@ -758,6 +758,8 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     senha: str
+    totp_code: Optional[str] = None  # ETAPA 14: 2FA
+    backup_code: Optional[str] = None  # ETAPA 14: 2FA
 
 class Token(BaseModel):
     access_token: str
