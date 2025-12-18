@@ -9282,14 +9282,12 @@ async def relatorio_auditoria(
 
 # Função helper para gerar número de conta a receber
 async def gerar_numero_conta_receber() -> str:
-    """Gera número sequencial para conta a receber (CR-000001)"""
-    ultimo = await db.contas_receber.find_one(sort=[("created_at", -1)])
-    if ultimo and "numero" in ultimo:
-        ultimo_num = int(ultimo["numero"].split("-")[1])
-        novo_num = ultimo_num + 1
-    else:
-        novo_num = 1
-    return f"CR-{novo_num:06d}"
+    """
+    Gera número sequencial para conta a receber (CR-000001).
+    Thread-safe: usa contador atômico do MongoDB.
+    """
+    seq = await get_next_sequence("contas_receber")
+    return f"CR-{seq:06d}"
 
 # Função helper para atualizar status da conta
 async def atualizar_status_conta_receber(conta_id: str):
