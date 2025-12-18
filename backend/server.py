@@ -8678,7 +8678,7 @@ async def get_dashboard_logs(current_user: dict = Depends(require_permission("lo
     total_erros = len([log_entry for log_entry in logs if log_entry.get("severidade") in ["ERROR", "CRITICAL"]])
     
     # Contar usuários REALMENTE ativos no sistema (não apenas nos logs)
-    usuarios_ativos_count = await db.usuarios.count_documents({"ativo": True})
+    usuarios_ativos_count = await db.users.count_documents({"ativo": True})
     
     # Atividade por dia
     atividade_por_dia = {}
@@ -10049,7 +10049,7 @@ async def admin_get_estatisticas(current_user: dict = Depends(require_permission
             "fornecedores": await db.fornecedores.count_documents({}),
             "logs": await db.logs.count_documents({}),
             "logs_seguranca": await db.logs_seguranca.count_documents({}),
-            "usuarios": await db.usuarios.count_documents({}),
+            "usuarios": await db.users.count_documents({}),
             "movimentacoes_estoque": await db.movimentacoes_estoque.count_documents({}),
             "inventarios": await db.inventarios.count_documents({})
         }
@@ -10253,7 +10253,7 @@ async def admin_remover_dados_teste(
         deletados["produtos"] = result_produtos.deleted_count
         
         # Usuários de teste (exceto admin principal)
-        result_usuarios = await db.usuarios.delete_many({
+        result_usuarios = await db.users.delete_many({
             "$and": [
                 {"$or": [
                     {"email": {"$regex": "teste|test|demo", "$options": "i"}},
@@ -10747,7 +10747,7 @@ async def criar_centro_custo(
     # Buscar responsável se informado
     responsavel_nome = None
     if centro.responsavel_id:
-        responsavel = await db.usuarios.find_one({"id": centro.responsavel_id}, {"_id": 0})
+        responsavel = await db.users.find_one({"id": centro.responsavel_id}, {"_id": 0})
         if responsavel:
             responsavel_nome = responsavel["nome"]
     
@@ -10781,7 +10781,7 @@ async def editar_centro_custo(
     
     # Atualizar nome do responsável se mudou
     if "responsavel_id" in update_data and update_data["responsavel_id"]:
-        responsavel = await db.usuarios.find_one({"id": update_data["responsavel_id"]}, {"_id": 0})
+        responsavel = await db.users.find_one({"id": update_data["responsavel_id"]}, {"_id": 0})
         if responsavel:
             update_data["responsavel_nome"] = responsavel["nome"]
     
