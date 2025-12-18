@@ -376,8 +376,17 @@ const Vendas = () => {
       toast.error('Selecione um cliente');
       return;
     }
-
+    
+    // Evitar duplo clique
+    if (criandoVenda) {
+      toast.info('Processando venda...');
+      return;
+    }
+    
+    setCriandoVenda(true);
+    setErroEstoque(null);
     setLoading(true);
+    
     try {
       const itensParaEnvio = itensVenda.map(item => ({
         produto_id: item.produto_id,
@@ -395,16 +404,40 @@ const Vendas = () => {
       };
 
       const token = localStorage.getItem('token');
+      
+      // Gerar ou reutilizar Idempotency-Key
+      if (!idempotencyKeyRef.current) {
+        idempotencyKeyRef.current = generateIdempotencyKey();
+      }
+      
       await axios.post(`${API}/vendas`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Idempotency-Key': idempotencyKeyRef.current
+        }
       });
       toast.success('Venda criada com sucesso! Estoque atualizado.');
+      idempotencyKeyRef.current = null; // Limpar key após sucesso
       fetchData();
       handleCloseCreate();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao criar venda');
+      const parsed = parseError(error);
+      
+      // Tratar erro 409 de estoque insuficiente
+      if (parsed.code === ERROR_CODES.INSUFFICIENT_STOCK || 
+          (parsed.code === ERROR_CODES.CONFLICT && parsed.message.toLowerCase().includes('estoque'))) {
+        setErroEstoque(parsed.message);
+        toast.error('Estoque insuficiente! Ajuste as quantidades.', { duration: 5000 });
+      } else if (parsed.code === ERROR_CODES.CONFLICT) {
+        // Outro tipo de conflito
+        toast.warning(parsed.message || 'Conflito ao criar venda');
+        idempotencyKeyRef.current = null;
+      } else {
+        toast.error(parsed.message || 'Erro ao criar venda');
+      }
     } finally {
       setLoading(false);
+      setCriandoVenda(false);
     }
   };
 
