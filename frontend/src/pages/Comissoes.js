@@ -209,14 +209,14 @@ const Comissoes = () => {
             <div>
               <Label>Status</Label>
               <Select 
-                value={filtros.status} 
-                onValueChange={(v) => setFiltros({...filtros, status: v})}
+                value={filtros.status || "all"} 
+                onValueChange={(v) => setFiltros({...filtros, status: v === "all" ? "" : v})}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="pendente">Pendente</SelectItem>
                   <SelectItem value="pago">Pago</SelectItem>
                 </SelectContent>
