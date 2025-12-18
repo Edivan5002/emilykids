@@ -11989,32 +11989,36 @@ async def editar_conta_pagar(
 async def liquidar_parcela(
     id: str,
     dados: PagamentoParcela,
+    request: Request,
     current_user: dict = Depends(require_permission("contas_pagar", "pagar"))
 ):
     """
-    Registra pagamento de uma parcela
+    Registra pagamento de uma parcela.
+    ETAPA 11: Update condicional atômico + Idempotência
     """
+    # 3) Verificar idempotência
+    idempotency_key = request.headers.get("Idempotency-Key")
+    if idempotency_key:
+        existing = await check_idempotency_key(idempotency_key, "liquidar-parcela-pagar", current_user["id"])
+        if existing:
+            return existing.get("response", {"message": "Operação já processada", "idempotent": True})
+    
     conta = await db.contas_pagar.find_one({"id": id}, {"_id": 0})
     if not conta:
         raise HTTPException(status_code=404, detail="Conta não encontrada")
     
-    if conta["cancelada"]:
+    if conta.get("cancelada"):
         raise HTTPException(status_code=400, detail="Conta cancelada")
     
-    # Encontrar parcela
+    # Encontrar índice da parcela
     parcela_idx = None
-    parcela = None
     for i, p in enumerate(conta["parcelas"]):
         if p["numero_parcela"] == dados.numero_parcela:
             parcela_idx = i
-            parcela = p
             break
     
-    if parcela is None:
+    if parcela_idx is None:
         raise HTTPException(status_code=404, detail="Parcela não encontrada")
-    
-    if parcela["status"] == "pago":
-        raise HTTPException(status_code=400, detail="Parcela já foi paga")
     
     # Calcular valor final usando helper padronizado
     valor_final = calc_valor_final_parcela_pagar(
@@ -12024,39 +12028,49 @@ async def liquidar_parcela(
         desconto=dados.desconto
     )
     
-    # Atualizar parcela com status padronizado
-    update_parcela = {
-        f"parcelas.{parcela_idx}.status": "pago",  # STATUS_PARCELA_PAGAR
-        f"parcelas.{parcela_idx}.data_pagamento": dados.data_pagamento,
-        f"parcelas.{parcela_idx}.valor_pago": dados.valor_pago,
-        f"parcelas.{parcela_idx}.valor_juros": dados.juros,
-        f"parcelas.{parcela_idx}.valor_multa": dados.multa,
-        f"parcelas.{parcela_idx}.valor_desconto": dados.desconto,
-        f"parcelas.{parcela_idx}.valor_final": valor_final,
-        f"parcelas.{parcela_idx}.forma_pagamento": dados.forma_pagamento or conta["forma_pagamento"],
-        f"parcelas.{parcela_idx}.comprovante": dados.comprovante,
-        f"parcelas.{parcela_idx}.paga_por": current_user["id"],
-        f"parcelas.{parcela_idx}.paga_por_name": current_user["nome"],
-        f"parcelas.{parcela_idx}.observacao": dados.observacao,
-        f"parcelas.{parcela_idx}.dias_atraso": 0
-    }
-    
-    await db.contas_pagar.update_one(
-        {"id": id},
-        {"$set": update_parcela}
+    # 2) UPDATE CONDICIONAL ATÔMICO - só atualiza se parcela ainda pendente/vencido
+    update_result = await db.contas_pagar.update_one(
+        {
+            "id": id,
+            f"parcelas.{parcela_idx}.numero_parcela": dados.numero_parcela,
+            f"parcelas.{parcela_idx}.status": {"$in": ["pendente", "vencido"]}  # Só se não pago
+        },
+        {"$set": {
+            f"parcelas.{parcela_idx}.status": "pago",
+            f"parcelas.{parcela_idx}.data_pagamento": dados.data_pagamento,
+            f"parcelas.{parcela_idx}.valor_pago": dados.valor_pago,
+            f"parcelas.{parcela_idx}.valor_juros": dados.juros,
+            f"parcelas.{parcela_idx}.valor_multa": dados.multa,
+            f"parcelas.{parcela_idx}.valor_desconto": dados.desconto,
+            f"parcelas.{parcela_idx}.valor_final": valor_final,
+            f"parcelas.{parcela_idx}.forma_pagamento": dados.forma_pagamento or conta["forma_pagamento"],
+            f"parcelas.{parcela_idx}.comprovante": dados.comprovante,
+            f"parcelas.{parcela_idx}.paga_por": current_user["id"],
+            f"parcelas.{parcela_idx}.paga_por_name": current_user["nome"],
+            f"parcelas.{parcela_idx}.observacao": dados.observacao,
+            f"parcelas.{parcela_idx}.dias_atraso": 0,
+            "updated_at": iso_utc_now()
+        }}
     )
     
-    # Atualizar status da conta
+    # 2) Se modified_count == 0, parcela já foi paga (409 Conflict)
+    if update_result.modified_count == 0:
+        raise HTTPException(
+            status_code=409,
+            detail="Parcela já foi liquidada ou sofreu alteração concorrente. Atualize a página."
+        )
+    
+    # Atualizar status da conta (recalcula valores)
     await atualizar_status_conta_pagar(id)
     
     # Atualizar dados do fornecedor se houver
     conta_atualizada = await db.contas_pagar.find_one({"id": id}, {"_id": 0})
-    if conta["fornecedor_id"]:
+    if conta.get("fornecedor_id"):
         await db.fornecedores.update_one(
             {"id": conta["fornecedor_id"]},
             {
                 "$inc": {"total_pago": valor_final},
-                "$set": {"data_ultimo_pagamento": datetime.now(timezone.utc).isoformat()}
+                "$set": {"data_ultimo_pagamento": iso_utc_now()}
             }
         )
     
@@ -12069,7 +12083,13 @@ async def liquidar_parcela(
         usuario_nome=current_user["nome"]
     )
     
-    return {"message": "Parcela paga com sucesso", "conta": conta_atualizada}
+    response = {"message": "Parcela paga com sucesso", "conta": conta_atualizada}
+    
+    # 3) Salvar idempotência
+    if idempotency_key:
+        await save_idempotency_key(idempotency_key, "liquidar-parcela-pagar", current_user["id"], response)
+    
+    return response
 
 # Cancelar conta a pagar
 @api_router.delete("/contas-pagar/{id}")
