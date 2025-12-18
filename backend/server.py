@@ -7975,16 +7975,9 @@ async def delete_orcamento(orcamento_id: str, current_user: dict = Depends(get_c
     if not orcamento:
         raise HTTPException(status_code=404, detail="Orçamento não encontrado")
     
-    # Se o orçamento estava aberto, devolver estoque
-    if orcamento["status"] == "aberto":
-        for item in orcamento.get("itens", []):
-            produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
-            if produto:
-                novo_estoque = produto["estoque_atual"] + item["quantidade"]
-                await db.produtos.update_one(
-                    {"id": item["produto_id"]},
-                    {"$set": {"estoque_atual": novo_estoque}}
-                )
+    # MELHORIA 1: Se o orçamento estava aberto/aprovado, liberar reserva de estoque
+    if orcamento["status"] in ["aberto", "aprovado"]:
+        await liberar_estoque_orcamento(orcamento_id, orcamento.get("itens", []))
     
     # Deletar orçamento
     await db.orcamentos.delete_one({"id": orcamento_id})
