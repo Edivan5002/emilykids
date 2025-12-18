@@ -1497,3 +1497,86 @@ agent_communication:
     message: "CORREÇÃO NECESSÁRIA: 'você esqueceu de implementar no módulo orçamento ao clicar em converter em venda na modal que se abre para efetivar venda implemente'."
   - agent: "main"
     message: "✅ VALIDAÇÃO IMPLEMENTADA NO MODAL DE CONVERSÃO! CORREÇÃO: Tinha implementado apenas no formulário de criar novo orçamento, mas esqueci do modal de conversão. IMPLEMENTAÇÃO AGORA COMPLETA: (1) MODAL DE CONVERSÃO (linha 300): Adicionada verificação modalConversao.itens.some(item => item.produto_id === novoItemConversao.produto_id); Se produto já existe na lista de itens do modal, bloqueia adição; (2) MENSAGEM CONSISTENTE: Mesma mensagem usada em todos os outros módulos; 'Item já adicionado! Para alterar a quantidade, remova o item e adicione novamente.'; (3) FLUXO COMPLETO PROTEGIDO: Criar novo orçamento ✓, Editar itens do orçamento ✓, Converter orçamento em venda (modal) ✓. MÓDULOS TOTALMENTE PROTEGIDOS: Notas Fiscais (criar nova), Vendas (criar nova), Orçamentos (criar novo), Orçamentos (converter em venda). Frontend compilado SEM ERROS. VALIDAÇÃO COMPLETA EM TODOS OS PONTOS DE ENTRADA!"
+
+# ============================================================================================================
+# COMPATIBILIDADE FRONTEND COM BACKEND HARDENED (ETAPAS 11-14)
+# ============================================================================================================
+
+frontend:
+  - task: "API Wrapper centralizado com helpers para compatibilidade"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/lib/api.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "✅ CRIADO /app/frontend/src/lib/api.js com: unwrap() para novo envelope {ok, data}, unwrapList() para listas com paginação, generateIdempotencyKey() para ações críticas, parseError() para tratamento de erros 401/403/409/422/429, ERROR_CODES constantes, STATUS_CONTAS_PAGAR e STATUS_CONTAS_RECEBER padronizados"
+
+  - task: "Login com suporte a 2FA"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/LoginPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "✅ LoginPage atualizado com: fluxo de 2FA (código TOTP ou backup code), tratamento de rate limiting (429) com timer, parseError para códigos TWO_FACTOR_REQUIRED/INVALID"
+
+  - task: "AuthContext com suporte a 2FA e interceptors melhorados"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/contexts/AuthContext.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "✅ AuthContext atualizado com: login() aceitando totpCode e backupCode, interceptor melhorado que ignora 2FA required, import de parseError e ERROR_CODES"
+
+  - task: "ContasPagar com Idempotency-Key e tratamento 409"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/ContasPagar.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "✅ ContasPagar atualizado: handlePagarParcela usa Idempotency-Key header, tratamento de erro 409 (ALREADY_PAID), proteção contra duplo clique, unwrapList para compatibilidade com novo envelope"
+
+  - task: "ContasReceber com Idempotency-Key e tratamento 409"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/ContasReceber.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "✅ ContasReceber atualizado: handleReceberParcela usa Idempotency-Key header, tratamento de erro 409, proteção contra duplo clique, unwrapList para compatibilidade"
+
+  - task: "Vendas com Idempotency-Key e tratamento de erro 409 (estoque)"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Vendas.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "✅ Vendas atualizado: handleSubmitVenda usa Idempotency-Key, tratamento de erro 409 INSUFFICIENT_STOCK com mensagem visual, proteção contra duplo clique, extractData helper para compatibilidade com novo envelope, verificações de segurança para venda.itens undefined"
+
+agent_communication:
+  - agent: "user"
+    message: "ETAPA FRONTEND: Analisar e ajustar frontend após hardening do backend (Etapas 11-14) - compatibilidade com novo envelope API, 2FA, Idempotency-Key, tratamento de erros 409/429/422"
+  - agent: "main"
+    message: "✅ AJUSTES FRONTEND IMPLEMENTADOS: (1) API WRAPPER (/app/frontend/src/lib/api.js): unwrap/unwrapList para {ok,data,meta}, Idempotency-Key helpers, parseError para 401/403/409/422/429, ERROR_CODES constantes; (2) LOGIN 2FA: Fluxo TOTP + backup codes, rate limiting UI (429), mensagens amigáveis; (3) CONTAS PAGAR/RECEBER: Idempotency-Key em liquidar parcela, tratamento 409 parcela já liquidada, proteção duplo clique; (4) VENDAS: Idempotency-Key em criar venda, erro 409 estoque insuficiente com mensagem visual, safety checks para itens undefined; (5) TELAS TESTADAS: Login OK, Dashboard OK, Contas a Pagar OK, Fluxo de Caixa OK, Vendas OK. SISTEMA COMPATÍVEL COM BACKEND HARDENED!"
