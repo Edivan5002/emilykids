@@ -12283,6 +12283,69 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# ==================== STARTUP EVENT - CORREÇÃO 6 ====================
+@app.on_event("startup")
+async def startup_create_indexes():
+    """
+    Correção 6: Criar índices no startup sem script externo.
+    Não quebra o app se houver erro (ex: duplicatas).
+    """
+    logger.info("Iniciando criação de índices do banco de dados...")
+    
+    indexes_to_create = [
+        # Índices únicos críticos
+        ("users", "email", {"unique": True, "name": "users_email_unique"}),
+        ("users", "id", {"unique": True, "name": "users_id_unique"}),
+        ("produtos", "sku", {"unique": True, "name": "produtos_sku_unique"}),
+        ("contas_pagar", "numero", {"unique": True, "name": "contas_pagar_numero_unique"}),
+        ("contas_receber", "numero", {"unique": True, "name": "contas_receber_numero_unique"}),
+        ("vendas", "numero_venda", {"unique": True, "name": "vendas_numero_unique"}),
+        ("roles", "nome", {"unique": True, "name": "roles_nome_unique"}),
+        ("counters", "name", {"unique": True, "name": "counters_name_unique"}),
+        
+        # Índices para filtros frequentes
+        ("users", "role_id", {"name": "users_role_idx"}),
+        ("contas_pagar", "created_at", {"name": "contas_pagar_created_idx"}),
+        ("contas_pagar", "status", {"name": "contas_pagar_status_idx"}),
+        ("contas_pagar", "fornecedor_id", {"name": "contas_pagar_fornecedor_idx"}),
+        ("contas_pagar", "centro_custo", {"name": "contas_pagar_centro_custo_idx"}),
+        ("contas_receber", "created_at", {"name": "contas_receber_created_idx"}),
+        ("contas_receber", "status", {"name": "contas_receber_status_idx"}),
+        ("contas_receber", "cliente_id", {"name": "contas_receber_cliente_idx"}),
+        ("vendas", "created_at", {"name": "vendas_created_idx"}),
+        ("vendas", "cliente_id", {"name": "vendas_cliente_idx"}),
+        ("produtos", "categoria_id", {"name": "produtos_categoria_idx"}),
+        ("logs", "timestamp", {"name": "logs_timestamp_idx"}),
+        ("logs", "user_id", {"name": "logs_user_idx"}),
+        ("logs", "arquivado", {"name": "logs_arquivado_idx"}),
+    ]
+    
+    created = 0
+    skipped = 0
+    errors = 0
+    
+    for collection_name, field, options in indexes_to_create:
+        try:
+            collection = db[collection_name]
+            await collection.create_index(field, **options)
+            created += 1
+        except Exception as e:
+            error_msg = str(e)
+            if "already exists" in error_msg.lower():
+                skipped += 1
+                logger.debug(f"Índice já existe: {collection_name}.{field}")
+            elif "duplicate key" in error_msg.lower():
+                errors += 1
+                logger.warning(
+                    f"AVISO: Não foi possível criar índice único {collection_name}.{field} - "
+                    f"existem valores duplicados no banco. Corrija os dados duplicados manualmente."
+                )
+            else:
+                errors += 1
+                logger.error(f"Erro ao criar índice {collection_name}.{field}: {error_msg}")
+    
+    logger.info(f"Índices: {created} criados, {skipped} já existiam, {errors} erros")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
