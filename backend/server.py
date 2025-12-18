@@ -4270,24 +4270,47 @@ async def validar_autorizacao(auth_data: AutorizacaoRequest, current_user: dict 
 
 # ========== CLIENTES ==========
 
-@api_router.get("/clientes", response_model=List[Cliente])
+@api_router.get("/clientes", tags=["Clientes"], summary="Lista clientes")
 async def get_clientes(
     incluir_inativos: bool = False,
     page: int = 1,
     limit: int = 20,
+    sort: str = "-created_at",
+    q: str = None,
     current_user: dict = Depends(require_permission("clientes", "ler"))
 ):
-    """Lista clientes com paginação opcional"""
+    """
+    Lista clientes com paginação e busca.
+    ETAPA 13: Resposta padronizada com api_list.
+    """
+    # Validar paginação
+    page, limit, skip = validate_pagination(page, limit)
+    
     filtro = {} if incluir_inativos else {"ativo": True}
     
-    # Se limit=0, retorna todos (mantém compatibilidade)
-    if limit == 0:
-        clientes = await db.clientes.find(filtro, {"_id": 0}).to_list(10000)
-    else:
-        skip = (page - 1) * limit
-        clientes = await db.clientes.find(filtro, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    # Busca textual
+    if q:
+        q_norm = normalize_search_query(q)
+        if q_norm:
+            filtro["$or"] = [
+                {"nome": {"$regex": q_norm, "$options": "i"}},
+                {"email": {"$regex": q_norm, "$options": "i"}},
+                {"telefone": {"$regex": q_norm, "$options": "i"}},
+                {"cpf_cnpj": {"$regex": q_norm, "$options": "i"}}
+            ]
     
-    return clientes
+    # Ordenação
+    sort_field = sort.lstrip("-")
+    sort_dir = -1 if sort.startswith("-") else 1
+    
+    # Buscar dados
+    cursor = db.clientes.find(filtro, {"_id": 0})
+    cursor = cursor.sort(sort_field, sort_dir).skip(skip).limit(limit)
+    clientes = await cursor.to_list(limit)
+    
+    total = await db.clientes.count_documents(filtro)
+    
+    return api_list(clientes, page=page, limit=limit, total=total)
 
 @api_router.post("/clientes", response_model=Cliente)
 async def create_cliente(cliente_data: ClienteCreate, current_user: dict = Depends(require_permission("clientes", "criar"))):
