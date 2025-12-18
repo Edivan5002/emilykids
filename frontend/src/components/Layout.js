@@ -44,6 +44,8 @@ const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [cadastrosOpen, setCadastrosOpen] = useState(true); // Estado para menu Cadastros
   const [financeiroOpen, setFinanceiroOpen] = useState(true); // Estado para menu Financeiro
+  const [estoqueOpen, setEstoqueOpen] = useState(true); // Estado para menu Estoque
+  const [comprasOpen, setComprasOpen] = useState(true); // Estado para menu Compras
   const [isMobile, setIsMobile] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
