@@ -1580,3 +1580,91 @@ agent_communication:
     message: "ETAPA FRONTEND: Analisar e ajustar frontend após hardening do backend (Etapas 11-14) - compatibilidade com novo envelope API, 2FA, Idempotency-Key, tratamento de erros 409/429/422"
   - agent: "main"
     message: "✅ AJUSTES FRONTEND IMPLEMENTADOS: (1) API WRAPPER (/app/frontend/src/lib/api.js): unwrap/unwrapList para {ok,data,meta}, Idempotency-Key helpers, parseError para 401/403/409/422/429, ERROR_CODES constantes; (2) LOGIN 2FA: Fluxo TOTP + backup codes, rate limiting UI (429), mensagens amigáveis; (3) CONTAS PAGAR/RECEBER: Idempotency-Key em liquidar parcela, tratamento 409 parcela já liquidada, proteção duplo clique; (4) VENDAS: Idempotency-Key em criar venda, erro 409 estoque insuficiente com mensagem visual, safety checks para itens undefined; (5) TELAS TESTADAS: Login OK, Dashboard OK, Contas a Pagar OK, Fluxo de Caixa OK, Vendas OK. SISTEMA COMPATÍVEL COM BACKEND HARDENED!"
+
+# ============================================================================================================
+# IMPLEMENTAÇÃO DAS 12 MELHORIAS DE REGRAS DE NEGÓCIO
+# ============================================================================================================
+
+melhorias_backend:
+  - melhoria: "1. Reserva Física de Estoque"
+    status: "implementado"
+    descricao: "Orçamentos abertos/aprovados reservam estoque no campo estoque_reservado do produto. Liberado ao converter/cancelar/devolver"
+    funcoes: ["reservar_estoque_orcamento", "liberar_estoque_orcamento", "calcular_estoque_disponivel"]
+
+  - melhoria: "2. Validação de Limite de Crédito"
+    status: "implementado"
+    descricao: "Vendas a prazo validam limite de crédito disponível do cliente. Bloqueia se inadimplente ou crédito insuficiente"
+    endpoints: ["GET /api/clientes/{id}/limite-credito", "PUT /api/clientes/{id}/limite-credito"]
+
+  - melhoria: "3. Comissão de Vendedor"
+    status: "implementado"
+    descricao: "Calcula e registra comissão automaticamente ao criar venda. Prioridade: comissão do produto > padrão do sistema"
+    endpoints: ["GET /api/comissoes", "POST /api/comissoes/pagar", "GET /api/comissoes/relatorio"]
+
+  - melhoria: "4. Validação de Desconto por Papel"
+    status: "implementado"
+    descricao: "Vendedor: 5%, Gerente: 15%, Admin: 100%. Exceder limite requer aprovação"
+    funcoes: ["get_limite_desconto_por_papel", "validar_desconto_por_papel"]
+
+  - melhoria: "5. Curva ABC de Produtos"
+    status: "implementado"
+    descricao: "Classifica produtos por faturamento: A (80%), B (15%), C (5%). Calcula giro de estoque"
+    endpoints: ["POST /api/produtos/calcular-curva-abc", "GET /api/produtos/curva-abc"]
+
+  - melhoria: "6. Alertas Financeiros Proativos"
+    status: "implementado"
+    descricao: "Parcelas a vencer em X dias, vencidas, clientes inadimplentes. Consolidado em um endpoint"
+    endpoints: ["GET /api/alertas/financeiros"]
+
+  - melhoria: "7. Histórico de Preços de Venda"
+    status: "implementado"
+    descricao: "Registra alterações de preço de venda com tipo específico (custo, venda, custo_e_venda)"
+    endpoints: ["GET /api/produtos/{id}/historico-precos-venda"]
+
+  - melhoria: "8. Pedido de Compra"
+    status: "implementado"
+    descricao: "Cria pedidos para fornecedores, vincula com notas fiscais de entrada, controla recebimento parcial"
+    endpoints: ["GET /api/pedidos-compra", "POST /api/pedidos-compra", "PUT /api/pedidos-compra/{id}/enviar", "POST /api/pedidos-compra/{id}/vincular-nf"]
+
+  - melhoria: "9. Crédito de Devolução"
+    status: "implementado"
+    descricao: "Devoluções geram crédito automático para o cliente. FIFO para uso em vendas"
+    endpoints: ["POST /api/clientes/{id}/creditos", "GET /api/clientes/{id}/creditos"]
+
+  - melhoria: "10. Controle de Lotes"
+    status: "implementado"
+    descricao: "Adiciona lotes com data de fabricação/validade. Alerta de lotes vencendo"
+    endpoints: ["POST /api/produtos/{id}/lotes", "GET /api/produtos/{id}/lotes", "GET /api/estoque/lotes-vencendo"]
+
+  - melhoria: "11. Multi-unidade de Medida"
+    status: "implementado"
+    descricao: "Configura unidade de compra (ex: CX) com fator de conversão (ex: 1 CX = 12 UN)"
+    endpoints: ["PUT /api/produtos/{id}/unidade-compra"]
+
+  - melhoria: "12. Auditoria de Estoque"
+    status: "implementado"
+    descricao: "Compara estoque sistema vs movimentações. Permite reconciliação com ajuste"
+    endpoints: ["GET /api/estoque/auditoria", "POST /api/estoque/reconciliar/{id}"]
+
+novos_campos_produto:
+  - "estoque_reservado: int"
+  - "controlar_lote: bool"
+  - "lotes: List[dict]"
+  - "unidade_compra: str"
+  - "fator_conversao: float"
+  - "curva_abc: str (A/B/C)"
+  - "giro_estoque: float"
+  - "faturamento_acumulado: float"
+
+novos_campos_cliente:
+  - "saldo_credito: float"
+  - "historico_creditos: List[dict]"
+
+novas_collections:
+  - "comissoes_vendedores"
+  - "creditos_clientes"
+  - "pedidos_compra"
+
+agent_communication:
+  - agent: "main"
+    message: "✅ TODAS AS 12 MELHORIAS IMPLEMENTADAS NO BACKEND. Endpoints testados via curl: alertas financeiros, comissões, pedidos de compra, auditoria estoque, lotes vencendo, limite de crédito."
