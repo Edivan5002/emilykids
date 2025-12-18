@@ -810,7 +810,13 @@ const Orcamentos = () => {
                             <SelectItem key={p.id} value={p.id} className="text-sm">
                               <div className="flex flex-col">
                                 <span className="font-medium text-blue-700">{getProdutoDescricaoCompleta(p.id)}</span>
-                                <span className="text-xs text-gray-600">R$ {p.preco_venda.toFixed(2)} | Estoque: {p.estoque_atual}</span>
+                                <span className="text-xs text-gray-600">
+                                  R$ {p.preco_venda.toFixed(2)} | 
+                                  Estoque: {p.estoque_atual}
+                                  {p.estoque_reservado > 0 && (
+                                    <span className="text-orange-600 ml-1">(Reserv: {p.estoque_reservado} | Disp: {(p.estoque_atual || 0) - (p.estoque_reservado || 0)})</span>
+                                  )}
+                                </span>
                               </div>
                             </SelectItem>
                           ))}
@@ -1333,7 +1339,13 @@ const Orcamentos = () => {
                                 <SelectItem key={p.id} value={p.id} className="text-sm">
                                   <div className="flex flex-col">
                                     <span className="font-medium text-blue-700">{getProdutoDescricaoCompleta(p.id)}</span>
-                                    <span className="text-xs text-gray-600">R$ {p.preco_venda?.toFixed(2)} | Estoque: {p.estoque_atual}</span>
+                                    <span className="text-xs text-gray-600">
+                                      R$ {p.preco_venda?.toFixed(2)} | 
+                                      Estoque: {p.estoque_atual}
+                                      {p.estoque_reservado > 0 && (
+                                        <span className="text-orange-600 ml-1">(Reserv: {p.estoque_reservado} | Disp: {(p.estoque_atual || 0) - (p.estoque_reservado || 0)})</span>
+                                      )}
+                                    </span>
                                   </div>
                                 </SelectItem>
                               ))}
