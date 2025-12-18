@@ -31,6 +31,9 @@ const Clientes = () => {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, nome: '' });
   const [toggleDialog, setToggleDialog] = useState({ open: false, id: null, nome: '', ativo: false });
   const [financeiroDialog, setFinanceiroDialog] = useState({ open: false, id: null, nome: '' });
+  const [creditoDialog, setCreditoDialog] = useState({ open: false, cliente: null, limiteCredito: null, creditos: [] });
+  const [novoLimite, setNovoLimite] = useState('');
+  const [novoCreditoForm, setNovoCreditoForm] = useState({ valor: '', descricao: '', origem: 'manual' });
   const [loading, setLoading] = useState(false);
   
   // Paginação
