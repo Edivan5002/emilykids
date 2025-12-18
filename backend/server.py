@@ -17,6 +17,25 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# ==================== VALIDAÇÃO DE VARIÁVEIS OBRIGATÓRIAS ====================
+# Correção 3: Exigir variáveis críticas no ambiente
+
+def _validate_required_env(var_name: str, description: str) -> str:
+    """Valida e retorna variável de ambiente obrigatória."""
+    value = os.environ.get(var_name)
+    if not value:
+        raise RuntimeError(
+            f"ERRO CRÍTICO: Variável de ambiente '{var_name}' não definida. "
+            f"Descrição: {description}. "
+            f"Configure no arquivo .env ou variáveis de ambiente."
+        )
+    return value
+
+# Validar variáveis críticas - falha rápido se faltarem
+_MONGO_URL = _validate_required_env('MONGO_URL', 'URL de conexão com MongoDB')
+_DB_NAME = _validate_required_env('DB_NAME', 'Nome do banco de dados')
+_JWT_SECRET = _validate_required_env('JWT_SECRET', 'Chave secreta para assinatura de tokens JWT')
+
 # ==================== HELPERS - ETAPA 6 ====================
 
 def iso_utc_now() -> str:
