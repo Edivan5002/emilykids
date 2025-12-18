@@ -6960,16 +6960,12 @@ TAXA_CARTAO_PADRAO = 3.5  # 3.5%
 COMISSAO_VENDEDOR_PADRAO = 2.0  # 2%
 
 async def gerar_proximo_numero_venda() -> str:
-    """Gera próximo número sequencial de venda"""
-    ultima_venda = await db.vendas.find({}, {"_id": 0, "numero_venda": 1}).sort("created_at", -1).limit(1).to_list(1)
-    
-    if ultima_venda and "numero_venda" in ultima_venda[0]:
-        ultimo_numero = int(ultima_venda[0]["numero_venda"].split("-")[1])
-        proximo_numero = ultimo_numero + 1
-    else:
-        proximo_numero = 1
-    
-    return f"VEN-{proximo_numero:05d}"
+    """
+    Gera próximo número sequencial de venda (VEN-00001).
+    Thread-safe: usa contador atômico do MongoDB.
+    """
+    seq = await get_next_sequence("vendas")
+    return f"VEN-{seq:05d}"
 
 def calcular_parcelas(total: float, numero_parcelas: int, data_base: str = None) -> List[dict]:
     """Calcula parcelas com datas de vencimento"""
