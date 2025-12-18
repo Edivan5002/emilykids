@@ -192,8 +192,8 @@ const Comissoes = () => {
             <div>
               <Label>Vendedor</Label>
               <Select 
-                value={filtros.vendedor_id} 
-                onValueChange={(v) => setFiltros({...filtros, vendedor_id: v})}
+                value={filtros.vendedor_id || "all"} 
+                onValueChange={(v) => setFiltros({...filtros, vendedor_id: v === "all" ? "" : v})}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
