@@ -167,7 +167,7 @@ const FluxoCaixa = () => {
       )}
 
       {/* Projeção */}
-      {dashboard && (
+      {dashboard?.projecao_30_dias && (
         <Card className="bg-gradient-to-r from-blue-50 to-purple-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -180,19 +180,19 @@ const FluxoCaixa = () => {
               <div>
                 <p className="text-sm text-gray-600 mb-2">Entradas Previstas</p>
                 <p className="text-2xl font-bold text-green-600">
-                  R$ {dashboard.projecao_30_dias.entradas_previstas.toFixed(2)}
+                  R$ {(dashboard.projecao_30_dias?.entradas_previstas || 0).toFixed(2)}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-2">Saídas Previstas</p>
                 <p className="text-2xl font-bold text-red-600">
-                  R$ {dashboard.projecao_30_dias.saidas_previstas.toFixed(2)}
+                  R$ {(dashboard.projecao_30_dias?.saidas_previstas || 0).toFixed(2)}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-2">Saldo Projetado</p>
-                <p className={`text-2xl font-bold ${dashboard.projecao_30_dias.saldo_projetado >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  R$ {dashboard.projecao_30_dias.saldo_projetado.toFixed(2)}
+                <p className={`text-2xl font-bold ${(dashboard.projecao_30_dias?.saldo_projetado || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  R$ {(dashboard.projecao_30_dias?.saldo_projetado || 0).toFixed(2)}
                 </p>
               </div>
             </div>
