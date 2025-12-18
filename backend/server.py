@@ -10987,7 +10987,7 @@ async def listar_pedidos_compra(
         fornecedor = await db.fornecedores.find_one({"id": pedido.get("fornecedor_id")}, {"_id": 0, "razao_social": 1})
         pedido["fornecedor_nome"] = fornecedor.get("razao_social") if fornecedor else "N/A"
     
-    return api_list(pedidos, page, limit, total)
+    return api_list(pedidos, page=page, limit=limit, total=total)
 
 @api_router.post("/pedidos-compra")
 async def criar_pedido_compra(
