@@ -11461,7 +11461,7 @@ async def editar_conta_pagar(
 async def liquidar_parcela(
     id: str,
     dados: PagamentoParcela,
-    current_user: dict = Depends(require_permission("contas_pagar", "liquidar"))
+    current_user: dict = Depends(require_permission("contas_pagar", "pagar"))
 ):
     """
     Registra pagamento de uma parcela
