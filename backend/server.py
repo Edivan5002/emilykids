@@ -12545,6 +12545,82 @@ async def get_fluxo_caixa(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao buscar fluxo de caixa: {str(e)}")
 
+# ==================== ETAPA 11 - ROTINA DE VENCIMENTOS ====================
+
+@api_router.post("/rotinas/atualizar-vencimentos")
+async def rotina_atualizar_vencimentos(
+    tipo: str = "ambos",
+    limit: int = 1000,
+    current_user: dict = Depends(require_permission("configuracoes", "editar"))
+):
+    """
+    4) Rotina administrativa para atualizar status de parcelas vencidas.
+    Marca parcelas como 'vencido' quando data_vencimento < hoje e ainda pendente.
+    """
+    if tipo not in ["receber", "pagar", "ambos"]:
+        raise HTTPException(status_code=400, detail="Tipo deve ser 'receber', 'pagar' ou 'ambos'")
+    
+    hoje = parse_date_only(iso_utc_now())
+    resultados = {"receber": {"contas_processadas": 0, "parcelas_vencidas": 0}, 
+                  "pagar": {"contas_processadas": 0, "parcelas_vencidas": 0}}
+    
+    async def processar_vencimentos(collection_name: str, tipo_key: str):
+        collection = db[collection_name]
+        
+        # Buscar contas não canceladas com parcelas pendentes
+        contas = await collection.find(
+            {"cancelada": {"$ne": True}, "status": {"$in": ["pendente", "recebido_parcial", "pago_parcial"]}},
+            {"_id": 0}
+        ).limit(limit).to_list(None)
+        
+        for conta in contas:
+            atualizado = False
+            for i, parcela in enumerate(conta.get("parcelas", [])):
+                if parcela.get("status") == "pendente":
+                    data_venc = parse_date_only(parcela.get("data_vencimento", ""))
+                    if data_venc and data_venc < hoje:
+                        # Calcular dias de atraso
+                        try:
+                            dt_venc = datetime.strptime(data_venc, "%Y-%m-%d")
+                            dt_hoje = datetime.strptime(hoje, "%Y-%m-%d")
+                            dias_atraso = (dt_hoje - dt_venc).days
+                        except:
+                            dias_atraso = 0
+                        
+                        # Atualizar parcela para vencido
+                        await collection.update_one(
+                            {"id": conta["id"]},
+                            {"$set": {
+                                f"parcelas.{i}.status": "vencido",
+                                f"parcelas.{i}.dias_atraso": dias_atraso
+                            }}
+                        )
+                        resultados[tipo_key]["parcelas_vencidas"] += 1
+                        atualizado = True
+            
+            if atualizado:
+                # Recalcular status da conta
+                if tipo_key == "pagar":
+                    await atualizar_status_conta_pagar(conta["id"])
+                else:
+                    await atualizar_status_conta_receber(conta["id"])
+                resultados[tipo_key]["contas_processadas"] += 1
+    
+    # Processar conforme tipo
+    if tipo in ["receber", "ambos"]:
+        await processar_vencimentos("contas_receber", "receber")
+    
+    if tipo in ["pagar", "ambos"]:
+        await processar_vencimentos("contas_pagar", "pagar")
+    
+    return {
+        "success": True,
+        "tipo": tipo,
+        "data_referencia": hoje,
+        "resultados": resultados
+    }
+
+
 @api_router.get("/fluxo-caixa/dashboard")
 async def get_fluxo_caixa_dashboard(
     current_user: dict = Depends(require_permission("contas_receber", "ler"))
