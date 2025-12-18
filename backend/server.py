@@ -7308,16 +7308,9 @@ async def create_orcamento(orcamento_data: OrcamentoCreate, current_user: dict =
     
     await db.orcamentos.insert_one(orcamento.model_dump())
     
-    # Reservar estoque se aprovado ou aberto
+    # MELHORIA 1: Reservar estoque fisicamente se aprovado ou aberto
     if status_inicial in ["aberto", "aprovado"]:
-        for item in orcamento.itens:
-            produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
-            if produto:
-                novo_estoque = produto["estoque_atual"] - item["quantidade"]
-                await db.produtos.update_one(
-                    {"id": item["produto_id"]},
-                    {"$set": {"estoque_atual": novo_estoque}}
-                )
+        await reservar_estoque_orcamento(orcamento.id, orcamento.itens)
     
     # Log
     await log_action(
