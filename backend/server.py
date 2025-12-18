@@ -10386,6 +10386,1057 @@ async def relatorio_auditoria(
     }
 
 
+# ==================== MELHORIAS IMPLEMENTADAS ====================
+
+# ==================== MELHORIA 1: RESERVA FÍSICA DE ESTOQUE ====================
+
+async def reservar_estoque_orcamento(orcamento_id: str, itens: List[dict]):
+    """Reserva estoque fisicamente ao criar/aprovar orçamento"""
+    for item in itens:
+        await db.produtos.update_one(
+            {"id": item["produto_id"]},
+            {"$inc": {"estoque_reservado": item["quantidade"]}}
+        )
+
+async def liberar_estoque_orcamento(orcamento_id: str, itens: List[dict]):
+    """Libera estoque reservado ao converter/cancelar/expirar orçamento"""
+    for item in itens:
+        await db.produtos.update_one(
+            {"id": item["produto_id"]},
+            {"$inc": {"estoque_reservado": -item["quantidade"]}}
+        )
+
+def calcular_estoque_disponivel(produto: dict) -> int:
+    """Calcula estoque disponível = atual - reservado"""
+    return produto.get("estoque_atual", 0) - produto.get("estoque_reservado", 0)
+
+# ==================== MELHORIA 2: VALIDAÇÃO DE LIMITE DE CRÉDITO ====================
+
+async def validar_limite_credito(cliente_id: str, valor_venda: float, forma_pagamento: str) -> dict:
+    """
+    Valida se cliente pode realizar venda a prazo baseado no limite de crédito.
+    Retorna: {"permitido": bool, "mensagem": str, "credito_disponivel": float}
+    """
+    # Vendas à vista não precisam validar crédito
+    if forma_pagamento in ["pix", "dinheiro", "cartao_debito"]:
+        return {"permitido": True, "mensagem": "Pagamento à vista", "credito_disponivel": None}
+    
+    cliente = await db.clientes.find_one({"id": cliente_id}, {"_id": 0})
+    if not cliente:
+        return {"permitido": False, "mensagem": "Cliente não encontrado", "credito_disponivel": 0}
+    
+    # Verificar status de crédito
+    if cliente.get("status_credito") == "bloqueado":
+        return {"permitido": False, "mensagem": "Cliente com crédito bloqueado", "credito_disponivel": 0}
+    
+    if cliente.get("inadimplente", False):
+        return {"permitido": False, "mensagem": "Cliente inadimplente - crédito bloqueado", "credito_disponivel": 0}
+    
+    limite = cliente.get("limite_credito", 0)
+    utilizado = cliente.get("credito_utilizado", 0)
+    disponivel = limite - utilizado
+    
+    # Se limite é 0, significa sem limite (liberado)
+    if limite == 0:
+        return {"permitido": True, "mensagem": "Cliente sem limite definido (liberado)", "credito_disponivel": None}
+    
+    if valor_venda > disponivel:
+        return {
+            "permitido": False, 
+            "mensagem": f"Limite de crédito insuficiente. Disponível: R$ {disponivel:.2f}, Solicitado: R$ {valor_venda:.2f}",
+            "credito_disponivel": disponivel
+        }
+    
+    return {"permitido": True, "mensagem": "Crédito aprovado", "credito_disponivel": disponivel - valor_venda}
+
+async def atualizar_credito_utilizado(cliente_id: str, valor: float, operacao: str = "adicionar"):
+    """Atualiza crédito utilizado do cliente (adicionar ou subtrair)"""
+    if operacao == "adicionar":
+        await db.clientes.update_one(
+            {"id": cliente_id},
+            {"$inc": {"credito_utilizado": valor}}
+        )
+    else:
+        await db.clientes.update_one(
+            {"id": cliente_id},
+            {"$inc": {"credito_utilizado": -valor}}
+        )
+
+@api_router.get("/clientes/{cliente_id}/limite-credito")
+async def consultar_limite_credito(cliente_id: str, current_user: dict = Depends(get_current_user)):
+    """Consulta situação de crédito do cliente"""
+    cliente = await db.clientes.find_one({"id": cliente_id}, {"_id": 0})
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    limite = cliente.get("limite_credito", 0)
+    utilizado = cliente.get("credito_utilizado", 0)
+    saldo_credito = cliente.get("saldo_credito", 0)  # Créditos de devolução
+    
+    return {
+        "cliente_id": cliente_id,
+        "nome": cliente.get("nome"),
+        "limite_credito": limite,
+        "credito_utilizado": utilizado,
+        "credito_disponivel": limite - utilizado if limite > 0 else None,
+        "saldo_credito_devolucao": saldo_credito,
+        "status_credito": cliente.get("status_credito", "aprovado"),
+        "inadimplente": cliente.get("inadimplente", False),
+        "score_credito": cliente.get("score_credito", 100)
+    }
+
+@api_router.put("/clientes/{cliente_id}/limite-credito")
+async def atualizar_limite_credito(
+    cliente_id: str, 
+    limite: float = Body(..., embed=True),
+    current_user: dict = Depends(require_permission("clientes", "editar"))
+):
+    """Atualiza limite de crédito do cliente"""
+    cliente = await db.clientes.find_one({"id": cliente_id}, {"_id": 0})
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    await db.clientes.update_one(
+        {"id": cliente_id},
+        {"$set": {"limite_credito": limite}}
+    )
+    
+    return {"message": f"Limite de crédito atualizado para R$ {limite:.2f}"}
+
+# ==================== MELHORIA 3: COMISSÃO DE VENDEDOR ====================
+
+async def calcular_comissao_venda(venda: dict, vendedor: dict) -> dict:
+    """
+    Calcula comissão da venda.
+    Prioridade: comissão do produto > comissão padrão do sistema
+    """
+    comissao_total = 0
+    detalhes = []
+    
+    for item in venda.get("itens", []):
+        produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
+        if produto:
+            # Usar comissão do produto ou padrão
+            percentual = produto.get("comissao_vendedor") or COMISSAO_VENDEDOR_PADRAO
+            valor_item = item["quantidade"] * item["preco_unitario"]
+            comissao_item = valor_item * (percentual / 100)
+            comissao_total += comissao_item
+            detalhes.append({
+                "produto_id": item["produto_id"],
+                "produto_nome": produto.get("nome"),
+                "valor_item": valor_item,
+                "percentual": percentual,
+                "comissao": comissao_item
+            })
+    
+    return {
+        "comissao_total": round(comissao_total, 2),
+        "percentual_medio": round((comissao_total / venda.get("total", 1)) * 100, 2),
+        "detalhes": detalhes
+    }
+
+async def registrar_comissao_venda(venda: dict, vendedor: dict):
+    """Registra comissão na coleção de comissões"""
+    calculo = await calcular_comissao_venda(venda, vendedor)
+    
+    cliente = await db.clientes.find_one({"id": venda.get("cliente_id")}, {"_id": 0})
+    
+    comissao = ComissaoVendedor(
+        vendedor_id=vendedor["id"],
+        vendedor_nome=vendedor["nome"],
+        venda_id=venda["id"],
+        venda_numero=venda.get("numero_venda", ""),
+        cliente_nome=cliente.get("nome", "") if cliente else "",
+        data_venda=venda.get("data_venda", datetime.now(timezone.utc).isoformat()),
+        valor_venda=venda.get("total", 0),
+        percentual_comissao=calculo["percentual_medio"],
+        valor_comissao=calculo["comissao_total"],
+        status="pendente"
+    )
+    
+    await db.comissoes_vendedores.insert_one(comissao.model_dump())
+    return comissao
+
+@api_router.get("/comissoes")
+async def listar_comissoes(
+    vendedor_id: Optional[str] = None,
+    status: Optional[str] = None,
+    data_inicio: Optional[str] = None,
+    data_fim: Optional[str] = None,
+    page: int = 1,
+    limit: int = 20,
+    current_user: dict = Depends(get_current_user)
+):
+    """Lista comissões de vendedores"""
+    filtro = {}
+    
+    # Vendedor só vê suas próprias comissões
+    if current_user["papel"] == "vendedor":
+        filtro["vendedor_id"] = current_user["id"]
+    elif vendedor_id:
+        filtro["vendedor_id"] = vendedor_id
+    
+    if status:
+        filtro["status"] = status
+    
+    if data_inicio:
+        filtro["data_venda"] = {"$gte": data_inicio}
+    if data_fim:
+        filtro.setdefault("data_venda", {})["$lte"] = data_fim
+    
+    skip = (page - 1) * limit
+    total = await db.comissoes_vendedores.count_documents(filtro)
+    comissoes = await db.comissoes_vendedores.find(filtro, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    # Calcular totais
+    total_pendente = sum(c["valor_comissao"] for c in comissoes if c["status"] == "pendente")
+    total_pago = sum(c["valor_comissao"] for c in comissoes if c["status"] == "pago")
+    
+    return api_list(comissoes, page, limit, total, extra={
+        "total_pendente": total_pendente,
+        "total_pago": total_pago
+    })
+
+@api_router.post("/comissoes/pagar")
+async def pagar_comissoes(
+    comissao_ids: List[str] = Body(...),
+    current_user: dict = Depends(require_permission("financeiro", "editar"))
+):
+    """Marca comissões como pagas"""
+    data_pagamento = datetime.now(timezone.utc).isoformat()
+    
+    result = await db.comissoes_vendedores.update_many(
+        {"id": {"$in": comissao_ids}, "status": "pendente"},
+        {"$set": {"status": "pago", "data_pagamento": data_pagamento}}
+    )
+    
+    return {"message": f"{result.modified_count} comissão(ões) marcada(s) como paga(s)"}
+
+@api_router.get("/comissoes/relatorio")
+async def relatorio_comissoes(
+    data_inicio: str,
+    data_fim: str,
+    current_user: dict = Depends(require_permission("relatorios", "ler"))
+):
+    """Relatório de comissões por vendedor no período"""
+    pipeline = [
+        {"$match": {"data_venda": {"$gte": data_inicio, "$lte": data_fim}}},
+        {"$group": {
+            "_id": "$vendedor_id",
+            "vendedor_nome": {"$first": "$vendedor_nome"},
+            "total_vendas": {"$sum": "$valor_venda"},
+            "total_comissao": {"$sum": "$valor_comissao"},
+            "quantidade_vendas": {"$sum": 1},
+            "comissao_pendente": {"$sum": {"$cond": [{"$eq": ["$status", "pendente"]}, "$valor_comissao", 0]}},
+            "comissao_paga": {"$sum": {"$cond": [{"$eq": ["$status", "pago"]}, "$valor_comissao", 0]}}
+        }},
+        {"$sort": {"total_comissao": -1}}
+    ]
+    
+    resultado = await db.comissoes_vendedores.aggregate(pipeline).to_list(100)
+    
+    return {
+        "periodo": {"data_inicio": data_inicio, "data_fim": data_fim},
+        "vendedores": resultado,
+        "totais": {
+            "total_vendas": sum(v["total_vendas"] for v in resultado),
+            "total_comissao": sum(v["total_comissao"] for v in resultado),
+            "comissao_pendente": sum(v["comissao_pendente"] for v in resultado),
+            "comissao_paga": sum(v["comissao_paga"] for v in resultado)
+        }
+    }
+
+# ==================== MELHORIA 4: VALIDAÇÃO DE DESCONTO POR PAPEL ====================
+
+def validar_desconto_por_papel(desconto_percentual: float, papel: str) -> dict:
+    """
+    Valida se o desconto está dentro do limite permitido para o papel do usuário.
+    Retorna: {"permitido": bool, "requer_aprovacao": bool, "limite": float, "mensagem": str}
+    """
+    limite = get_limite_desconto_por_papel(papel)
+    
+    if desconto_percentual <= limite:
+        return {
+            "permitido": True,
+            "requer_aprovacao": False,
+            "limite": limite,
+            "mensagem": f"Desconto de {desconto_percentual:.1f}% aprovado automaticamente"
+        }
+    
+    # Se excede o limite, precisa de aprovação
+    return {
+        "permitido": False,
+        "requer_aprovacao": True,
+        "limite": limite,
+        "mensagem": f"Desconto de {desconto_percentual:.1f}% excede seu limite de {limite:.1f}%. Requer aprovação de gerente/admin."
+    }
+
+# ==================== MELHORIA 5: CURVA ABC DE PRODUTOS ====================
+
+@api_router.post("/produtos/calcular-curva-abc")
+async def calcular_curva_abc(
+    periodo_meses: int = 12,
+    current_user: dict = Depends(require_permission("produtos", "editar"))
+):
+    """
+    Calcula e atualiza a Curva ABC de todos os produtos baseado em faturamento.
+    A = 80% do faturamento (top ~20% produtos)
+    B = 15% do faturamento (próximos ~30%)
+    C = 5% do faturamento (restante ~50%)
+    """
+    data_limite = (datetime.now(timezone.utc) - timedelta(days=periodo_meses * 30)).isoformat()
+    
+    # Buscar vendas do período
+    pipeline = [
+        {"$match": {"data_venda": {"$gte": data_limite}, "cancelada": {"$ne": True}}},
+        {"$unwind": "$itens"},
+        {"$group": {
+            "_id": "$itens.produto_id",
+            "faturamento": {"$sum": {"$multiply": ["$itens.quantidade", "$itens.preco_unitario"]}},
+            "quantidade_vendida": {"$sum": "$itens.quantidade"},
+            "num_vendas": {"$sum": 1}
+        }},
+        {"$sort": {"faturamento": -1}}
+    ]
+    
+    resultados = await db.vendas.aggregate(pipeline).to_list(10000)
+    
+    if not resultados:
+        return {"message": "Nenhuma venda encontrada no período", "produtos_atualizados": 0}
+    
+    # Calcular totais
+    faturamento_total = sum(r["faturamento"] for r in resultados)
+    
+    # Classificar produtos
+    faturamento_acumulado = 0
+    produtos_atualizados = 0
+    
+    for r in resultados:
+        faturamento_acumulado += r["faturamento"]
+        percentual_acumulado = (faturamento_acumulado / faturamento_total) * 100 if faturamento_total > 0 else 0
+        
+        # Determinar curva
+        if percentual_acumulado <= 80:
+            curva = "A"
+        elif percentual_acumulado <= 95:
+            curva = "B"
+        else:
+            curva = "C"
+        
+        # Calcular giro de estoque
+        produto = await db.produtos.find_one({"id": r["_id"]}, {"_id": 0})
+        if produto:
+            estoque_medio = produto.get("estoque_atual", 1) or 1
+            giro = (r["quantidade_vendida"] / estoque_medio) / periodo_meses if estoque_medio > 0 else 0
+            
+            await db.produtos.update_one(
+                {"id": r["_id"]},
+                {"$set": {
+                    "curva_abc": curva,
+                    "giro_estoque": round(giro, 2),
+                    "faturamento_acumulado": r["faturamento"]
+                }}
+            )
+            produtos_atualizados += 1
+    
+    # Produtos sem vendas são classificados como C
+    produtos_sem_venda = await db.produtos.update_many(
+        {"id": {"$nin": [r["_id"] for r in resultados]}},
+        {"$set": {"curva_abc": "C", "giro_estoque": 0, "faturamento_acumulado": 0}}
+    )
+    
+    return {
+        "message": "Curva ABC calculada com sucesso",
+        "periodo_meses": periodo_meses,
+        "faturamento_total": faturamento_total,
+        "produtos_atualizados": produtos_atualizados,
+        "produtos_sem_venda": produtos_sem_venda.modified_count,
+        "distribuicao": {
+            "A": len([r for r in resultados if (sum(x["faturamento"] for x in resultados[:resultados.index(r)+1]) / faturamento_total * 100) <= 80]),
+            "B": len([r for r in resultados if 80 < (sum(x["faturamento"] for x in resultados[:resultados.index(r)+1]) / faturamento_total * 100) <= 95]),
+            "C": len([r for r in resultados if (sum(x["faturamento"] for x in resultados[:resultados.index(r)+1]) / faturamento_total * 100) > 95])
+        }
+    }
+
+@api_router.get("/produtos/curva-abc")
+async def get_curva_abc(current_user: dict = Depends(get_current_user)):
+    """Retorna produtos agrupados por Curva ABC"""
+    pipeline = [
+        {"$match": {"ativo": True}},
+        {"$group": {
+            "_id": "$curva_abc",
+            "produtos": {"$push": {"id": "$id", "nome": "$nome", "sku": "$sku", "faturamento": "$faturamento_acumulado", "giro": "$giro_estoque"}},
+            "count": {"$sum": 1},
+            "faturamento_total": {"$sum": "$faturamento_acumulado"}
+        }},
+        {"$sort": {"_id": 1}}
+    ]
+    
+    resultado = await db.produtos.aggregate(pipeline).to_list(3)
+    
+    return {
+        "curvas": {r["_id"]: {"count": r["count"], "faturamento": r["faturamento_total"], "produtos": r["produtos"][:20]} for r in resultado}
+    }
+
+# ==================== MELHORIA 6: ALERTAS FINANCEIROS PROATIVOS ====================
+
+@api_router.get("/alertas/financeiros")
+async def get_alertas_financeiros(
+    dias_vencer: int = 7,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Retorna alertas financeiros proativos:
+    - Parcelas a vencer nos próximos X dias
+    - Parcelas vencidas
+    - Clientes inadimplentes
+    - Contas a pagar próximas do vencimento
+    """
+    hoje = datetime.now(timezone.utc).date()
+    data_limite = (hoje + timedelta(days=dias_vencer)).isoformat()
+    hoje_str = hoje.isoformat()
+    
+    # Parcelas a receber vencendo
+    contas_receber = await db.contas_receber.find(
+        {"status": {"$in": ["pendente", "recebido_parcial"]}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    parcelas_a_vencer = []
+    parcelas_vencidas_receber = []
+    
+    for conta in contas_receber:
+        cliente = await db.clientes.find_one({"id": conta.get("cliente_id")}, {"_id": 0, "nome": 1})
+        for parcela in conta.get("parcelas", []):
+            if parcela.get("status") == "pendente":
+                vencimento = parcela.get("data_vencimento", "")[:10]
+                if vencimento <= hoje_str:
+                    parcelas_vencidas_receber.append({
+                        "conta_id": conta["id"],
+                        "numero": conta.get("numero"),
+                        "cliente": cliente.get("nome") if cliente else "N/A",
+                        "parcela": parcela.get("numero_parcela"),
+                        "valor": parcela.get("valor"),
+                        "vencimento": vencimento,
+                        "dias_atraso": (hoje - datetime.fromisoformat(vencimento).date()).days
+                    })
+                elif vencimento <= data_limite:
+                    parcelas_a_vencer.append({
+                        "conta_id": conta["id"],
+                        "numero": conta.get("numero"),
+                        "cliente": cliente.get("nome") if cliente else "N/A",
+                        "parcela": parcela.get("numero_parcela"),
+                        "valor": parcela.get("valor"),
+                        "vencimento": vencimento,
+                        "dias_para_vencer": (datetime.fromisoformat(vencimento).date() - hoje).days
+                    })
+    
+    # Parcelas a pagar vencendo
+    contas_pagar = await db.contas_pagar.find(
+        {"status": {"$in": ["pendente", "pago_parcial"]}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    parcelas_a_pagar = []
+    parcelas_vencidas_pagar = []
+    
+    for conta in contas_pagar:
+        fornecedor = await db.fornecedores.find_one({"id": conta.get("fornecedor_id")}, {"_id": 0, "razao_social": 1})
+        for parcela in conta.get("parcelas", []):
+            if parcela.get("status") == "pendente":
+                vencimento = parcela.get("data_vencimento", "")[:10]
+                if vencimento <= hoje_str:
+                    parcelas_vencidas_pagar.append({
+                        "conta_id": conta["id"],
+                        "numero": conta.get("numero"),
+                        "fornecedor": fornecedor.get("razao_social") if fornecedor else "N/A",
+                        "parcela": parcela.get("numero_parcela"),
+                        "valor": parcela.get("valor"),
+                        "vencimento": vencimento,
+                        "dias_atraso": (hoje - datetime.fromisoformat(vencimento).date()).days
+                    })
+                elif vencimento <= data_limite:
+                    parcelas_a_pagar.append({
+                        "conta_id": conta["id"],
+                        "numero": conta.get("numero"),
+                        "fornecedor": fornecedor.get("razao_social") if fornecedor else "N/A",
+                        "parcela": parcela.get("numero_parcela"),
+                        "valor": parcela.get("valor"),
+                        "vencimento": vencimento,
+                        "dias_para_vencer": (datetime.fromisoformat(vencimento).date() - hoje).days
+                    })
+    
+    # Clientes inadimplentes
+    clientes_inadimplentes = await db.clientes.find(
+        {"$or": [{"inadimplente": True}, {"status_credito": "bloqueado"}]},
+        {"_id": 0, "id": 1, "nome": 1, "total_vencido": 1, "score_credito": 1}
+    ).to_list(100)
+    
+    return {
+        "resumo": {
+            "total_a_receber_vencendo": sum(p["valor"] for p in parcelas_a_vencer),
+            "total_a_receber_vencido": sum(p["valor"] for p in parcelas_vencidas_receber),
+            "total_a_pagar_vencendo": sum(p["valor"] for p in parcelas_a_pagar),
+            "total_a_pagar_vencido": sum(p["valor"] for p in parcelas_vencidas_pagar),
+            "clientes_inadimplentes": len(clientes_inadimplentes)
+        },
+        "contas_a_receber": {
+            "a_vencer": sorted(parcelas_a_vencer, key=lambda x: x["vencimento"])[:20],
+            "vencidas": sorted(parcelas_vencidas_receber, key=lambda x: x["dias_atraso"], reverse=True)[:20]
+        },
+        "contas_a_pagar": {
+            "a_vencer": sorted(parcelas_a_pagar, key=lambda x: x["vencimento"])[:20],
+            "vencidas": sorted(parcelas_vencidas_pagar, key=lambda x: x["dias_atraso"], reverse=True)[:20]
+        },
+        "clientes_inadimplentes": clientes_inadimplentes
+    }
+
+# ==================== MELHORIA 7: HISTÓRICO DE PREÇOS DE VENDA ====================
+
+async def registrar_alteracao_preco_venda(produto_id: str, preco_anterior: float, preco_novo: float, usuario: dict, motivo: str = None):
+    """Registra alteração de preço de venda no histórico"""
+    produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
+    if not produto:
+        return
+    
+    historico = HistoricoPreco(
+        produto_id=produto_id,
+        preco_custo_anterior=produto.get("preco_medio", 0),
+        preco_custo_novo=produto.get("preco_medio", 0),
+        preco_venda_anterior=preco_anterior,
+        preco_venda_novo=preco_novo,
+        margem_anterior=((preco_anterior - produto.get("preco_medio", 0)) / produto.get("preco_medio", 1)) * 100 if produto.get("preco_medio", 0) > 0 else 0,
+        margem_nova=((preco_novo - produto.get("preco_medio", 0)) / produto.get("preco_medio", 1)) * 100 if produto.get("preco_medio", 0) > 0 else 0,
+        usuario_id=usuario["id"],
+        usuario_nome=usuario["nome"],
+        motivo=motivo,
+        tipo="venda"
+    )
+    
+    await db.historico_precos.insert_one(historico.model_dump())
+
+@api_router.get("/produtos/{produto_id}/historico-precos-venda")
+async def get_historico_precos_venda(
+    produto_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Retorna histórico de alterações de preço de venda de um produto"""
+    historico = await db.historico_precos.find(
+        {"produto_id": produto_id},
+        {"_id": 0}
+    ).sort("data_alteracao", -1).to_list(100)
+    
+    return {"historico": historico}
+
+# ==================== MELHORIA 8: PEDIDO DE COMPRA ====================
+
+async def gerar_numero_pedido_compra() -> str:
+    """Gera número sequencial para pedido de compra"""
+    seq = await get_next_sequence("pedidos_compra")
+    return f"PC-{seq:06d}"
+
+@api_router.get("/pedidos-compra")
+async def listar_pedidos_compra(
+    fornecedor_id: Optional[str] = None,
+    status: Optional[str] = None,
+    page: int = 1,
+    limit: int = 20,
+    current_user: dict = Depends(get_current_user)
+):
+    """Lista pedidos de compra"""
+    filtro = {}
+    if fornecedor_id:
+        filtro["fornecedor_id"] = fornecedor_id
+    if status:
+        filtro["status"] = status
+    
+    skip = (page - 1) * limit
+    total = await db.pedidos_compra.count_documents(filtro)
+    pedidos = await db.pedidos_compra.find(filtro, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    # Enriquecer com dados do fornecedor
+    for pedido in pedidos:
+        fornecedor = await db.fornecedores.find_one({"id": pedido.get("fornecedor_id")}, {"_id": 0, "razao_social": 1})
+        pedido["fornecedor_nome"] = fornecedor.get("razao_social") if fornecedor else "N/A"
+    
+    return api_list(pedidos, page, limit, total)
+
+@api_router.post("/pedidos-compra")
+async def criar_pedido_compra(
+    fornecedor_id: str = Body(...),
+    itens: List[dict] = Body(...),
+    data_previsao_entrega: Optional[str] = Body(None),
+    observacoes: Optional[str] = Body(None),
+    current_user: dict = Depends(require_permission("estoque", "criar"))
+):
+    """Cria um pedido de compra para fornecedor"""
+    # Validar fornecedor
+    fornecedor = await db.fornecedores.find_one({"id": fornecedor_id}, {"_id": 0})
+    if not fornecedor:
+        raise HTTPException(status_code=404, detail="Fornecedor não encontrado")
+    
+    # Validar e enriquecer itens
+    valor_total = 0
+    itens_enriquecidos = []
+    for item in itens:
+        produto = await db.produtos.find_one({"id": item["produto_id"]}, {"_id": 0})
+        if not produto:
+            raise HTTPException(status_code=404, detail=f"Produto {item['produto_id']} não encontrado")
+        
+        preco = item.get("preco_unitario", produto.get("preco_medio", 0))
+        subtotal = preco * item["quantidade"]
+        valor_total += subtotal
+        
+        itens_enriquecidos.append({
+            "produto_id": item["produto_id"],
+            "produto_nome": produto.get("nome"),
+            "produto_sku": produto.get("sku"),
+            "quantidade": item["quantidade"],
+            "quantidade_recebida": 0,
+            "preco_unitario": preco,
+            "subtotal": subtotal
+        })
+    
+    numero = await gerar_numero_pedido_compra()
+    
+    pedido = PedidoCompra(
+        numero=numero,
+        fornecedor_id=fornecedor_id,
+        itens=itens_enriquecidos,
+        valor_total=valor_total,
+        data_previsao_entrega=data_previsao_entrega,
+        observacoes=observacoes,
+        usuario_id=current_user["id"]
+    )
+    
+    await db.pedidos_compra.insert_one(pedido.model_dump())
+    
+    return {"message": "Pedido de compra criado", "id": pedido.id, "numero": numero}
+
+@api_router.put("/pedidos-compra/{pedido_id}/enviar")
+async def enviar_pedido_compra(
+    pedido_id: str,
+    current_user: dict = Depends(require_permission("estoque", "editar"))
+):
+    """Marca pedido como enviado ao fornecedor"""
+    result = await db.pedidos_compra.update_one(
+        {"id": pedido_id, "status": "rascunho"},
+        {"$set": {"status": "enviado", "data_envio": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=400, detail="Pedido não encontrado ou já foi enviado")
+    
+    return {"message": "Pedido enviado ao fornecedor"}
+
+@api_router.post("/pedidos-compra/{pedido_id}/vincular-nf")
+async def vincular_nf_pedido_compra(
+    pedido_id: str,
+    nota_fiscal_id: str = Body(..., embed=True),
+    current_user: dict = Depends(require_permission("notas_fiscais", "editar"))
+):
+    """Vincula uma nota fiscal a um pedido de compra"""
+    pedido = await db.pedidos_compra.find_one({"id": pedido_id}, {"_id": 0})
+    if not pedido:
+        raise HTTPException(status_code=404, detail="Pedido não encontrado")
+    
+    nota = await db.notas_fiscais.find_one({"id": nota_fiscal_id}, {"_id": 0})
+    if not nota:
+        raise HTTPException(status_code=404, detail="Nota fiscal não encontrada")
+    
+    # Adicionar NF à lista de vinculadas
+    nfs_vinculadas = pedido.get("notas_fiscais_vinculadas", [])
+    if nota_fiscal_id not in nfs_vinculadas:
+        nfs_vinculadas.append(nota_fiscal_id)
+    
+    # Atualizar quantidades recebidas
+    itens_atualizados = pedido.get("itens", [])
+    for item_nf in nota.get("itens", []):
+        for item_pedido in itens_atualizados:
+            if item_pedido["produto_id"] == item_nf.get("produto_id"):
+                item_pedido["quantidade_recebida"] = item_pedido.get("quantidade_recebida", 0) + item_nf.get("quantidade", 0)
+    
+    # Verificar se pedido foi totalmente atendido
+    totalmente_atendido = all(
+        item.get("quantidade_recebida", 0) >= item.get("quantidade", 0)
+        for item in itens_atualizados
+    )
+    
+    novo_status = "recebido" if totalmente_atendido else "parcial"
+    
+    await db.pedidos_compra.update_one(
+        {"id": pedido_id},
+        {"$set": {
+            "notas_fiscais_vinculadas": nfs_vinculadas,
+            "itens": itens_atualizados,
+            "status": novo_status
+        }}
+    )
+    
+    # Vincular pedido na nota fiscal
+    await db.notas_fiscais.update_one(
+        {"id": nota_fiscal_id},
+        {"$set": {"pedido_compra_id": pedido_id}}
+    )
+    
+    return {"message": "Nota fiscal vinculada ao pedido", "status_pedido": novo_status}
+
+# ==================== MELHORIA 9: CRÉDITO DE DEVOLUÇÃO ====================
+
+@api_router.post("/clientes/{cliente_id}/creditos")
+async def criar_credito_cliente(
+    cliente_id: str,
+    valor: float = Body(...),
+    origem: str = Body("manual"),  # devolucao, bonificacao, ajuste, manual
+    descricao: str = Body(...),
+    origem_id: Optional[str] = Body(None),
+    data_expiracao: Optional[str] = Body(None),
+    current_user: dict = Depends(require_permission("clientes", "editar"))
+):
+    """Cria um crédito para o cliente"""
+    cliente = await db.clientes.find_one({"id": cliente_id}, {"_id": 0})
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    credito = CreditoCliente(
+        cliente_id=cliente_id,
+        valor=valor,
+        origem=origem,
+        origem_id=origem_id,
+        descricao=descricao,
+        data_expiracao=data_expiracao
+    )
+    
+    await db.creditos_clientes.insert_one(credito.model_dump())
+    
+    # Atualizar saldo de crédito do cliente
+    await db.clientes.update_one(
+        {"id": cliente_id},
+        {"$inc": {"saldo_credito": valor}}
+    )
+    
+    return {"message": "Crédito criado", "id": credito.id, "valor": valor}
+
+@api_router.get("/clientes/{cliente_id}/creditos")
+async def listar_creditos_cliente(
+    cliente_id: str,
+    status: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Lista créditos do cliente"""
+    filtro = {"cliente_id": cliente_id}
+    if status:
+        filtro["status"] = status
+    
+    creditos = await db.creditos_clientes.find(filtro, {"_id": 0}).sort("data_criacao", -1).to_list(100)
+    
+    total_disponivel = sum(c["valor"] for c in creditos if c["status"] == "disponivel")
+    total_utilizado = sum(c["valor"] for c in creditos if c["status"] == "utilizado")
+    
+    return {
+        "creditos": creditos,
+        "total_disponivel": total_disponivel,
+        "total_utilizado": total_utilizado
+    }
+
+async def utilizar_credito_cliente(cliente_id: str, valor: float, venda_id: str) -> float:
+    """
+    Utiliza crédito disponível do cliente em uma venda.
+    Retorna o valor efetivamente utilizado.
+    """
+    creditos = await db.creditos_clientes.find(
+        {"cliente_id": cliente_id, "status": "disponivel"},
+        {"_id": 0}
+    ).sort("data_criacao", 1).to_list(100)  # FIFO - usar créditos mais antigos primeiro
+    
+    valor_utilizado = 0
+    
+    for credito in creditos:
+        if valor_utilizado >= valor:
+            break
+        
+        valor_disponivel = credito["valor"]
+        valor_a_usar = min(valor_disponivel, valor - valor_utilizado)
+        
+        if valor_a_usar >= valor_disponivel:
+            # Usar todo o crédito
+            await db.creditos_clientes.update_one(
+                {"id": credito["id"]},
+                {"$set": {
+                    "status": "utilizado",
+                    "data_utilizacao": datetime.now(timezone.utc).isoformat(),
+                    "venda_utilizacao_id": venda_id
+                }}
+            )
+        else:
+            # Usar parcialmente (criar novo crédito com o restante)
+            novo_credito = CreditoCliente(
+                cliente_id=cliente_id,
+                valor=valor_disponivel - valor_a_usar,
+                origem="saldo_anterior",
+                origem_id=credito["id"],
+                descricao=f"Saldo restante do crédito {credito['id']}"
+            )
+            await db.creditos_clientes.insert_one(novo_credito.model_dump())
+            
+            await db.creditos_clientes.update_one(
+                {"id": credito["id"]},
+                {"$set": {
+                    "valor": valor_a_usar,
+                    "status": "utilizado",
+                    "data_utilizacao": datetime.now(timezone.utc).isoformat(),
+                    "venda_utilizacao_id": venda_id
+                }}
+            )
+        
+        valor_utilizado += valor_a_usar
+    
+    # Atualizar saldo do cliente
+    if valor_utilizado > 0:
+        await db.clientes.update_one(
+            {"id": cliente_id},
+            {"$inc": {"saldo_credito": -valor_utilizado}}
+        )
+    
+    return valor_utilizado
+
+# ==================== MELHORIA 10: CONTROLE DE LOTES ====================
+
+@api_router.post("/produtos/{produto_id}/lotes")
+async def adicionar_lote(
+    produto_id: str,
+    lote: str = Body(...),
+    quantidade: int = Body(...),
+    data_fabricacao: Optional[str] = Body(None),
+    data_validade: Optional[str] = Body(None),
+    current_user: dict = Depends(require_permission("estoque", "editar"))
+):
+    """Adiciona um lote ao produto"""
+    produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    
+    lotes = produto.get("lotes") or []
+    
+    # Verificar se lote já existe
+    for l in lotes:
+        if l["lote"] == lote:
+            raise HTTPException(status_code=400, detail=f"Lote {lote} já existe para este produto")
+    
+    novo_lote = {
+        "lote": lote,
+        "quantidade": quantidade,
+        "data_fabricacao": data_fabricacao,
+        "data_validade": data_validade,
+        "data_entrada": datetime.now(timezone.utc).isoformat()
+    }
+    
+    lotes.append(novo_lote)
+    
+    await db.produtos.update_one(
+        {"id": produto_id},
+        {"$set": {"lotes": lotes, "controlar_lote": True}}
+    )
+    
+    return {"message": "Lote adicionado", "lote": novo_lote}
+
+@api_router.get("/produtos/{produto_id}/lotes")
+async def listar_lotes(
+    produto_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Lista lotes do produto"""
+    produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    
+    lotes = produto.get("lotes") or []
+    
+    # Verificar lotes próximos do vencimento
+    hoje = datetime.now(timezone.utc).date()
+    for lote in lotes:
+        if lote.get("data_validade"):
+            validade = datetime.fromisoformat(lote["data_validade"][:10]).date()
+            dias_vencer = (validade - hoje).days
+            lote["dias_para_vencer"] = dias_vencer
+            lote["status_validade"] = "vencido" if dias_vencer < 0 else "proximo_vencer" if dias_vencer <= 30 else "ok"
+    
+    return {"produto_id": produto_id, "lotes": lotes}
+
+@api_router.get("/estoque/lotes-vencendo")
+async def get_lotes_vencendo(
+    dias: int = 30,
+    current_user: dict = Depends(get_current_user)
+):
+    """Lista produtos com lotes próximos do vencimento"""
+    data_limite = (datetime.now(timezone.utc) + timedelta(days=dias)).isoformat()[:10]
+    hoje = datetime.now(timezone.utc).isoformat()[:10]
+    
+    produtos = await db.produtos.find(
+        {"controlar_lote": True, "lotes": {"$exists": True, "$ne": []}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    alertas = []
+    for produto in produtos:
+        for lote in produto.get("lotes", []):
+            if lote.get("data_validade") and lote.get("quantidade", 0) > 0:
+                if lote["data_validade"][:10] <= data_limite:
+                    alertas.append({
+                        "produto_id": produto["id"],
+                        "produto_nome": produto.get("nome"),
+                        "lote": lote["lote"],
+                        "quantidade": lote["quantidade"],
+                        "data_validade": lote["data_validade"],
+                        "vencido": lote["data_validade"][:10] < hoje
+                    })
+    
+    return {
+        "alertas": sorted(alertas, key=lambda x: x["data_validade"]),
+        "total": len(alertas)
+    }
+
+# ==================== MELHORIA 11: MULTI-UNIDADE ====================
+
+@api_router.put("/produtos/{produto_id}/unidade-compra")
+async def configurar_unidade_compra(
+    produto_id: str,
+    unidade_compra: str = Body(...),
+    fator_conversao: float = Body(...),
+    current_user: dict = Depends(require_permission("produtos", "editar"))
+):
+    """
+    Configura unidade de compra e fator de conversão.
+    Ex: unidade_compra="CX", fator_conversao=12 (1 caixa = 12 unidades)
+    """
+    produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    
+    if fator_conversao <= 0:
+        raise HTTPException(status_code=400, detail="Fator de conversão deve ser maior que zero")
+    
+    await db.produtos.update_one(
+        {"id": produto_id},
+        {"$set": {
+            "unidade_compra": unidade_compra,
+            "fator_conversao": fator_conversao
+        }}
+    )
+    
+    return {
+        "message": "Unidade de compra configurada",
+        "unidade_venda": produto.get("unidade", "UN"),
+        "unidade_compra": unidade_compra,
+        "fator_conversao": fator_conversao,
+        "exemplo": f"1 {unidade_compra} = {fator_conversao} {produto.get('unidade', 'UN')}"
+    }
+
+def converter_unidade(quantidade: float, fator: float, direcao: str = "compra_para_venda") -> float:
+    """
+    Converte quantidade entre unidades.
+    direcao: "compra_para_venda" (ex: 2 CX -> 24 UN) ou "venda_para_compra" (ex: 24 UN -> 2 CX)
+    """
+    if direcao == "compra_para_venda":
+        return quantidade * fator
+    else:
+        return quantidade / fator
+
+# ==================== MELHORIA 12: AUDITORIA DE ESTOQUE ====================
+
+@api_router.get("/estoque/auditoria")
+async def auditoria_estoque(
+    current_user: dict = Depends(require_permission("estoque", "ler"))
+):
+    """
+    Gera relatório de auditoria comparando estoque do sistema com movimentações.
+    Identifica divergências.
+    """
+    produtos = await db.produtos.find({"ativo": True}, {"_id": 0}).to_list(10000)
+    
+    divergencias = []
+    
+    for produto in produtos:
+        # Calcular estoque teórico baseado em movimentações
+        movimentacoes = await db.movimentacoes_estoque.find(
+            {"produto_id": produto["id"]},
+            {"_id": 0}
+        ).to_list(10000)
+        
+        estoque_calculado = 0
+        for mov in movimentacoes:
+            if mov.get("tipo") == "entrada":
+                estoque_calculado += mov.get("quantidade", 0)
+            else:
+                estoque_calculado -= mov.get("quantidade", 0)
+        
+        estoque_sistema = produto.get("estoque_atual", 0)
+        
+        if estoque_calculado != estoque_sistema:
+            divergencias.append({
+                "produto_id": produto["id"],
+                "produto_nome": produto.get("nome"),
+                "sku": produto.get("sku"),
+                "estoque_sistema": estoque_sistema,
+                "estoque_calculado": estoque_calculado,
+                "diferenca": estoque_sistema - estoque_calculado,
+                "total_movimentacoes": len(movimentacoes)
+            })
+    
+    return {
+        "data_auditoria": datetime.now(timezone.utc).isoformat(),
+        "total_produtos": len(produtos),
+        "produtos_com_divergencia": len(divergencias),
+        "divergencias": sorted(divergencias, key=lambda x: abs(x["diferenca"]), reverse=True)
+    }
+
+@api_router.post("/estoque/reconciliar/{produto_id}")
+async def reconciliar_estoque(
+    produto_id: str,
+    estoque_fisico: int = Body(...),
+    motivo: str = Body(...),
+    current_user: dict = Depends(require_permission("estoque", "editar"))
+):
+    """Reconcilia estoque do sistema com contagem física"""
+    produto = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    
+    estoque_sistema = produto.get("estoque_atual", 0)
+    diferenca = estoque_fisico - estoque_sistema
+    
+    if diferenca == 0:
+        return {"message": "Estoque já está correto, nenhum ajuste necessário"}
+    
+    # Criar movimentação de ajuste
+    tipo = "entrada" if diferenca > 0 else "saida"
+    
+    movimentacao = MovimentacaoEstoque(
+        produto_id=produto_id,
+        tipo=tipo,
+        quantidade=abs(diferenca),
+        referencia_tipo="reconciliacao_auditoria",
+        referencia_id=f"AUDIT-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
+        user_id=current_user["id"],
+        observacao=f"Reconciliação de auditoria: {motivo}"
+    )
+    
+    await db.movimentacoes_estoque.insert_one(movimentacao.model_dump())
+    
+    # Atualizar estoque
+    await db.produtos.update_one(
+        {"id": produto_id},
+        {"$set": {"estoque_atual": estoque_fisico}}
+    )
+    
+    return {
+        "message": "Estoque reconciliado",
+        "estoque_anterior": estoque_sistema,
+        "estoque_novo": estoque_fisico,
+        "ajuste": diferenca,
+        "tipo_ajuste": tipo
+    }
+
 
 # ========== CONTAS A RECEBER ==========
 
