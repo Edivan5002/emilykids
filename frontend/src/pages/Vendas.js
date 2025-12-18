@@ -225,14 +225,16 @@ const Vendas = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Sempre carregar vendas
+      // Sempre carregar vendas - usar unwrapList para compatibilidade com novo envelope
       const vendasRes = await axios.get(`${API}/vendas?limit=0`);
-      setVendas(vendasRes.data);
+      const { items: vendasData } = unwrapList(vendasRes);
+      setVendas(vendasData);
       
       // Tentar carregar clientes separadamente
       try {
         const cliRes = await axios.get(`${API}/clientes?limit=0`);
-        setClientes(cliRes.data);
+        const { items: cliData } = unwrapList(cliRes);
+        setClientes(cliData);
       } catch (err) {
         console.log('Sem permissão para clientes');
         setClientes([]);
@@ -241,7 +243,8 @@ const Vendas = () => {
       // Tentar carregar produtos separadamente
       try {
         const prodRes = await axios.get(`${API}/produtos?limit=0`);
-        setProdutos(prodRes.data);
+        const { items: prodData } = unwrapList(prodRes);
+        setProdutos(prodData);
       } catch (err) {
         console.log('Sem permissão para produtos');
         setProdutos([]);
@@ -250,7 +253,8 @@ const Vendas = () => {
       // Tentar carregar marcas
       try {
         const marcasRes = await axios.get(`${API}/marcas?limit=0`);
-        setMarcas(marcasRes.data);
+        const { items: marcasData } = unwrapList(marcasRes);
+        setMarcas(marcasData);
       } catch (err) {
         console.log('Sem permissão para marcas');
         setMarcas([]);
@@ -259,7 +263,8 @@ const Vendas = () => {
       // Tentar carregar categorias
       try {
         const catRes = await axios.get(`${API}/categorias?limit=0`);
-        setCategorias(catRes.data);
+        const { items: catData } = unwrapList(catRes);
+        setCategorias(catData);
       } catch (err) {
         console.log('Sem permissão para categorias');
         setCategorias([]);
@@ -268,7 +273,8 @@ const Vendas = () => {
       // Tentar carregar subcategorias
       try {
         const subRes = await axios.get(`${API}/subcategorias?limit=0`);
-        setSubcategorias(subRes.data);
+        const { items: subData } = unwrapList(subRes);
+        setSubcategorias(subData);
       } catch (err) {
         console.log('Sem permissão para subcategorias');
         setSubcategorias([]);
