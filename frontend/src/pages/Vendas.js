@@ -458,6 +458,9 @@ const Vendas = () => {
       quantidade: 1,
       preco_unitario: 0
     });
+    // Limpar estados de controle
+    setErroEstoque(null);
+    idempotencyKeyRef.current = null;
   };
 
   // CANCELAR VENDA
