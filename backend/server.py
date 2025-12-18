@@ -8205,6 +8205,12 @@ async def create_venda(venda_data: VendaCreate, current_user: dict = Depends(req
     
     total = subtotal - venda_data.desconto + venda_data.frete
     
+    # MELHORIA 2: Validar limite de crédito para vendas a prazo
+    if venda_data.forma_pagamento not in ["pix", "dinheiro", "cartao_debito"]:
+        validacao_credito = await validar_limite_credito(venda_data.cliente_id, total, venda_data.forma_pagamento)
+        if not validacao_credito["permitido"]:
+            raise HTTPException(status_code=400, detail=validacao_credito["mensagem"])
+    
     # Verificar se precisa autorização por valor
     requer_autorizacao = total >= VALOR_MINIMO_AUTORIZACAO_VENDA and papel == "vendedor"
     status_inicial = "aguardando_pagamento" if not requer_autorizacao else "rascunho"
