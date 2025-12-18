@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { parseError, ERROR_CODES } from '../lib/api';
 
 const AuthContext = createContext(null);
 
@@ -25,16 +26,25 @@ export const AuthProvider = ({ children }) => {
     delete axios.defaults.headers.common['Authorization'];
   }, []);
 
-  // Interceptor global para tratar erros 401
+  // Interceptor global para tratar erros 401/403/429
   useEffect(() => {
     const interceptor = axios.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401) {
-          console.warn('Sessão expirada - redirecionando para login');
-          handleLogout();
-          window.location.href = '/login';
+        const status = error.response?.status;
+        const parsed = parseError(error);
+        
+        // 401: Não fazer logout se for 2FA required ou login inicial
+        if (status === 401) {
+          // Ignorar 401 em rotas de login (onde 2FA pode ser requerido)
+          const isLoginRoute = error.config?.url?.includes('/auth/login');
+          if (!isLoginRoute && parsed.code !== ERROR_CODES.TWO_FACTOR_REQUIRED) {
+            console.warn('Sessão expirada - redirecionando para login');
+            handleLogout();
+            window.location.href = '/login';
+          }
         }
+        
         return Promise.reject(error);
       }
     );
