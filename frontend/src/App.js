@@ -90,6 +90,10 @@ function AppContent() {
                     <Route path="/contas-receber" element={<ContasReceber />} />
                     <Route path="/contas-pagar" element={<ContasPagar />} />
                     <Route path="/fluxo-caixa" element={<FluxoCaixa />} />
+                    <Route path="/comissoes" element={<Comissoes />} />
+                    <Route path="/curva-abc" element={<CurvaABC />} />
+                    <Route path="/pedidos-compra" element={<PedidosCompra />} />
+                    <Route path="/auditoria-estoque" element={<AuditoriaEstoque />} />
                   </Routes>
                 </Layout>
               </PrivateRoute>
