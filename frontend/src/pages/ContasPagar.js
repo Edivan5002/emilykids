@@ -109,9 +109,13 @@ const ContasPagar = () => {
         axios.get(`${API}/contas-pagar/dashboard/kpis`, { headers })
       ]);
 
-      setContas(contasResp.data.data || contasResp.data);
-      setFornecedores(fornecedoresResp.data);
-      setKpis(kpisResp.data);
+      // Usar unwrapList para compatibilidade com novo envelope {ok, data, meta}
+      const { items: contasData } = unwrapList(contasResp);
+      const { items: fornecedoresData } = unwrapList(fornecedoresResp);
+      
+      setContas(contasData);
+      setFornecedores(fornecedoresData);
+      setKpis(kpisResp.data?.data || kpisResp.data);
       setPaginaAtual(1); // Resetar página ao buscar/filtrar
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
