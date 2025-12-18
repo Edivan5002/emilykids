@@ -29,6 +29,10 @@ import ContasReceber from './pages/ContasReceber';
 import ContasPagar from './pages/ContasPagar';
 import FluxoCaixa from './pages/FluxoCaixa';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import Comissoes from './pages/Comissoes';
+import CurvaABC from './pages/CurvaABC';
+import PedidosCompra from './pages/PedidosCompra';
+import AuditoriaEstoque from './pages/AuditoriaEstoque';
 
 // Layout
 import Layout from './components/Layout';
