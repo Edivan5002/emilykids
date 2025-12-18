@@ -11768,120 +11768,144 @@ async def contas_por_fornecedor(
 async def get_fluxo_caixa(
     data_inicio: str,
     data_fim: str,
+    regime: str = "caixa",  # caixa (realizado) ou competencia (previsto)
     tipo_visao: str = "diario",  # diario, semanal, mensal
     current_user: dict = Depends(require_permission("contas_receber", "ler"))
 ):
     """
-    Retorna o fluxo de caixa consolidado
+    Retorna o fluxo de caixa consolidado baseado nos modelos reais.
+    
+    Regime caixa: considera apenas valores efetivamente recebidos/pagos.
+    Regime competência: considera valores por data de vencimento.
+    
+    IMPORTANTE: Vendas NÃO são contabilizadas para evitar duplicidade,
+    pois cada venda já gera contas a receber automaticamente.
     """
     try:
-        from datetime import datetime, timedelta
+        from datetime import datetime
         
-        # Converter datas
-        dt_inicio = datetime.fromisoformat(data_inicio.replace('Z', '+00:00'))
-        dt_fim = datetime.fromisoformat(data_fim.replace('Z', '+00:00'))
-        
-        # Buscar vendas (entradas realizadas)
-        vendas_cursor = db.vendas.find({
-            "data_venda": {"$gte": data_inicio, "$lte": data_fim},
+        # Buscar todas as contas a receber (não filtrar no nível raiz)
+        contas_receber = await db.contas_receber.find({
             "cancelada": {"$ne": True}
-        })
-        vendas = await vendas_cursor.to_list(length=None)
+        }, {"_id": 0}).to_list(None)
         
-        # Buscar contas a receber (entradas futuras/realizadas)
-        contas_receber_cursor = db.contas_receber.find({
-            "$or": [
-                {"data_vencimento": {"$gte": data_inicio, "$lte": data_fim}},
-                {"data_recebimento": {"$gte": data_inicio, "$lte": data_fim}}
-            ],
+        # Buscar todas as contas a pagar
+        contas_pagar = await db.contas_pagar.find({
             "cancelada": {"$ne": True}
-        })
-        contas_receber = await contas_receber_cursor.to_list(length=None)
-        
-        # Buscar contas a pagar (saídas futuras/realizadas)
-        contas_pagar_cursor = db.contas_pagar.find({
-            "$or": [
-                {"data_vencimento": {"$gte": data_inicio, "$lte": data_fim}},
-                {"data_pagamento": {"$gte": data_inicio, "$lte": data_fim}}
-            ],
-            "cancelada": {"$ne": True}
-        })
-        contas_pagar = await contas_pagar_cursor.to_list(length=None)
+        }, {"_id": 0}).to_list(None)
         
         # Organizar por período
         fluxo_por_periodo = {}
         
-        # Processar vendas (entradas)
-        for venda in vendas:
-            data_ref = venda.get('data_venda', '').split('T')[0]
-            if data_ref not in fluxo_por_periodo:
-                fluxo_por_periodo[data_ref] = {
-                    "entradas": 0,
-                    "saidas": 0,
-                    "detalhes_entradas": [],
-                    "detalhes_saidas": []
-                }
-            valor = venda.get('total', 0)
-            fluxo_por_periodo[data_ref]["entradas"] += valor
-            fluxo_por_periodo[data_ref]["detalhes_entradas"].append({
-                "tipo": "Venda",
-                "descricao": f"Venda #{venda.get('id', '')[:8]}",
-                "valor": valor,
-                "data": venda.get('data_venda')
-            })
-        
-        # Processar contas a receber
+        # Processar CONTAS A RECEBER por parcelas
         for conta in contas_receber:
-            if conta.get('status') == 'recebida':
-                data_ref = conta.get('data_recebimento', '').split('T')[0]
-            else:
-                data_ref = conta.get('data_vencimento', '').split('T')[0]
-                
-            if data_ref and data_ref not in fluxo_por_periodo:
-                fluxo_por_periodo[data_ref] = {
-                    "entradas": 0,
-                    "saidas": 0,
-                    "detalhes_entradas": [],
-                    "detalhes_saidas": []
-                }
+            parcelas = conta.get("parcelas", [])
             
-            if data_ref:
-                valor = conta.get('valor', 0)
+            for parcela in parcelas:
+                if regime == "caixa":
+                    # Regime CAIXA: só parcelas efetivamente recebidas
+                    if parcela.get("status") != "recebido":
+                        continue
+                    
+                    data_ref_str = parcela.get("data_recebimento", "")
+                    if not data_ref_str:
+                        continue
+                    
+                    # Verificar se está no período
+                    data_ref = data_ref_str.split("T")[0]
+                    if not (data_inicio <= data_ref <= data_fim):
+                        continue
+                    
+                    valor = parcela.get("valor_recebido", 0)
+                    
+                else:  # competencia
+                    # Regime COMPETÊNCIA: todas as parcelas por vencimento
+                    data_ref_str = parcela.get("data_vencimento", "")
+                    if not data_ref_str:
+                        continue
+                    
+                    data_ref = data_ref_str.split("T")[0]
+                    if not (data_inicio <= data_ref <= data_fim):
+                        continue
+                    
+                    valor = parcela.get("valor", 0)
+                
+                # Inicializar período se não existir
+                if data_ref not in fluxo_por_periodo:
+                    fluxo_por_periodo[data_ref] = {
+                        "entradas": 0,
+                        "saidas": 0,
+                        "detalhes_entradas": [],
+                        "detalhes_saidas": []
+                    }
+                
+                # Adicionar entrada
                 fluxo_por_periodo[data_ref]["entradas"] += valor
-                status_texto = "Recebida" if conta.get('status') == 'recebida' else "A Receber"
                 fluxo_por_periodo[data_ref]["detalhes_entradas"].append({
-                    "tipo": status_texto,
-                    "descricao": conta.get('descricao', 'Conta a Receber'),
+                    "tipo": "CR Parcela",
+                    "descricao": f"{conta.get('numero', 'CR-XXX')} - Parcela {parcela.get('numero', '?')}",
                     "valor": valor,
                     "data": data_ref,
-                    "status": conta.get('status')
+                    "referencia": {
+                        "conta_id": conta.get("id"),
+                        "numero": conta.get("numero"),
+                        "parcela": parcela.get("numero")
+                    }
                 })
         
-        # Processar contas a pagar
+        # Processar CONTAS A PAGAR por parcelas
         for conta in contas_pagar:
-            if conta.get('status') == 'paga':
-                data_ref = conta.get('data_pagamento', '').split('T')[0]
-            else:
-                data_ref = conta.get('data_vencimento', '').split('T')[0]
-                
-            if data_ref and data_ref not in fluxo_por_periodo:
-                fluxo_por_periodo[data_ref] = {
-                    "entradas": 0,
-                    "saidas": 0,
-                    "detalhes_entradas": [],
-                    "detalhes_saidas": []
-                }
+            parcelas = conta.get("parcelas", [])
             
-            if data_ref:
-                valor = conta.get('valor', 0)
+            for parcela in parcelas:
+                if regime == "caixa":
+                    # Regime CAIXA: só parcelas efetivamente pagas
+                    if parcela.get("status") != "pago":
+                        continue
+                    
+                    data_ref_str = parcela.get("data_pagamento", "")
+                    if not data_ref_str:
+                        continue
+                    
+                    data_ref = data_ref_str.split("T")[0]
+                    if not (data_inicio <= data_ref <= data_fim):
+                        continue
+                    
+                    valor = parcela.get("valor_pago", 0)
+                    
+                else:  # competencia
+                    # Regime COMPETÊNCIA: todas as parcelas por vencimento
+                    data_ref_str = parcela.get("data_vencimento", "")
+                    if not data_ref_str:
+                        continue
+                    
+                    data_ref = data_ref_str.split("T")[0]
+                    if not (data_inicio <= data_ref <= data_fim):
+                        continue
+                    
+                    valor = parcela.get("valor", 0)
+                
+                # Inicializar período se não existir
+                if data_ref not in fluxo_por_periodo:
+                    fluxo_por_periodo[data_ref] = {
+                        "entradas": 0,
+                        "saidas": 0,
+                        "detalhes_entradas": [],
+                        "detalhes_saidas": []
+                    }
+                
+                # Adicionar saída
                 fluxo_por_periodo[data_ref]["saidas"] += valor
-                status_texto = "Paga" if conta.get('status') == 'paga' else "A Pagar"
                 fluxo_por_periodo[data_ref]["detalhes_saidas"].append({
-                    "tipo": status_texto,
-                    "descricao": conta.get('descricao', 'Conta a Pagar'),
+                    "tipo": "CP Parcela",
+                    "descricao": f"{conta.get('numero', 'CP-XXX')} - Parcela {parcela.get('numero', '?')}",
                     "valor": valor,
                     "data": data_ref,
-                    "status": conta.get('status')
+                    "referencia": {
+                        "conta_id": conta.get("id"),
+                        "numero": conta.get("numero"),
+                        "parcela": parcela.get("numero")
+                    }
                 })
         
         # Ordenar por data
@@ -11916,11 +11940,12 @@ async def get_fluxo_caixa(
                 "inicio": data_inicio,
                 "fim": data_fim
             },
+            "regime": regime,
             "resumo": {
                 "total_entradas": total_entradas,
                 "total_saidas": total_saidas,
                 "saldo_periodo": saldo_final,
-                "saldo_final": saldo_acumulado
+                "saldo_acumulado_final": saldo_acumulado
             },
             "fluxo": fluxo_final
         }
