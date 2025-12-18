@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ShoppingCart, Plus, DollarSign, TrendingUp, Users, CreditCard, Search, Calendar, X, AlertCircle, Ban, Trash2, Shield, ChevronLeft, ChevronRight, Clock, CheckCircle, FileText, ChevronDown, ChevronUp, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
-import { generateIdempotencyKey, parseError, ERROR_CODES, unwrapList } from '../lib/api';
+import { generateIdempotencyKey, parseError, ERROR_CODES } from '../lib/api';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
