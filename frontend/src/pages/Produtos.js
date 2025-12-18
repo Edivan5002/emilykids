@@ -115,18 +115,28 @@ const Produtos = () => {
     aplicarFiltros();
   }, [filtros, produtos]);
 
+  // Helper para extrair dados compatível com formato antigo e novo da API
+  const extractData = (response) => {
+    const data = response?.data;
+    if (data && data.ok !== undefined && Array.isArray(data.data)) return data.data;
+    if (data && Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data)) return data;
+    return [];
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
       // Sempre tentar carregar produtos (vendedor tem permissão)
       const prodRes = await axios.get(`${API}/produtos?incluir_inativos=true&limit=0`);
-      setProdutos(prodRes.data);
-      setProdutosFiltrados(prodRes.data);
+      const prodData = extractData(prodRes);
+      setProdutos(prodData);
+      setProdutosFiltrados(prodData);
       
       // Tentar carregar dados adicionais, mas não falhar se não tiver permissão
       try {
         const marcaRes = await axios.get(`${API}/marcas?limit=0`);
-        setMarcas(marcaRes.data.filter(m => m.ativo));
+        setMarcas(extractData(marcaRes).filter(m => m.ativo));
       } catch (err) {
         console.log('Sem permissão para marcas');
         setMarcas([]);
@@ -134,7 +144,7 @@ const Produtos = () => {
       
       try {
         const catRes = await axios.get(`${API}/categorias?limit=0`);
-        setCategorias(catRes.data.filter(c => c.ativo));
+        setCategorias(extractData(catRes).filter(c => c.ativo));
       } catch (err) {
         console.log('Sem permissão para categorias');
         setCategorias([]);
@@ -142,7 +152,7 @@ const Produtos = () => {
       
       try {
         const subRes = await axios.get(`${API}/subcategorias?limit=0`);
-        setSubcategorias(subRes.data.filter(s => s.ativo));
+        setSubcategorias(extractData(subRes).filter(s => s.ativo));
       } catch (err) {
         console.log('Sem permissão para subcategorias');
         setSubcategorias([]);
