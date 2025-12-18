@@ -91,8 +91,27 @@ export const AuthProvider = ({ children }) => {
     return acoes?.includes(acao) || false;
   };
 
-  const login = async (email, senha) => {
-    const response = await axios.post(`${API}/auth/login`, { email, senha });
+  /**
+   * Login com suporte a 2FA
+   * @param {string} email 
+   * @param {string} senha 
+   * @param {string} [totpCode] - Código TOTP (se 2FA habilitado)
+   * @param {string} [backupCode] - Código de backup (alternativa ao TOTP)
+   * @returns {Promise<Object>} user data
+   * @throws {Object} { code, message, requires2FA }
+   */
+  const login = async (email, senha, totpCode = null, backupCode = null) => {
+    const payload = { email, senha };
+    
+    // Adicionar código 2FA se fornecido
+    if (totpCode) {
+      payload.totp_code = totpCode;
+    }
+    if (backupCode) {
+      payload.backup_code = backupCode;
+    }
+    
+    const response = await axios.post(`${API}/auth/login`, payload);
     const { access_token, user } = response.data;
     localStorage.setItem('token', access_token);
     setToken(access_token);
