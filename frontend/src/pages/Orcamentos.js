@@ -228,17 +228,35 @@ const Orcamentos = () => {
     setPaginaAtual(1);
   }, [filtros]);
 
+  // Helper para extrair dados compatível com formato antigo e novo da API
+  const extractData = (response) => {
+    const data = response?.data;
+    // Novo formato: { ok: true, data: [...] }
+    if (data && data.ok !== undefined && Array.isArray(data.data)) {
+      return data.data;
+    }
+    // Formato com .data como array
+    if (data && Array.isArray(data.data)) {
+      return data.data;
+    }
+    // Formato antigo: array direto
+    if (Array.isArray(data)) {
+      return data;
+    }
+    return [];
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
       // Sempre carregar orçamentos
       const orcRes = await axios.get(`${API}/orcamentos?limit=0`);
-      setOrcamentos(orcRes.data);
+      setOrcamentos(extractData(orcRes));
       
       // Tentar carregar clientes separadamente
       try {
         const cliRes = await axios.get(`${API}/clientes?limit=0`);
-        setClientes(cliRes.data);
+        setClientes(extractData(cliRes));
       } catch (err) {
         console.log('Sem permissão para clientes');
         setClientes([]);
@@ -247,7 +265,7 @@ const Orcamentos = () => {
       // Tentar carregar produtos separadamente
       try {
         const prodRes = await axios.get(`${API}/produtos?limit=0`);
-        setProdutos(prodRes.data);
+        setProdutos(extractData(prodRes));
       } catch (err) {
         console.log('Sem permissão para produtos');
         setProdutos([]);
@@ -256,7 +274,7 @@ const Orcamentos = () => {
       // Tentar carregar marcas
       try {
         const marcasRes = await axios.get(`${API}/marcas?limit=0`);
-        setMarcas(marcasRes.data);
+        setMarcas(extractData(marcasRes));
       } catch (err) {
         console.log('Sem permissão para marcas');
         setMarcas([]);
@@ -265,7 +283,7 @@ const Orcamentos = () => {
       // Tentar carregar categorias
       try {
         const catRes = await axios.get(`${API}/categorias?limit=0`);
-        setCategorias(catRes.data);
+        setCategorias(extractData(catRes));
       } catch (err) {
         console.log('Sem permissão para categorias');
         setCategorias([]);
