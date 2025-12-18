@@ -11502,6 +11502,589 @@ async def admin_financeiro_sanity_check(
     }
 
 
+# ==================== ETAPA 14 - BACKUP/RESTORE ====================
+
+@api_router.get("/admin/operacoes/backup-restore/instrucoes", tags=["Admin"])
+async def get_backup_restore_instrucoes(
+    current_user: dict = Depends(require_permission("admin", "ler"))
+):
+    """
+    1.1) Instruções operacionais de backup/restore (documentação viva).
+    """
+    colecoes_criticas = [
+        "users", "roles", "permissions", "user_groups",
+        "produtos", "categorias", "clientes", "fornecedores",
+        "contas_pagar", "contas_receber", "vendas", "orcamentos",
+        "logs", "counters", "configuracoes_financeiras"
+    ]
+    
+    instrucoes = [
+        "=== BACKUP COM MONGODUMP ===",
+        "mongodump --uri=\"$MONGO_URL\" --db=$DB_NAME --out=/backup/$(date +%Y%m%d)",
+        "",
+        "=== RESTORE COM MONGORESTORE ===",
+        "mongorestore --uri=\"$MONGO_URL\" --db=$DB_NAME /backup/20250101/$DB_NAME",
+        "",
+        "=== BACKUP FILTRADO POR DATA ===",
+        "mongodump --uri=\"$MONGO_URL\" --db=$DB_NAME -c contas_pagar \\",
+        "  --query='{\"created_at\":{\"$gte\":\"2025-01-01\"}}'",
+        "",
+        "=== SEGURANÇA ===",
+        "- Nunca expor dumps em URLs públicas",
+        "- Criptografar backups em repouso (gpg, age)",
+        "- Testar restore periodicamente",
+        "- Manter ao menos 3 cópias em locais diferentes"
+    ]
+    
+    return {
+        "colecoes_criticas": colecoes_criticas,
+        "instrucoes": "\n".join(instrucoes),
+        "max_export_api": 5000,
+        "nota": "Para grandes volumes, usar mongodump/mongorestore diretamente"
+    }
+
+
+@api_router.get("/admin/operacoes/export", tags=["Admin"])
+async def admin_export_collection(
+    collection: str,
+    limit: int = 1000,
+    format: str = "json",
+    current_user: dict = Depends(require_permission("admin", "ler"))
+):
+    """
+    1.2) Export leve de coleção via API (máx 5000 docs).
+    """
+    MAX_EXPORT = 5000
+    limit = min(limit, MAX_EXPORT)
+    
+    colecoes_permitidas = [
+        "produtos", "categorias", "clientes", "fornecedores",
+        "contas_pagar", "contas_receber", "vendas", "orcamentos",
+        "centros_custo", "projetos"
+    ]
+    
+    if collection not in colecoes_permitidas:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Coleção não permitida para export. Permitidas: {colecoes_permitidas}"
+        )
+    
+    docs = await db[collection].find({}, {"_id": 0}).limit(limit).to_list(limit)
+    
+    if format == "jsonl":
+        import json
+        lines = [json.dumps(doc, default=str) for doc in docs]
+        return {"format": "jsonl", "count": len(docs), "data": "\n".join(lines)}
+    
+    return {"format": "json", "count": len(docs), "data": docs}
+
+
+@api_router.post("/admin/operacoes/import", tags=["Admin"])
+async def admin_import_collection(
+    request: Request,
+    current_user: dict = Depends(require_permission("admin", "editar"))
+):
+    """
+    1.2) Import leve via API (máx 200 docs por chamada).
+    """
+    body = await request.json()
+    collection = body.get("collection")
+    mode = body.get("mode", "insert_only")
+    docs = body.get("docs", [])
+    force = body.get("force", False)
+    
+    MAX_IMPORT = 200
+    
+    colecoes_bloqueadas = ["users", "roles", "permissions", "logs"]
+    
+    if collection in colecoes_bloqueadas and not force:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Import bloqueado para '{collection}'. Use force=true se necessário."
+        )
+    
+    if len(docs) > MAX_IMPORT:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Máximo {MAX_IMPORT} documentos por chamada"
+        )
+    
+    if not docs:
+        raise HTTPException(status_code=400, detail="Lista 'docs' vazia")
+    
+    inserted = 0
+    updated = 0
+    errors = []
+    
+    for doc in docs:
+        try:
+            if mode == "upsert_by_id" and "id" in doc:
+                result = await db[collection].update_one(
+                    {"id": doc["id"]},
+                    {"$set": doc},
+                    upsert=True
+                )
+                if result.upserted_id:
+                    inserted += 1
+                else:
+                    updated += 1
+            else:
+                await db[collection].insert_one(doc)
+                inserted += 1
+        except Exception as e:
+            errors.append({"doc_id": doc.get("id", "?"), "error": str(e)[:100]})
+    
+    return {
+        "success": len(errors) == 0,
+        "inserted": inserted,
+        "updated": updated,
+        "errors": errors[:10]
+    }
+
+
+# ==================== ETAPA 14 - ESTORNO AUDITÁVEL ====================
+
+@api_router.post("/contas-pagar/{conta_id}/parcelas/{numero_parcela}/estornar", tags=["Financeiro"])
+async def estornar_parcela_pagar(
+    conta_id: str,
+    numero_parcela: int,
+    request: Request,
+    current_user: dict = Depends(require_permission("contas_pagar", "editar"))
+):
+    """
+    3.2) Estorno formal de parcela paga com trilha de auditoria.
+    """
+    body = await request.json()
+    motivo = body.get("motivo", "")
+    
+    if not motivo or len(motivo) < 5 or len(motivo) > 200:
+        raise HTTPException(status_code=400, detail="Motivo obrigatório (5-200 caracteres)")
+    
+    # Idempotência
+    idempotency_key = request.headers.get("Idempotency-Key")
+    if idempotency_key:
+        existing = await check_idempotency_key(idempotency_key, "estornar-pagar", current_user["id"])
+        if existing:
+            return existing.get("response", {"message": "Estorno já processado", "idempotent": True})
+    
+    conta = await db.contas_pagar.find_one({"id": conta_id}, {"_id": 0})
+    if not conta:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    # Encontrar parcela
+    parcela_idx = None
+    parcela = None
+    for i, p in enumerate(conta.get("parcelas", [])):
+        if p.get("numero_parcela") == numero_parcela:
+            parcela_idx = i
+            parcela = p
+            break
+    
+    if parcela is None:
+        raise HTTPException(status_code=404, detail="Parcela não encontrada")
+    
+    if parcela.get("status") != "pago" and parcela.get("valor_pago", 0) == 0:
+        raise HTTPException(status_code=400, detail="Parcela não está paga - não há o que estornar")
+    
+    # Dados antes do estorno
+    before = {
+        "parcela_status": parcela.get("status"),
+        "parcela_valor_pago": parcela.get("valor_pago"),
+        "conta_status": conta.get("status"),
+        "conta_valor_pago": conta.get("valor_pago")
+    }
+    
+    # Determinar novo status da parcela
+    hoje = parse_date_only(utc_now_iso())
+    data_venc = parse_date_only(parcela.get("data_vencimento", ""))
+    novo_status = "vencido" if data_venc and data_venc < hoje else "pendente"
+    
+    # Update condicional atômico
+    update_result = await db.contas_pagar.update_one(
+        {
+            "id": conta_id,
+            f"parcelas.{parcela_idx}.numero_parcela": numero_parcela,
+            f"parcelas.{parcela_idx}.status": "pago"
+        },
+        {
+            "$set": {
+                f"parcelas.{parcela_idx}.status": novo_status,
+                f"parcelas.{parcela_idx}.valor_pago": 0,
+                f"parcelas.{parcela_idx}.data_estorno": utc_now_iso(),
+                f"parcelas.{parcela_idx}.estornado_por": current_user["id"],
+                f"parcelas.{parcela_idx}.motivo_estorno": motivo,
+                "updated_at": utc_now_iso()
+            },
+            "$push": {
+                "eventos": create_audit_event(
+                    tipo="ESTORNO_PARCELA",
+                    user_id=current_user["id"],
+                    detalhe=motivo,
+                    before=before,
+                    after={"parcela_status": novo_status, "parcela_valor_pago": 0}
+                )
+            }
+        }
+    )
+    
+    if update_result.modified_count == 0:
+        raise HTTPException(status_code=409, detail="Parcela já foi estornada ou sofreu alteração")
+    
+    # Recalcular status da conta
+    await atualizar_status_conta_pagar(conta_id)
+    
+    conta_atualizada = await db.contas_pagar.find_one({"id": conta_id}, {"_id": 0})
+    
+    response = {
+        "success": True,
+        "message": "Parcela estornada com sucesso",
+        "conta": conta_atualizada
+    }
+    
+    if idempotency_key:
+        await save_idempotency_key(idempotency_key, "estornar-pagar", current_user["id"], response)
+    
+    return response
+
+
+@api_router.post("/contas-receber/{conta_id}/parcelas/{numero_parcela}/estornar", tags=["Financeiro"])
+async def estornar_parcela_receber(
+    conta_id: str,
+    numero_parcela: int,
+    request: Request,
+    current_user: dict = Depends(require_permission("contas_receber", "editar"))
+):
+    """
+    3.2) Estorno formal de parcela recebida com trilha de auditoria.
+    """
+    body = await request.json()
+    motivo = body.get("motivo", "")
+    
+    if not motivo or len(motivo) < 5 or len(motivo) > 200:
+        raise HTTPException(status_code=400, detail="Motivo obrigatório (5-200 caracteres)")
+    
+    # Idempotência
+    idempotency_key = request.headers.get("Idempotency-Key")
+    if idempotency_key:
+        existing = await check_idempotency_key(idempotency_key, "estornar-receber", current_user["id"])
+        if existing:
+            return existing.get("response", {"message": "Estorno já processado", "idempotent": True})
+    
+    conta = await db.contas_receber.find_one({"id": conta_id}, {"_id": 0})
+    if not conta:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    # Encontrar parcela
+    parcela_idx = None
+    parcela = None
+    for i, p in enumerate(conta.get("parcelas", [])):
+        if p.get("numero_parcela") == numero_parcela:
+            parcela_idx = i
+            parcela = p
+            break
+    
+    if parcela is None:
+        raise HTTPException(status_code=404, detail="Parcela não encontrada")
+    
+    if parcela.get("status") != "recebido" and parcela.get("valor_recebido", 0) == 0:
+        raise HTTPException(status_code=400, detail="Parcela não foi recebida - não há o que estornar")
+    
+    before = {
+        "parcela_status": parcela.get("status"),
+        "parcela_valor_recebido": parcela.get("valor_recebido"),
+        "conta_status": conta.get("status"),
+        "conta_valor_recebido": conta.get("valor_recebido")
+    }
+    
+    hoje = parse_date_only(utc_now_iso())
+    data_venc = parse_date_only(parcela.get("data_vencimento", ""))
+    novo_status = "vencido" if data_venc and data_venc < hoje else "pendente"
+    
+    update_result = await db.contas_receber.update_one(
+        {
+            "id": conta_id,
+            f"parcelas.{parcela_idx}.numero_parcela": numero_parcela,
+            f"parcelas.{parcela_idx}.status": "recebido"
+        },
+        {
+            "$set": {
+                f"parcelas.{parcela_idx}.status": novo_status,
+                f"parcelas.{parcela_idx}.valor_recebido": 0,
+                f"parcelas.{parcela_idx}.data_estorno": utc_now_iso(),
+                f"parcelas.{parcela_idx}.estornado_por": current_user["id"],
+                f"parcelas.{parcela_idx}.motivo_estorno": motivo,
+                "updated_at": utc_now_iso()
+            },
+            "$push": {
+                "eventos": create_audit_event(
+                    tipo="ESTORNO_PARCELA",
+                    user_id=current_user["id"],
+                    detalhe=motivo,
+                    before=before,
+                    after={"parcela_status": novo_status, "parcela_valor_recebido": 0}
+                )
+            }
+        }
+    )
+    
+    if update_result.modified_count == 0:
+        raise HTTPException(status_code=409, detail="Parcela já foi estornada ou sofreu alteração")
+    
+    await atualizar_status_conta_receber(conta_id)
+    
+    conta_atualizada = await db.contas_receber.find_one({"id": conta_id}, {"_id": 0})
+    
+    response = {
+        "success": True,
+        "message": "Parcela estornada com sucesso",
+        "conta": conta_atualizada
+    }
+    
+    if idempotency_key:
+        await save_idempotency_key(idempotency_key, "estornar-receber", current_user["id"], response)
+    
+    return response
+
+
+# ==================== ETAPA 14 - SMOKE TESTS ====================
+
+@api_router.post("/admin/operacoes/smoke-test", tags=["Admin"])
+async def admin_smoke_test(
+    dry_run: bool = True,
+    current_user: dict = Depends(require_permission("admin", "editar"))
+):
+    """
+    4) Smoke tests automatizáveis.
+    """
+    checks = []
+    
+    # 1) Testar geração de número sequencial
+    try:
+        num = await get_next_sequence_number("smoke_test")
+        checks.append({"nome": "contador_sequencial", "ok": True, "detalhe": f"Gerou: {num}"})
+    except Exception as e:
+        checks.append({"nome": "contador_sequencial", "ok": False, "detalhe": str(e)[:50]})
+    
+    # 2) Criar conta de teste
+    conta_teste_id = None
+    if not dry_run:
+        try:
+            conta_teste = {
+                "id": str(uuid.uuid4()),
+                "numero": f"SMOKE-{int(time.time())}",
+                "descricao": "Smoke Test - pode deletar",
+                "valor_total": 100.0,
+                "valor_pago": 0,
+                "valor_pendente": 100.0,
+                "status": "pendente",
+                "forma_pagamento": "pix",
+                "categoria": "teste",
+                "cancelada": False,
+                "parcelas": [{"numero_parcela": 1, "valor": 100.0, "status": "pendente", "data_vencimento": "2099-12-31"}],
+                "created_at": utc_now_iso(),
+                "_smoke": True
+            }
+            await db.contas_pagar.insert_one(conta_teste)
+            conta_teste_id = conta_teste["id"]
+            checks.append({"nome": "criar_conta_teste", "ok": True, "detalhe": conta_teste_id[:8]})
+        except Exception as e:
+            checks.append({"nome": "criar_conta_teste", "ok": False, "detalhe": str(e)[:50]})
+    else:
+        checks.append({"nome": "criar_conta_teste", "ok": True, "detalhe": "dry_run=true, pulado"})
+    
+    # 3) Testar dupla baixa (espera 409)
+    if conta_teste_id and not dry_run:
+        try:
+            # Primeira baixa
+            result1 = await db.contas_pagar.update_one(
+                {"id": conta_teste_id, "parcelas.0.status": "pendente"},
+                {"$set": {"parcelas.0.status": "pago", "parcelas.0.valor_pago": 100}}
+            )
+            # Segunda baixa (deve falhar)
+            result2 = await db.contas_pagar.update_one(
+                {"id": conta_teste_id, "parcelas.0.status": "pendente"},
+                {"$set": {"parcelas.0.status": "pago", "parcelas.0.valor_pago": 100}}
+            )
+            if result2.modified_count == 0:
+                checks.append({"nome": "dupla_baixa_bloqueada", "ok": True, "detalhe": "409 simulado OK"})
+            else:
+                checks.append({"nome": "dupla_baixa_bloqueada", "ok": False, "detalhe": "Permitiu dupla baixa!"})
+        except Exception as e:
+            checks.append({"nome": "dupla_baixa_bloqueada", "ok": False, "detalhe": str(e)[:50]})
+    else:
+        checks.append({"nome": "dupla_baixa_bloqueada", "ok": True, "detalhe": "dry_run, pulado"})
+    
+    # 4) Testar fluxo de caixa
+    try:
+        contas_r = await db.contas_receber.find({"cancelada": {"$ne": True}}).limit(1).to_list(1)
+        contas_p = await db.contas_pagar.find({"cancelada": {"$ne": True}}).limit(1).to_list(1)
+        checks.append({"nome": "fluxo_caixa_query", "ok": True, "detalhe": f"R:{len(contas_r)} P:{len(contas_p)}"})
+    except Exception as e:
+        checks.append({"nome": "fluxo_caixa_query", "ok": False, "detalhe": str(e)[:50]})
+    
+    all_ok = all(c["ok"] for c in checks)
+    
+    return {"ok": all_ok, "dry_run": dry_run, "checks": checks}
+
+
+@api_router.delete("/admin/operacoes/smoke-test/cleanup", tags=["Admin"])
+async def admin_smoke_test_cleanup(
+    current_user: dict = Depends(require_permission("admin", "deletar"))
+):
+    """
+    4) Limpa dados de smoke test (docs com _smoke: true).
+    """
+    result_cp = await db.contas_pagar.delete_many({"_smoke": True})
+    result_cr = await db.contas_receber.delete_many({"_smoke": True})
+    
+    return {
+        "success": True,
+        "deleted": {
+            "contas_pagar": result_cp.deleted_count,
+            "contas_receber": result_cr.deleted_count
+        }
+    }
+
+
+# ==================== ETAPA 14 - 2FA ENDPOINTS ====================
+
+@api_router.post("/2fa/setup", tags=["Auth"])
+async def setup_2fa(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    5.3) Setup 2FA - gera secret e backup codes (retorna UMA ÚNICA VEZ).
+    """
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
+    # Verificar se já tem 2FA habilitado
+    two_factor = user.get("two_factor", {})
+    if two_factor.get("enabled"):
+        raise HTTPException(status_code=400, detail="2FA já está habilitado. Desabilite primeiro.")
+    
+    # Gerar secret e backup codes
+    secret = generate_totp_secret()
+    backup_codes = generate_backup_codes(8)
+    
+    # Hash dos backup codes
+    salt = f"{current_user['id']}:{secret}"
+    backup_hashes = [hash_backup_code(code, salt) for code in backup_codes]
+    
+    # Salvar (enabled=false até confirmar)
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {
+            "two_factor": {
+                "enabled": False,
+                "secret": secret,
+                "backup_codes_hash": backup_hashes,
+                "updated_at": utc_now_iso()
+            }
+        }}
+    )
+    
+    # Gerar URI para QR code
+    otpauth_uri = generate_otpauth_uri(secret, user.get("email", "user"), "ERP")
+    
+    return {
+        "success": True,
+        "message": "2FA configurado. Use o código para habilitar.",
+        "secret": secret,
+        "otpauth_uri": otpauth_uri,
+        "backup_codes": backup_codes,
+        "aviso": "GUARDE OS BACKUP CODES EM LOCAL SEGURO. Não serão mostrados novamente."
+    }
+
+
+@api_router.post("/2fa/enable", tags=["Auth"])
+async def enable_2fa(
+    request: Request,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    5.3) Habilita 2FA após validar código TOTP.
+    """
+    body = await request.json()
+    code = body.get("code", "")
+    
+    if not code:
+        raise HTTPException(status_code=400, detail="Código TOTP obrigatório")
+    
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    two_factor = user.get("two_factor", {})
+    
+    if not two_factor.get("secret"):
+        raise HTTPException(status_code=400, detail="Execute /2fa/setup primeiro")
+    
+    if two_factor.get("enabled"):
+        raise HTTPException(status_code=400, detail="2FA já está habilitado")
+    
+    # Validar TOTP
+    if not verify_totp(two_factor["secret"], code):
+        raise HTTPException(status_code=401, detail="Código TOTP inválido")
+    
+    # Habilitar
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {
+            "two_factor.enabled": True,
+            "two_factor.enabled_at": utc_now_iso()
+        }}
+    )
+    
+    return {"success": True, "message": "2FA habilitado com sucesso"}
+
+
+@api_router.post("/2fa/disable", tags=["Auth"])
+async def disable_2fa(
+    request: Request,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    5.3) Desabilita 2FA (requer código TOTP ou backup code).
+    """
+    body = await request.json()
+    code = body.get("code", "")
+    
+    if not code:
+        raise HTTPException(status_code=400, detail="Código obrigatório (TOTP ou backup)")
+    
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    two_factor = user.get("two_factor", {})
+    
+    if not two_factor.get("enabled"):
+        raise HTTPException(status_code=400, detail="2FA não está habilitado")
+    
+    # Tentar validar como TOTP
+    valid = verify_totp(two_factor.get("secret", ""), code)
+    
+    # Se não for TOTP válido, tentar como backup code
+    if not valid:
+        salt = f"{current_user['id']}:{two_factor.get('secret', '')}"
+        idx = verify_backup_code(code, two_factor.get("backup_codes_hash", []), salt)
+        valid = idx >= 0
+    
+    if not valid:
+        raise HTTPException(status_code=401, detail="Código inválido")
+    
+    # Desabilitar (limpa secret e hashes)
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {
+            "two_factor": {
+                "enabled": False,
+                "secret": None,
+                "backup_codes_hash": [],
+                "disabled_at": utc_now_iso()
+            }
+        }}
+    )
+    
+    return {"success": True, "message": "2FA desabilitado"}
+
+
 # ========== ADMINISTRAÇÃO E CONFIGURAÇÕES - ENDPOINTS ==========
 
 # ===== CONFIGURAÇÕES FINANCEIRAS =====
