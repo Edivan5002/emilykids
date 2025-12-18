@@ -1567,6 +1567,7 @@ const Produtos = () => {
               <th className="min-w-[100px]">Preço Venda</th>
               <th className="hidden lg:table-cell min-w-[80px]">Margem</th>
               <th className="hidden sm:table-cell min-w-[80px]">Estoque</th>
+              <th className="hidden lg:table-cell min-w-[90px]">Reservado</th>
               <th className="min-w-[80px]">Status</th>
               <th className="text-right min-w-[120px] sticky right-0" style={{backgroundColor: '#F5F2E9'}}>Ações</th>
             </tr>
@@ -1628,9 +1629,25 @@ const Produtos = () => {
                 <td>{formatarMoeda(p.preco_venda)}</td>
                 <td className="text-green-600 font-semibold hidden lg:table-cell">{p.margem_lucro?.toFixed(2)}%</td>
                 <td className="hidden sm:table-cell">
-                  <span className={p.estoque_atual <= p.estoque_minimo ? 'text-red-600 font-semibold' : ''}>
-                    {p.estoque_atual}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className={p.estoque_atual <= p.estoque_minimo ? 'text-red-600 font-semibold' : ''}>
+                      {p.estoque_atual}
+                    </span>
+                    {(p.estoque_reservado > 0) && (
+                      <span className="text-xs text-blue-600">
+                        Disp: {(p.estoque_atual || 0) - (p.estoque_reservado || 0)}
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td className="hidden lg:table-cell">
+                  {p.estoque_reservado > 0 ? (
+                    <span className="text-orange-600 font-medium" title="Estoque reservado para orçamentos">
+                      {p.estoque_reservado}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
                 </td>
                 <td>
                   <span className={`badge ${p.ativo ? 'badge-success' : 'badge-danger'}`}>
