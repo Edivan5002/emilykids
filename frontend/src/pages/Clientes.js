@@ -481,6 +481,117 @@ const Clientes = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog Crédito e Limite */}
+      <Dialog open={creditoDialog.open} onOpenChange={(open) => setCreditoDialog({ ...creditoDialog, open })}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-purple-600" />
+              Crédito e Limite - {creditoDialog.cliente?.nome}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-4 space-y-6">
+            {/* Limite de Crédito */}
+            <div className="border rounded-lg p-4">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Wallet className="w-5 h-5 text-blue-600" />
+                Limite de Crédito
+              </h3>
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <Label>Limite Atual: R$ {creditoDialog.limiteCredito?.limite_credito || '0,00'}</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Novo limite"
+                    value={novoLimite}
+                    onChange={(e) => setNovoLimite(e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+                <Button onClick={handleAtualizarLimite}>
+                  Atualizar Limite
+                </Button>
+              </div>
+            </div>
+
+            {/* Créditos */}
+            <div className="border rounded-lg p-4">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Gift className="w-5 h-5 text-green-600" />
+                Créditos Disponíveis
+              </h3>
+              
+              {/* Lista de Créditos */}
+              <div className="space-y-2 mb-4">
+                {creditoDialog.creditos?.length > 0 ? (
+                  creditoDialog.creditos.map((credito, index) => (
+                    <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                      <div>
+                        <span className="font-medium">R$ {credito.valor}</span>
+                        <span className="text-gray-600 ml-2">- {credito.descricao}</span>
+                        <span className="text-xs text-gray-500 ml-2">({credito.origem})</span>
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {new Date(credito.data_criacao).toLocaleDateString()}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500">Nenhum crédito disponível</p>
+                )}
+              </div>
+
+              {/* Adicionar Novo Crédito */}
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-3">Adicionar Novo Crédito</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <Label>Valor</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0,00"
+                      value={novoCreditoForm.valor}
+                      onChange={(e) => setNovoCreditoForm({ ...novoCreditoForm, valor: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Descrição</Label>
+                    <Input
+                      placeholder="Motivo do crédito"
+                      value={novoCreditoForm.descricao}
+                      onChange={(e) => setNovoCreditoForm({ ...novoCreditoForm, descricao: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Origem</Label>
+                    <Select 
+                      value={novoCreditoForm.origem} 
+                      onValueChange={(value) => setNovoCreditoForm({ ...novoCreditoForm, origem: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="manual">Manual</SelectItem>
+                        <SelectItem value="promocao">Promoção</SelectItem>
+                        <SelectItem value="devolucao">Devolução</SelectItem>
+                        <SelectItem value="bonus">Bônus</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button onClick={handleCriarCredito} className="mt-3">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Crédito
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
