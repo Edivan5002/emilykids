@@ -12795,7 +12795,22 @@ async def startup_create_indexes():
         ("logs", "timestamp", {"name": "logs_timestamp_idx"}),
         ("logs", "user_id", {"name": "logs_user_idx"}),
         ("logs", "arquivado", {"name": "logs_arquivado_idx"}),
+        
+        # ETAPA 11: Índice para idempotency_keys
+        ("idempotency_keys", "created_at", {"name": "idempotency_created_idx", "expireAfterSeconds": 86400}),  # TTL 24h
     ]
+    
+    # ETAPA 11: Índice composto único para idempotency_keys
+    try:
+        await db.idempotency_keys.create_index(
+            [("key", 1), ("endpoint", 1), ("user_id", 1)],
+            unique=True,
+            name="idempotency_key_endpoint_user_unique"
+        )
+        logger.info("Índice de idempotência criado")
+    except Exception as e:
+        if "already exists" not in str(e).lower():
+            logger.error(f"Erro ao criar índice de idempotência: {e}")
     
     created = 0
     skipped = 0
