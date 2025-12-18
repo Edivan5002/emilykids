@@ -12,7 +12,7 @@ import sys
 import os
 
 # Backend URL from environment
-BACKEND_URL = "https://fintech-erp-3.preview.emergentagent.com/api"
+BACKEND_URL = "https://mongo-fastapi-1.preview.emergentagent.com/api"
 
 class ComprehensiveTester:
     def __init__(self):
