@@ -118,16 +118,16 @@ class MelhoriasTester:
             if response.status_code == 200:
                 data = response.json()
                 
-                # Validate response structure
-                expected_keys = ["resumo", "parcelas_vencer", "parcelas_vencidas", "clientes_inadimplentes"]
+                # Validate response structure - updated to match actual API response
+                expected_keys = ["resumo", "contas_a_receber", "contas_a_pagar", "clientes_inadimplentes"]
                 missing_keys = [key for key in expected_keys if key not in data]
                 
                 if not missing_keys:
                     # Check if resumo has totals
                     resumo = data.get("resumo", {})
-                    if "total_vencer" in resumo and "total_vencido" in resumo:
+                    if "total_a_receber_vencendo" in resumo and "total_a_receber_vencido" in resumo:
                         self.log_test("Financial Alerts", True, 
-                                    f"✅ Status 200, returned complete structure with resumo, parcelas a vencer/vencidas, clientes inadimplentes")
+                                    f"✅ Status 200, returned complete structure with resumo, contas a receber/pagar, clientes inadimplentes")
                     else:
                         self.log_test("Financial Alerts", False, 
                                     "Resumo missing required totals", {"resumo": resumo})
