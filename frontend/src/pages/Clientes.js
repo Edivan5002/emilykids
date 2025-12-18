@@ -156,6 +156,58 @@ const Clientes = () => {
     }
   };
 
+  // MELHORIA: Abrir dialog de crédito/limite
+  const handleOpenCredito = async (cliente) => {
+    try {
+      const [limiteRes, creditosRes] = await Promise.all([
+        axios.get(`${API}/clientes/${cliente.id}/limite-credito`),
+        axios.get(`${API}/clientes/${cliente.id}/creditos`)
+      ]);
+      setCreditoDialog({
+        open: true,
+        cliente,
+        limiteCredito: limiteRes.data,
+        creditos: creditosRes.data.creditos || []
+      });
+      setNovoLimite(limiteRes.data.limite_credito || '');
+    } catch (error) {
+      toast.error('Erro ao carregar dados de crédito');
+    }
+  };
+
+  // MELHORIA: Atualizar limite de crédito
+  const handleAtualizarLimite = async () => {
+    try {
+      await axios.put(`${API}/clientes/${creditoDialog.cliente.id}/limite-credito`, {
+        limite: parseFloat(novoLimite) || 0
+      });
+      toast.success('Limite de crédito atualizado!');
+      handleOpenCredito(creditoDialog.cliente); // Recarregar dados
+    } catch (error) {
+      toast.error('Erro ao atualizar limite');
+    }
+  };
+
+  // MELHORIA: Criar novo crédito
+  const handleCriarCredito = async () => {
+    if (!novoCreditoForm.valor || !novoCreditoForm.descricao) {
+      toast.error('Preencha valor e descrição');
+      return;
+    }
+    try {
+      await axios.post(`${API}/clientes/${creditoDialog.cliente.id}/creditos`, {
+        valor: parseFloat(novoCreditoForm.valor),
+        descricao: novoCreditoForm.descricao,
+        origem: novoCreditoForm.origem
+      });
+      toast.success('Crédito adicionado!');
+      setNovoCreditoForm({ valor: '', descricao: '', origem: 'manual' });
+      handleOpenCredito(creditoDialog.cliente); // Recarregar
+    } catch (error) {
+      toast.error('Erro ao criar crédito');
+    }
+  };
+
   const handleCloseDialog = () => {
     setIsOpen(false);
     setIsEditing(false);
