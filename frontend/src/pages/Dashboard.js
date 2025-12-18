@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Users, Package, ShoppingCart, DollarSign, AlertCircle, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, Package, ShoppingCart, DollarSign, AlertCircle, TrendingUp, ChevronLeft, ChevronRight, Clock, AlertTriangle, UserX, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -13,6 +13,7 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [vendasPorPeriodo, setVendasPorPeriodo] = useState([]);
   const [alertas, setAlertas] = useState(null);
+  const [alertasFinanceiros, setAlertasFinanceiros] = useState(null); // MELHORIA: Alertas Financeiros
   const [loading, setLoading] = useState(true);
   const [marcas, setMarcas] = useState([]);
   const [categorias, setCategorias] = useState([]);
