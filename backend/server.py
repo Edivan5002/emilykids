@@ -2758,12 +2758,14 @@ async def login(login_data: UserLogin, request: Request):
     
     # Se usuário não existe, retornar erro genérico (não revelar se email existe)
     if not user:
+        # 6) Registrar tentativa no rate limiter
+        login_rate_limiter.record_attempt(rate_limit_key)
+        
         # Log tentativa de login com email inexistente
         await log_action(
-            ip=request.client.host if request.client else "0.0.0.0",
+            ip=client_ip,
             user_id="",
             user_nome="Desconhecido",
-            
             tela="login",
             acao="login_falha",
             severidade="WARNING",
