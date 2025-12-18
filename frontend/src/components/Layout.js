@@ -126,7 +126,17 @@ const Layout = ({ children }) => {
         { path: '/contas-receber', label: 'Contas a Receber', icon: TrendingUp, module: 'contas_receber' },
         { path: '/contas-pagar', label: 'Contas a Pagar', icon: TrendingDown, module: 'contas_pagar' },
         { path: '/fluxo-caixa', label: 'Fluxo de Caixa', icon: Activity, module: 'contas_receber' },
+        { path: '/comissoes', label: 'Comissões', icon: DollarSign, module: 'financeiro' },
         { path: '/configuracoes-financeiras', label: 'Configurações', icon: Settings, module: 'administracao' }
+      ]
+    },
+    { 
+      label: 'Compras', 
+      icon: ShoppingCart, 
+      isSubmenu: true,
+      children: [
+        { path: '/pedidos-compra', label: 'Pedidos de Compra', icon: ClipboardList, module: 'estoque' },
+        { path: '/notas-fiscais', label: 'Notas Fiscais', icon: Receipt, module: 'notas_fiscais' }
       ]
     },
     { path: '/relatorios', label: 'Relatórios', icon: BarChart3, module: 'relatorios' },
