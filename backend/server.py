@@ -1570,6 +1570,34 @@ async def validate_password_policy(password: str, policy: PasswordPolicy = None)
     
     return True, "Senha válida"
 
+# ============================================================================
+# GERAÇÃO DE NÚMEROS SEQUENCIAIS ATÔMICOS (Thread-Safe)
+# ============================================================================
+
+async def get_next_sequence(sequence_name: str) -> int:
+    """
+    Gera próximo número sequencial de forma atômica usando MongoDB.
+    
+    Thread-safe: usa find_one_and_update com $inc atômico.
+    Previne race conditions quando múltiplos usuários criam registros simultaneamente.
+    
+    Args:
+        sequence_name: Nome da sequência (ex: "contas_pagar", "contas_receber", "vendas")
+    
+    Returns:
+        int: Próximo número sequencial
+    """
+    from pymongo import ReturnDocument
+    
+    result = await db.counters.find_one_and_update(
+        {"name": sequence_name},
+        {"$inc": {"seq": 1}},
+        upsert=True,
+        return_document=ReturnDocument.AFTER
+    )
+    
+    return result["seq"]
+
 async def initialize_default_roles_and_permissions():
     """Inicializa papéis e permissões padrão do sistema"""
     # Verificar se já existem
